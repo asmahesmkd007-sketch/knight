@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Tournament – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .countdown { font-family: var(--font-display); font-size: 28px; color: #5bc0eb; }
+    .leaderboard-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .leaderboard-row.me { background: rgba(91,192,235,0.06); border-radius: 8px; padding: 10px 8px; }
+    .rank-num { font-family: var(--font-display); font-size: 16px; font-weight: 700; width: 32px; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title">FREE TOURNAMENT</div>
+        <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-player-id" id="tb-pid">...</div>
+        <div class="topbar-avatar" id="tb-avatar">P</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <!-- Info Banner -->
+      <div style="background:rgba(91,192,235,0.06);border:1px solid rgba(91,192,235,0.2);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+        <span style="font-size:24px"><i class="fa-solid fa-gamepad"></i></span>
+        <div>
+          <div style="font-weight:600;color:#5bc0eb">Free Mode — No Entry Fee</div>
+          <div style="font-size:12px;color:var(--text-secondary)">Compete for IQ points. New tournaments every 20 minutes. 4 timer types available.</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs mb-24">
+        <button class="tab-btn active" onclick="switchTab('live', this)"><i class="fa-solid fa-circle" style="color:var(--error);"></i> Live</button>
+        <button class="tab-btn" onclick="switchTab('upcoming', this)"><i class="fa-solid fa-clock"></i> Upcoming</button>
+      </div>
+
+      <!-- Tournament Grid -->
+      <div id="tournament-grid" class="grid-auto">
+        <div class="skeleton" style="height:180px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:180px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:180px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:180px;border-radius:var(--radius)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOURNAMENT DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:580px;width:95%">
+    <div class="flex-between mb-16">
+      <div>
+        <div class="modal-title" id="modal-name">Tournament</div>
+        <div style="font-size:12px;color:var(--text-muted)" id="modal-status-text">...</div>
+      </div>
+      <button onclick="document.getElementById('detail-modal').classList.remove('active')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="grid-2 mb-16" style="gap:12px">
+      <div class="stat-card teal" style="padding:14px"><div class="stat-label">Timer</div><div class="stat-value" id="modal-timer" style="font-size:20px">-</div></div>
+      <div class="stat-card orange" style="padding:14px"><div class="stat-label">Players</div><div class="stat-value" id="modal-players" style="font-size:20px">-</div></div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div class="flex-between mb-8">
+        <span style="font-size:12px;color:var(--text-muted)">Players joined</span>
+        <span id="modal-players-label" style="font-size:12px;color:#5bc0eb">0/500</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill progress-teal" id="modal-players-bar" style="width:0%"></div></div>
+    </div>
+
+    <!-- Leaderboard inside modal -->
+    <div id="modal-leaderboard" style="max-height:220px;overflow-y:auto;margin-bottom:16px"></div>
+
+    <div id="modal-timer-display" style="text-align:center;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">TIME REMAINING</div>
+      <div class="countdown" id="modal-countdown">--:--</div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="document.getElementById('detail-modal').classList.remove('active')">Close</button>
+      <button class="btn btn-primary btn-lg" id="join-btn" onclick="joinTournament()"> <i class="fa-solid fa-gamepad"></i>Join Tournament</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-pid').textContent = user.player_id;
+document.getElementById('tb-avatar').textContent = user.username[0].toUpperCase();
+
+let currentTab = 'live';
+let selectedTournament = null;
+let countdownInterval = null;
+
+async function loadTournaments() {
+  const res = await TournamentAPI.getAll('free', currentTab === 'live' ? 'live' : 'upcoming');
+  const grid = document.getElementById('tournament-grid');
+  if (!res?.success || !res.tournaments?.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)">
+      <div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-gamepad"></i></div>
+      <div style="font-weight:600">No ${currentTab} tournaments</div>
+      <div style="font-size:12px;margin-top:6px">New tournaments created every 20 minutes</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = res.tournaments.map(t => {
+    const pct = Math.round((t.current_players / t.max_players) * 100);
+    const isJoined = t.players?.some(p => p.user_id === user.id || p.user_id?.id === user.id);
+    return `<div class="tournament-card" onclick="openDetail('${t.id}')">
+      <div class="flex-between mb-12">
+        <span class="tournament-card timer-badge">${t.timer_type}min</span>
+        <span class="badge ${t.status === 'live' ? 'badge-live' : 'badge-upcoming'}">${t.status === 'live' ? '<i class="fa-solid fa-circle" style="color:var(--error);"></i> LIVE' : '<i class="fa-solid fa-clock"></i> SOON'}</span>
+      </div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">${t.name}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">
+        ${t.status === 'live' ? 'Ends at ' + new Date(t.end_time).toLocaleTimeString() : 'Starts at ' + new Date(t.start_time).toLocaleTimeString()}
+      </div>
+      <div class="flex-between" style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">
+        <span>Players</span><span>${t.current_players}/${t.max_players}</span>
+      </div>
+      <div class="tournament-card players-bar"><div class="tournament-card players-fill" style="width:${pct}%"></div></div>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:#5bc0eb"><i class="fa-solid fa-gamepad"></i> Free Entry</span>
+        ${isJoined ? (t.status==='live' ? '<span class="badge badge-verified" style="cursor:pointer" onclick="event.stopPropagation(); window.location.href=\'/pages/tournament-live.html?id='+t.id+'\'">▶ Enter Live Area</span>' : '<span class="badge badge-verified"><i class="fa-solid fa-check"></i> Joined</span>') : '<span style="font-size:12px;color:var(--text-muted)">Click to join →</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openDetail(id) {
+  selectedTournament = id;
+  document.getElementById('detail-modal').classList.add('active');
+  const res = await TournamentAPI.getById(id);
+  if (!res?.success) return;
+  const t = res.tournament;
+  document.getElementById('modal-name').textContent = t.name;
+  document.getElementById('modal-status-text').textContent = t.status === 'live' ? '<i class="fa-solid fa-circle" style="color:var(--error);"></i> Live Now' : '<i class="fa-solid fa-clock"></i> Upcoming';
+  document.getElementById('modal-timer').textContent = t.timer_type + ' min';
+  document.getElementById('modal-players').textContent = t.current_players + '/' + t.max_players;
+  document.getElementById('modal-players-label').textContent = t.current_players + '/' + t.max_players;
+  document.getElementById('modal-players-bar').style.width = Math.round((t.current_players / t.max_players) * 100) + '%';
+
+  const isJoined = t.players?.some(p => (p.user_id?.id || p.user_id) === user.id);
+  const isFull = t.current_players >= t.max_players;
+  const btn = document.getElementById('join-btn');
+  if (isJoined && t.status === 'live') {
+    btn.textContent = '▶ Enter Live Area'; 
+    btn.disabled = false;
+    btn.onclick = () => window.location.href = '/pages/tournament-live.html?id=' + t.id;
+  }
+  else if (isJoined) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Already Joined'; btn.disabled = true; }
+  else if (isFull) { btn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Tournament Full'; btn.disabled = true; }
+  else { 
+    btn.textContent = ' Join Tournament'; 
+    btn.disabled = false; 
+    btn.onclick = () => joinTournament();
+  }
+
+  // Leaderboard
+  if (t.players?.length) {
+    const sorted = [...t.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+    document.getElementById('modal-leaderboard').innerHTML = `
+      <div style="font-family:var(--font-display);font-size:11px;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">LEADERBOARD</div>
+      ${sorted.slice(0, 10).map((p, i) => {
+        const name = p.profiles?.username || 'Player';
+        const isMe = p.user_id === user.id;
+        return `<div class="leaderboard-row ${isMe ? 'me' : ''}">
+          <div class="rank-num ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}">${i + 1}</div>
+          <div class="avatar-initial" style="width:28px;height:28px;font-size:11px">${name[0].toUpperCase()}</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${name}${isMe ? ' (You)' : ''}</div></div>
+          <div style="font-family:var(--font-display);font-size:13px;color:#5bc0eb">${p.score || 0}pts</div>
+        </div>`;
+      }).join('')}`;
+  } else {
+    document.getElementById('modal-leaderboard').innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">No players yet</div>';
+  }
+
+  // Countdown
+  if (countdownInterval) clearInterval(countdownInterval);
+  const updateCountdown = () => {
+    const target = t.status === 'live' ? new Date(t.end_time) : new Date(t.start_time);
+    const diff = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    document.getElementById('modal-countdown').textContent = fmt.countdown(diff);
+    if (diff === 0) clearInterval(countdownInterval);
+  };
+  updateCountdown();
+  countdownInterval = setInterval(updateCountdown, 1000);
+}
+
+async function joinTournament() {
+  if (!selectedTournament) return;
+  const res = await TournamentAPI.join(selectedTournament);
+  if (res?.success) {
+    Toast.success('Joined tournament! Good luck!');
+    // If we belong to a live tournament straight away, go there
+    if (currentTab === 'live') {
+      window.location.href = '/pages/tournament-live.html?id=' + selectedTournament;
+    } else {
+      document.getElementById('join-btn').innerHTML = '<i class="fa-solid fa-check"></i> Joined!';
+      document.getElementById('join-btn').disabled = true;
+      loadTournaments();
+    }
+  } else Toast.error(res?.message || 'Failed to join.');
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadTournaments();
+}
+
+// Socket live updates
+const sock = initSocket();
+sock.on('tournament_update', () => loadTournaments());
+
+loadTournaments();
+setInterval(loadTournaments, 30000); // Refresh every 30s
+</script>
+</body>
+</html>

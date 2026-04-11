@@ -1,0 +1,102 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="/pages/dashboard.html" class="brand">PHOENIX<span>X</span></a>
+    <div class="tagline"></div>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" id="sb-avatar">P</div>
+    <div class="sidebar-user-info">
+      <div class="name" id="sb-username">Loading...</div>
+      <div class="iq">IQ: <span id="sb-iq">100</span></div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-wallet">
+      <div class="label">WALLET</div>
+      <div class="balance"><span id="sb-balance">0</span></div>
+      <div class="coins-label">coins available</div>
+    </div>
+    <div class="nav-section-title">MAIN</div>
+    <a href="/pages/dashboard.html" class="nav-item" data-page="dashboard"> <span class="icon"><i
+          class="fa-solid fa-house"></i></span> Dashboard</a>
+    <a href="/pages/play.html" class="nav-item" data-page="play"> <span class="icon"><i
+          class="fa-solid fa-chess-pawn"></i></span> Play Chess</a>
+    <a href="/pages/friends.html" class="nav-item" data-page="friends"> <span class="icon"><i
+          class="fa-solid fa-user-group"></i></span> Friends</a>
+    <div class="nav-section-title">TOURNAMENT</div>
+    <a href="/pages/free-tournament.html" class="nav-item" data-page="free-tournament"><span class="icon"><i
+          class="fa-solid fa-gamepad"></i></span> Free Tournament</a>
+    <a href="/pages/paid-tournament.html" class="nav-item" data-page="paid-tournament"><span class="icon"><i
+          class="fa-solid fa-trophy"></i></span> Paid Tournament</a>
+    <div class="nav-section-title">STATS</div>
+    <a href="/pages/leaderboard.html" class="nav-item" data-page="leaderboard"> <span class="icon"><i
+          class="fa-solid fa-chart-simple"></i></span> Leaderboard</a>
+    <a href="/pages/history.html" class="nav-item" data-page="history"> <span class="icon"><i
+          class="fa-solid fa-scroll"></i></span> Match History</a>
+    <div class="nav-section-title">ACCOUNT</div>
+    <a href="/pages/wallet.html" class="nav-item" data-page="wallet"> <span class="icon"><i
+          class="fa-solid fa-wallet"></i></span> Wallet</a>
+    <a href="/pages/account.html" class="nav-item" data-page="account"> <span class="icon"><i
+          class="fa-solid fa-user"></i></span> Account & KYC</a>
+    <a href="/pages/settings.html" class="nav-item" data-page="settings"> <span class="icon"><i
+          class="fa-solid fa-gear"></i></span> Settings</a>
+    <a href="/pages/feedback.html" class="nav-item" data-page="feedback"> <span class="icon"><i
+          class="fa-solid fa-comment-dots"></i></span> Feedback</a>
+    <a href="/pages/report.html" class="nav-item" data-page="report"> <span class="icon"><i
+          class="fa-solid fa-triangle-exclamation"></i></span> Report a Problem</a>
+    <a href="/pages/admin.html" id="sb-admin" class="nav-item" style="color:var(--orange);display:none">
+      <span class="icon"><i class="fa-solid fa-shield-halved"></i></span> Admin Panel
+    </a>
+    <div class="nav-section-title">LIVE</div>
+    <div class="nav-item"><span class="icon"><i class="fa-solid fa-circle"
+          style="color:var(--success);font-size:12px;"></i></span><span><span data-live="online">0</span> Online</span>
+    </div>
+    <div class="nav-item"><span class="icon"><i class="fa-solid fa-bolt"
+          style="color:var(--orange);"></i></span><span><span data-live="matches">0</span> Matches</span></div>
+    <a href="#" class="nav-item" id="sb-logout" style="color:var(--error);margin-top:8px"><span class="icon"><i
+          class="fa-solid fa-arrow-right-from-bracket"></i></span> Logout</a>
+  </nav>
+</aside>
+<script>
+  (function () {
+    const user = (() => { try { return JSON.parse(localStorage.getItem('px_user')); } catch { return null; } })();
+    if (user) {
+      const u = document.getElementById('sb-username');
+      const iq = document.getElementById('sb-iq');
+      const av = document.getElementById('sb-avatar');
+      const adminLnk = document.getElementById('sb-admin');
+      if (u) u.textContent = fmt.username(user.username || 'Player');
+      if (iq) iq.textContent = user.iq_level || 100;
+      if (av) av.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+      if (adminLnk && user.is_admin) adminLnk.style.display = '';
+    }
+    const cur = window.location.pathname.split('/').pop().replace('.html', '');
+    document.querySelectorAll('.nav-item[data-page]').forEach(el => { if (el.dataset.page === cur) el.classList.add('active'); });
+    const lb = document.getElementById('sb-logout');
+    if (lb) lb.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (typeof AuthAPI !== 'undefined') { await AuthAPI.logout(); return; }
+      try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('px_token')}` } }); } catch { }
+      localStorage.removeItem('px_token'); localStorage.removeItem('px_refresh'); localStorage.removeItem('px_user');
+      window.location.href = '/pages/login.html';
+    });
+    const tk = localStorage.getItem('px_token');
+    if (tk) {
+      fetch('/api/wallet/balance', { headers: { Authorization: `Bearer ${tk}` } })
+        .then(r => r.json()).then(d => { const el = document.getElementById('sb-balance'); if (el && d.success) el.textContent = (d.wallet.balance || 0).toLocaleString(); }).catch(() => { });
+
+      // Dynamically check the database for admin status so changes reflect without logging out
+      fetch('/api/user/profile', { headers: { Authorization: `Bearer ${tk}` } })
+        .then(r => r.json()).then(d => {
+          if (d.success && d.user) {
+            localStorage.setItem('px_user', JSON.stringify(d.user)); // Keep local session fresh
+            const adminLnk = document.getElementById('sb-admin');
+            if (adminLnk) {
+              adminLnk.style.display = d.user.is_admin ? '' : 'none';
+            }
+          }
+        }).catch(() => { });
+    }
+  })();
+</script>

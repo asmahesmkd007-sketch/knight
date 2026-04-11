@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <style>
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .admin-sidebar {
+      width: 220px;
+      background: rgba(6, 9, 18, 0.98);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .admin-brand {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-brand .logo {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--orange);
+      letter-spacing: 2px;
+    }
+
+    .admin-brand .sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .admin-nav {
+      flex: 1;
+      padding: 12px 0;
+    }
+
+    .admin-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .admin-nav-item:hover,
+    .admin-nav-item.active {
+      background: rgba(255, 107, 53, 0.08);
+      color: var(--orange);
+      border-left-color: var(--orange);
+    }
+
+    .admin-content {
+      margin-left: 220px;
+      flex: 1;
+    }
+
+    .admin-topbar {
+      height: 60px;
+      background: rgba(13, 17, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    .admin-page {
+      padding: 24px;
+      display: none;
+    }
+
+    .admin-page.active {
+      display: block;
+    }
+
+    .admin-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .pending-count {
+      background: var(--error);
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-approve {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: var(--success);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+
+    .btn-approve:hover {
+      background: rgba(34, 197, 94, 0.2);
+    }
+
+    .btn-reject {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--error);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+
+    .btn-reject:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="admin-layout">
+    <!-- Admin Sidebar -->
+    <div class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="logo"><i class="fa-solid fa-bolt"></i> ADMIN</div>
+        <div class="sub">PHOENIX X CONTROL</div>
+      </div>
+      <nav class="admin-nav">
+        <div class="admin-nav-item active" onclick="showPage('dashboard', this)">
+          <i class="fa-solid fa-chart-bar"></i> Dashboard
+        </div>
+        <div class="admin-nav-item" onclick="showPage('users', this)">
+          <i class="fa-solid fa-users"></i> Users
+          <span id="nav-users-count" class="pending-count" style="display: none">0</span>
+        </div>
+        <div class="admin-nav-item" onclick="showPage('kyc', this)">
+          <i class="fa-solid fa-lock"></i> KYC Requests
+          <span id="nav-kyc-count" class="pending-count">0</span>
+        </div>
+        <div class="admin-nav-item" onclick="showPage('withdrawals', this)">
+          <i class="fa-solid fa-money-bill-wave"></i> Withdrawals
+          <span id="nav-wd-count" class="pending-count">0</span>
+        </div>
+        <div class="admin-nav-item" onclick="showPage('tournaments', this)">
+          <i class="fa-solid fa-trophy"></i> Tournaments
+        </div>
+        <div class="admin-nav-item" onclick="showPage('matches', this)">
+          <i class="fa-solid fa-chess-pawn"></i> Live Matches
+        </div>
+        <div class="admin-nav-item" onclick="showPage('transactions', this)">
+          <i class="fa-solid fa-clipboard"></i> Transactions
+        </div>
+        <div class="admin-nav-item" onclick="showPage('feedback', this)">
+          <i class="fa-solid fa-comment-dots"></i> Feedback
+        </div>
+        <div class="admin-nav-item" onclick="showPage('reports', this)">
+          <i class="fa-solid fa-triangle-exclamation"></i> Reports
+        </div>
+        <div class="admin-nav-item" onclick="showPage('create-tournament', this)">
+          <i class="fa-solid fa-plus"></i> Create Tournament
+        </div>
+      </nav>
+      <div style="padding: 16px; border-top: 1px solid var(--border)">
+        <button class="btn btn-danger btn-sm btn-full" onclick="adminLogout()">
+          <i class="fa-solid fa-door-open"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div class="admin-topbar">
+        <div style="
+              font-family: var(--font-display);
+              font-size: 14px;
+              font-weight: 700;
+            " id="admin-page-title">
+          DASHBOARD
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div class="live-badge">
+            <div class="live-dot"></div>
+            <span data-live="online">0</span> Online
+          </div>
+          <div style="font-size: 13px; color: var(--text-secondary)" id="admin-username">
+            Admin
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <div class="admin-page active" id="page-dashboard">
+        <div class="stats-grid mb-24">
+          <div class="admin-stat">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="d-total" style="color: #5bc0eb">
+              -
+            </div>
+          </div>
+          <div class="admin-stat">
+            <div class="stat-label">Online Now</div>
+            <div class="stat-value" id="d-online" style="color: var(--success)">
+              -
+            </div>
+          </div>
+          <div class="admin-stat">
+            <div class="stat-label">Active Matches</div>
+            <div class="stat-value" id="d-matches" style="color: var(--orange)">
+              -
+            </div>
+          </div>
+          <div class="admin-stat">
+            <div class="stat-label">Pending KYC</div>
+            <div class="stat-value" id="d-kyc" style="color: var(--warning)">
+              -
+            </div>
+          </div>
+          <div class="admin-stat">
+            <div class="stat-label">Pending Withdrawals</div>
+            <div class="stat-value" id="d-wd" style="color: var(--error)">
+              -
+            </div>
+          </div>
+          <div class="admin-stat">
+            <div class="stat-label">Total Coins in System</div>
+            <div class="stat-value" id="d-coins" style="color: var(--gold)">
+              -
+            </div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Quick Actions</div>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <button class="btn btn-primary" onclick="
+                    showPage('kyc', document.querySelector('[onclick*=kyc]'))
+                  ">
+                <i class="fa-solid fa-lock"></i> Review KYC Requests
+              </button>
+              <button class="btn btn-orange" onclick="
+                    showPage(
+                      'withdrawals',
+                      document.querySelector('[onclick*=withdrawals]'),
+                    )
+                  ">
+                <i class="fa-solid fa-money-bill-wave"></i> Process Withdrawals
+              </button>
+              <button class="btn btn-secondary" onclick="
+                    showPage(
+                      'create-tournament',
+                      document.querySelector('[onclick*=create]'),
+                    )
+                  ">
+                <i class="fa-solid fa-plus"></i> Create Tournament
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">System Status</div>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div class="flex-between">
+                <span style="font-size: 13px">Server</span><span class="badge badge-verified"><i class="fa-solid fa-circle" style="color:var(--success);"></i> Online</span>
+              </div>
+              <div class="flex-between">
+                <span style="font-size: 13px">Database</span><span class="badge badge-verified"><i class="fa-solid fa-circle" style="color:var(--success);"></i> Connected</span>
+              </div>
+              <div class="flex-between">
+                <span style="font-size: 13px">Socket.IO</span><span class="badge badge-verified"><i class="fa-solid fa-circle" style="color:var(--success);"></i> Active</span>
+              </div>
+              <div class="flex-between">
+                <span style="font-size: 13px">Razorpay</span><span class="badge badge-pending"><i class="fa-solid fa-gear"></i> Configured</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS PAGE -->
+      <div class="admin-page" id="page-users">
+        <div class="flex-between mb-20">
+          <input type="text" class="input" placeholder="Search @username or PX-ID..." style="max-width: 300px" id="user-search"
+            oninput="searchUsers(this.value)" />
+          <div style="display: flex; gap: 8px">
+            <button class="btn btn-secondary btn-sm" onclick="filterUsers('active')">
+              Active
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="filterUsers('blocked')">
+              Blocked
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="loadUsers()">
+              All
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Player ID</th>
+                <th>IQ</th>
+                <th>KYC</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 32px">
+                  <div class="spinner"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KYC PAGE -->
+      <div class="admin-page" id="page-kyc">
+        <div class="card mb-16" style="
+              background: rgba(245, 158, 11, 0.06);
+              border-color: rgba(245, 158, 11, 0.2);
+            ">
+          <div style="font-size: 13px; color: var(--warning)">
+            <i class="fa-solid fa-triangle-exclamation"></i> Review KYC documents carefully. Approval unlocks wallet & paid
+            tournaments for users.
+          </div>
+        </div>
+        <div id="kyc-list">
+          <div class="flex-center" style="padding: 48px">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WITHDRAWALS PAGE -->
+      <div class="admin-page" id="page-withdrawals">
+        <div class="card mb-16" style="
+              background: rgba(239, 68, 68, 0.06);
+              border-color: rgba(239, 68, 68, 0.2);
+            ">
+          <div style="font-size: 13px; color: var(--error)">
+            <i class="fa-solid fa-money-bill-wave"></i> FIFO Queue — Process in order. Approve means you manually send
+            money to user.
+          </div>
+        </div>
+        <div id="withdrawals-list">
+          <div class="flex-center" style="padding: 48px">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOURNAMENTS PAGE -->
+      <div class="admin-page" id="page-tournaments">
+        <div class="flex-between mb-20">
+          <input type="text" class="input" placeholder="Search Tournaments..." style="max-width:300px" id="tournament-search" oninput="filterAdminTournaments(this.value)" />
+          <button class="btn btn-secondary btn-sm" onclick="loadAdminTournaments()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tournament Name</th>
+                <th>Type / Format</th>
+                <th>Players</th>
+                <th>Status</th>
+                <th>Start Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tournaments-table">
+              <tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MATCHES PAGE -->
+      <div class="admin-page" id="page-matches">
+        <div id="matches-list">
+          <div class="flex-center" style="padding: 48px">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS PAGE -->
+      <div class="admin-page" id="page-transactions">
+        <div class="flex-between mb-16">
+          <select class="input" style="max-width: 200px" onchange="loadTransactions(this.value)">
+            <option value="all">All Types</option>
+            <option value="deposit">Deposits</option>
+            <option value="withdraw">Withdrawals</option>
+            <option value="tournament_entry">Tournament Entry</option>
+            <option value="tournament_prize">Prizes</option>
+          </select>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="txn-table">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 32px">
+                  <div class="spinner"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FEEDBACK PAGE -->
+      <div class="admin-page" id="page-feedback">
+        <div class="flex-between mb-20">
+          <input type="text" class="input" placeholder="Search feedback..." style="max-width: 300px" id="feedback-search" oninput="filterFeedback(this.value)" />
+          <button class="btn btn-secondary btn-sm" onclick="loadFeedback()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Rating</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="feedback-table">
+              <tr>
+                <td colspan="4" style="text-align: center; padding: 32px">
+                  <div class="spinner"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPORTS PAGE -->
+      <div class="admin-page" id="page-reports">
+        <div class="flex-between mb-20">
+          <select class="input" style="max-width: 200px" id="report-filter" onchange="loadReports()">
+            <option value="all">All Reports</option>
+            <option value="player">Player Reports</option>
+            <option value="issue">Issue Reports</option>
+            <option value="open">Open Reports</option>
+            <option value="resolved">Resolved Reports</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="loadReports()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Type / Priority</th>
+                <th>Context</th>
+                <th>Description</th>
+                <th>Proof</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="reports-table">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 32px">
+                  <div class="spinner"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CREATE TOURNAMENT PAGE -->
+      <div class="admin-page" id="page-create-tournament">
+        <div class="card" style="max-width: 600px">
+          <div class="card-title">Create New Tournament</div>
+          <div class="input-group">
+            <label class="input-label">Tournament Name</label>
+            <input type="text" id="ct-name" class="input" placeholder="PHOENIX Battle #1" />
+          </div>
+          <div class="grid-2" style="gap: 16px">
+            <div class="input-group">
+              <label class="input-label">Type</label>
+              <select id="ct-type" class="input" onchange="toggleEntryFee()">
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Format</label>
+              <select id="ct-format" class="input">
+                <option value="standard">Standard</option>
+                <option value="quick">Quick (20min)</option>
+                <option value="battle">Battle (30min)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2" style="gap: 16px">
+            <div class="input-group">
+              <label class="input-label">Timer Type</label>
+              <select id="ct-timer" class="input">
+                <option value="1">1 minute</option>
+                <option value="3">3 minutes</option>
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Max Players</label>
+              <input type="number" id="ct-maxplayers" class="input" value="500" min="2" max="1000" />
+            </div>
+          </div>
+          <div class="grid-2" style="gap: 16px">
+            <div class="input-group">
+              <label class="input-label">Start Time</label>
+              <input type="datetime-local" id="ct-start" class="input" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Duration (minutes)</label>
+              <input type="number" id="ct-duration" class="input" value="30" min="10" />
+            </div>
+          </div>
+          <div id="entry-fee-section">
+            <div class="card-title" style="margin-top: 8px">
+              Entry Fee & Prizes
+            </div>
+            <div class="grid-2" style="gap: 12px">
+              <div class="input-group">
+                <label class="input-label">Entry Fee (coins)</label><input type="number" id="ct-fee" class="input"
+                  value="0" min="0" oninput="calcPrizePool()" />
+              </div>
+              <div class="input-group">
+                <label class="input-label">Prize Pool (auto)</label><input type="number" id="ct-pool" class="input"
+                  readonly style="opacity: 0.7" />
+              </div>
+            </div>
+            <div class="grid-3" style="gap: 12px">
+              <div class="input-group">
+                <label class="input-label">1st Prize</label><input type="number" id="ct-p1" class="input" value="0" />
+              </div>
+              <div class="input-group">
+                <label class="input-label">2nd Prize</label><input type="number" id="ct-p2" class="input" value="0" />
+              </div>
+              <div class="input-group">
+                <label class="input-label">3rd Prize</label><input type="number" id="ct-p3" class="input" value="0" />
+              </div>
+            </div>
+          </div>
+          <div id="ct-error" class="error-msg" style="margin-bottom: 12px"></div>
+          <button class="btn btn-primary btn-lg" onclick="createTournament()">
+            <i class="fa-solid fa-plus"></i> Create Tournament
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/socket.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error();
+    const user = getUser();
+    if (!user.is_admin) {
+      Toast.error("Admin access required!");
+      setTimeout(
+        () => (window.location.href = "/pages/dashboard.html"),
+        1500,
+      );
+      throw new Error();
+    }
+    document.getElementById("admin-username").textContent = fmt.username(user.username);
+
+    function showPage(page, el) {
+      document
+        .querySelectorAll(".admin-page")
+        .forEach((p) => p.classList.remove("active"));
+      document
+        .querySelectorAll(".admin-nav-item")
+        .forEach((n) => n.classList.remove("active"));
+      document.getElementById("page-" + page).classList.add("active");
+      if (el) el.classList.add("active");
+      document.getElementById("admin-page-title").textContent = page
+        .toUpperCase()
+        .replace("-", " ");
+      const loaders = {
+        users: loadUsers,
+        kyc: loadKYC,
+        withdrawals: loadWithdrawals,
+        tournaments: loadAdminTournaments,
+        matches: loadMatches,
+        transactions: () => loadTransactions("all"),
+        feedback: loadFeedback,
+        reports: loadReports,
+      };
+      if (loaders[page]) loaders[page]();
+    }
+
+    async function loadDashboard() {
+      const res = await AdminAPI.getDashboard();
+      if (!res?.success) return;
+      const s = res.stats;
+      document.getElementById("d-total").textContent = s.totalUsers || 0;
+      document.getElementById("d-online").textContent = s.activeUsers || 0;
+      document.getElementById("d-matches").textContent = s.totalMatches || 0;
+      document.getElementById("d-kyc").textContent = s.pendingKYC || 0;
+      document.getElementById("d-wd").textContent = s.pendingWithdraw || 0;
+      document.getElementById("d-coins").textContent = (
+        s.wallet?.total || 0
+      ).toLocaleString();
+      document.getElementById("nav-kyc-count").textContent =
+        s.pendingKYC || 0;
+      document.getElementById("nav-kyc-count").style.display =
+        s.pendingKYC > 0 ? "inline" : "none";
+      document.getElementById("nav-wd-count").textContent =
+        s.pendingWithdraw || 0;
+      document.getElementById("nav-wd-count").style.display =
+        s.pendingWithdraw > 0 ? "inline" : "none";
+    }
+
+    async function loadUsers(status = "") {
+      const res = await AdminAPI.getUsers(status ? "status=" + status : "");
+      const tbody = document.getElementById("users-table");
+      if (!res?.success) {
+        tbody.innerHTML =
+          '<tr><td colspan="6" style="text-align:center;color:var(--error)">Failed to load</td></tr>';
+        return;
+      }
+      const kycBadge = {
+        verified: "badge-verified",
+        pending: "badge-pending",
+        rejected: "badge-rejected",
+        not_verified: "badge-rejected",
+      };
+      tbody.innerHTML = res.users
+        .map(
+          (u) => `<tr>
+    <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar-initial" style="width:32px;height:32px;font-size:12px">${(u.username || '?').replace('@', '')[0].toUpperCase()}</div><div><div style="font-weight:600;font-size:13px">${fmt.username(u.username)}</div><div style="font-size:11px;color:var(--text-muted)">${u.email}</div></div></div></td>
+    <td style="font-family:var(--font-display);font-size:12px;color:var(--gold)">${u.player_id}</td>
+    <td style="font-family:var(--font-display);color:#5bc0eb">${u.iq_level}</td>
+    <td><span class="badge ${kycBadge[u.kyc_status] || "badge-rejected"}">${u.kyc_status}</span></td>
+    <td><span class="badge ${u.status === "active" ? "badge-verified" : "badge-rejected"}">${u.status}</span></td>
+    <td><div class="action-btns">${u.status === "active" ? `<button class="btn-reject" onclick="updateUser('${u.id}', 'blocked')">Block</button>` : `<button class="btn-approve" onclick="updateUser('${u.id}', 'active')">Unblock</button>`}</div></td>
+  </tr>`,
+        )
+        .join("");
+    }
+
+    async function updateUser(id, status) {
+      const res = await AdminAPI.updateUserStatus(id, status);
+      if (res?.success) {
+        Toast.success("User " + status);
+        loadUsers();
+      } else Toast.error(res?.message || "Failed.");
+    }
+
+    function searchUsers(query) {
+      // Auto-add @ for username search if not Player ID
+      let searchQ = query.trim();
+      if (searchQ && !searchQ.startsWith('@') && !searchQ.startsWith('PX-')) {
+        searchQ = '@' + searchQ;
+      }
+      AdminAPI.getUsers("search=" + encodeURIComponent(searchQ)).then(
+        (res) => {
+          if (res?.success) {
+            const tbody = document.getElementById("users-table");
+            const kycBadge = { verified: "badge-verified", pending: "badge-pending", rejected: "badge-rejected", not_verified: "badge-rejected" };
+            tbody.innerHTML = res.users.map(u => `<tr>
+    <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar-initial" style="width:32px;height:32px;font-size:12px">${(u.username || '?').replace('@', '')[0].toUpperCase()}</div><div><div style="font-weight:600;font-size:13px">${fmt.username(u.username)}</div><div style="font-size:11px;color:var(--text-muted)">${u.email}</div></div></div></td>
+    <td style="font-family:var(--font-display);font-size:12px;color:var(--gold)">${u.player_id}</td>
+    <td style="font-family:var(--font-display);color:#5bc0eb">${u.iq_level}</td>
+    <td><span class="badge ${kycBadge[u.kyc_status] || 'badge-rejected'}">${u.kyc_status}</span></td>
+    <td><span class="badge ${u.status === 'active' ? 'badge-verified' : 'badge-rejected'}">${u.status}</span></td>
+    <td><div class="action-btns">${u.status === 'active' ? `<button class="btn-reject" onclick="updateUser('${u.id}', 'blocked')">Block</button>` : `<button class="btn-approve" onclick="updateUser('${u.id}', 'active')">Unblock</button>`}</div></td>
+  </tr>`).join('');
+          }
+        },
+      );
+    }
+    function filterUsers(status) {
+      loadUsers(status);
+    }
+
+    async function loadKYC() {
+      const res = await AdminAPI.getKYC();
+      const container = document.getElementById('kyc-list');
+      if (!res?.success || !res.kycs?.length) {
+        container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px"><i class="fa-solid fa-check-circle"></i></div><div style="margin-top:12px">No pending KYC requests!</div></div>';
+        return;
+      }
+      container.innerHTML = res.kycs.map(k => {
+        const profile = k.profiles || {};
+        return `<div class="card mb-12">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:700;font-size:14px">@${profile.username || 'Unknown'}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${profile.email || '-'} · ${profile.player_id || '-'}</div>
+          <div style="margin-top:8px">
+            <span class="badge badge-pending" style="margin-right:8px">${k.type?.toUpperCase()}</span>
+            <span style="font-size:12px;color:var(--text-secondary)">Name: ${k.name}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">ID: ${k.id_number?.replace(/\d(?=\d{4})/g, '*')}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Submitted: ${k.created_at ? new Date(k.created_at).toLocaleString('en-IN') : '-'}</div>
+        </div>
+        <div class="action-btns" style="align-items:flex-start">
+          <button class="btn-approve" onclick="reviewKYC('${k.id}', 'approve')"><i class="fa-solid fa-check"></i> Approve</button>
+          <button class="btn-reject" onclick="rejectKYC('${k.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+        </div>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    async function reviewKYC(id, action, reason = "") {
+      const res = await AdminAPI.reviewKYC(id, action, reason);
+      if (res?.success) {
+        Toast.success("KYC " + action + "d!");
+        loadKYC();
+        loadDashboard();
+      } else Toast.error(res?.message || "Failed.");
+    }
+
+    function rejectKYC(id) {
+      const reason = prompt("Rejection reason:");
+      if (reason !== null) reviewKYC(id, "reject", reason);
+    }
+
+    async function loadWithdrawals() {
+      const res = await AdminAPI.getWithdrawals();
+      const container = document.getElementById('withdrawals-list');
+      if (!res?.success || !res.requests?.length) {
+        container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px"><i class="fa-solid fa-check-circle"></i></div><div style="margin-top:12px">No pending withdrawal requests!</div></div>';
+        return;
+      }
+      container.innerHTML = res.requests.map((r, i) => {
+        const profile = r.profiles || {};
+        return `<div class="card mb-12" style="border-left:3px solid var(--orange)">
+      <div class="flex-between">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);color:var(--orange);padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">#${i + 1} in queue</span>
+            <span style="font-weight:700">@${profile.username || 'Unknown'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted)">${profile.email || '-'} · ${profile.player_id || '-'}</div>
+          <div style="font-family:var(--font-display);font-size:22px;color:var(--gold);margin-top:6px">${r.amount} <span style="font-size:12px;color:var(--text-secondary)">Coins</span></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Requested: ${r.created_at ? new Date(r.created_at).toLocaleString('en-IN') : '-'}</div>
+        </div>
+        <div class="action-btns" style="align-items:flex-start;flex-direction:column;gap:8px">
+          <button class="btn-approve" style="padding:8px 16px" onclick="processWithdrawal('${r.id}', 'approve')"><i class="fa-solid fa-check"></i> Approve & Send Money</button>
+          <button class="btn-reject" style="padding:8px 16px" onclick="rejectWithdrawal('${r.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+        </div>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    async function processWithdrawal(id, action, reason = "") {
+      const res = await AdminAPI.processWithdraw(id, action, reason);
+      if (res?.success) {
+        Toast.success("Withdrawal " + action + "d!");
+        loadWithdrawals();
+        loadDashboard();
+      } else Toast.error(res?.message || "Failed.");
+    }
+
+    function rejectWithdrawal(id) {
+      const reason = prompt("Rejection reason (coins will be refunded):");
+      if (reason !== null) processWithdrawal(id, "reject", reason);
+    }
+
+    async function loadMatches() {
+      const res = await AdminAPI.getLiveMatches();
+      const container = document.getElementById("matches-list");
+      if (!res?.success || !res.matches?.length) {
+        container.innerHTML =
+          '<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px"><i class="fa-solid fa-chess-pawn"></i></div><div style="margin-top:12px">No live matches right now</div></div>';
+        return;
+      }
+      container.innerHTML = `<div class="table-container"><table><thead><tr><th>Player 1</th><th>Player 2</th><th>Type</th><th>Timer</th><th>Started</th></tr></thead><tbody>${res.matches.map((m) => `<tr><td>${m.player1_id?.username || "-"} (IQ: ${m.player1_id?.iq_level || "-"})</td><td>${m.player2_id?.username || "-"} (IQ: ${m.player2_id?.iq_level || "-"})</td><td><span class="badge badge-live">${m.match_type}</span></td><td>${m.timer_type ? m.timer_type + "min" : "Bot"}</td><td style="font-size:12px">${new Date(m.start_time).toLocaleTimeString("en-IN")}</td></tr>`).join("")}</tbody></table></div>`;
+    }
+
+    async function loadTransactions(type = "all") {
+      const res = await AdminAPI.getTransactions(type);
+      const tbody = document.getElementById("txn-table");
+      if (!res?.success) return;
+      const typeLabels = {
+        deposit: '<i class="fa-solid fa-credit-card"></i> Deposit',
+        withdraw: '→ Withdraw',
+        tournament_entry: '<i class="fa-solid fa-trophy"></i> Entry',
+        tournament_prize: '<i class="fa-solid fa-medal" style="color:var(--gold);"></i> Prize',
+        refund: '↩ Refund',
+      };
+      tbody.innerHTML = res.transactions
+        .map(
+          (t) => `<tr>
+    <td>${t.user_id?.username || "-"}<div style="font-size:10px;color:var(--text-muted)">${t.user_id?.player_id || ""}</div></td>
+    <td>${typeLabels[t.type] || t.type}</td>
+    <td style="font-family:var(--font-display);color:${["deposit", "tournament_prize", "refund"].includes(t.type) ? "var(--success)" : "var(--error)"}">${t.amount}</td>
+    <td><span class="badge ${t.status === "success" ? "badge-verified" : t.status === "pending" ? "badge-pending" : "badge-rejected"}">${t.status}</span></td>
+    <td style="font-size:12px;color:var(--text-muted)">${new Date(t.createdAt).toLocaleDateString("en-IN")}</td>
+  </tr>`,
+        )
+        .join("");
+    }
+
+    let allAdminTournaments = [];
+    async function loadAdminTournaments() {
+      const tbody = document.getElementById("tournaments-table");
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>';
+      
+      const res = await AdminAPI.getAllTournaments();
+      if (!res?.success) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--error)">Error loading tournaments</td></tr>';
+        return;
+      }
+      
+      allAdminTournaments = res.tournaments || [];
+      if (allAdminTournaments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No tournaments found.</td></tr>';
+        return;
+      }
+      
+      renderAdminTournaments(allAdminTournaments);
+    }
+
+    function filterAdminTournaments(query) {
+      const lowerQ = query.toLowerCase();
+      renderAdminTournaments(allAdminTournaments.filter(t => (t.name || '').toLowerCase().includes(lowerQ)));
+    }
+
+    function renderAdminTournaments(list) {
+      const tbody = document.getElementById("tournaments-table");
+      if(list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No matching tournaments found.</td></tr>';
+        return;
+      }
+      const typeBadge = { "free": "badge-verified", "paid": "badge-gold" };
+      const statusBadge = { "live": "badge-live", "upcoming": "badge-pending", "completed": "badge-silver", "cancelled": "badge-rejected" };
+      
+      tbody.innerHTML = list.map(t => `
+        <tr>
+          <td><div style="font-weight:600;font-size:14px">${t.name}</div><div style="font-size:11px;color:var(--text-muted)">ID: ${t.id}</div></td>
+          <td><span class="badge ${typeBadge[t.type] || 'badge-silver'}">${t.type.toUpperCase()}</span><div style="font-size:11px;margin-top:4px;color:var(--text-secondary)">${t.timer_type}m / ${t.format}</div></td>
+          <td><span style="font-weight:700">${t.players_count || 0}</span> <span style="font-size:11px;color:var(--text-muted)">/ ${t.max_players}</span></td>
+          <td><span class="badge ${statusBadge[t.status] || 'badge-pending'}">${t.status.toUpperCase()}</span></td>
+          <td style="font-size:12px;color:var(--text-secondary)">${new Date(t.start_time).toLocaleString('en-IN')}</td>
+          <td>
+            ${t.status === 'upcoming' || t.status === 'live' ? `<button class="btn-reject" onclick="cancelTournamentAdmin('${t.id}')"><i class="fa-solid fa-xmark"></i> Cancel</button>` : `<span style="font-size:11px;color:var(--text-muted)">No Actions</span>`}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function cancelTournamentAdmin(id) {
+      if(!confirm("Are you sure you want to cancel this tournament? This will automatically refund entry fees to all players if it's Paid.")) return;
+      const res = await AdminAPI.cancelTournament(id);
+      if (res?.success) {
+        Toast.success("Tournament cancelled successfully");
+        loadAdminTournaments();
+      } else Toast.error(res?.message || "Failed to cancel");
+    }
+
+    function calcPrizePool() {
+      const fee = parseInt(document.getElementById("ct-fee").value) || 0;
+      const max =
+        parseInt(document.getElementById("ct-maxplayers").value) || 500;
+      document.getElementById("ct-pool").value = fee * max;
+    }
+
+    function toggleEntryFee() {
+      const isPaid = document.getElementById("ct-type").value === "paid";
+      document.getElementById("entry-fee-section").style.opacity = isPaid
+        ? "1"
+        : "0.4";
+    }
+
+    async function createTournament() {
+      const data = {
+        name: document.getElementById("ct-name").value.trim(),
+        type: document.getElementById("ct-type").value,
+        format: document.getElementById("ct-format").value,
+        timer_type: parseInt(document.getElementById("ct-timer").value),
+        max_players: parseInt(document.getElementById("ct-maxplayers").value),
+        start_time: document.getElementById("ct-start").value,
+        duration_minutes: parseInt(
+          document.getElementById("ct-duration").value,
+        ),
+        entry_fee: parseInt(document.getElementById("ct-fee").value) || 0,
+        prize_distribution: {
+          first: parseInt(document.getElementById("ct-p1").value) || 0,
+          second: parseInt(document.getElementById("ct-p2").value) || 0,
+          third: parseInt(document.getElementById("ct-p3").value) || 0,
+        },
+      };
+      const errEl = document.getElementById("ct-error");
+      if (!data.name) {
+        errEl.textContent = "Tournament name required.";
+        return;
+      }
+      if (!data.start_time) {
+        errEl.textContent = "Start time required.";
+        return;
+      }
+      errEl.textContent = "";
+      const res = await AdminAPI.createTournament(data);
+      if (res?.success) {
+        Toast.success("Tournament created successfully!");
+        document.getElementById("ct-name").value = "";
+      } else Toast.error(res?.message || "Failed to create.");
+    }
+
+    let allFeedbacks = [];
+    async function loadFeedback() {
+      const tbody = document.getElementById("feedback-table");
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>';
+      try {
+        const res = await AdminAPI.getFeedbacks();
+        if(!res?.success) throw new Error();
+        allFeedbacks = res.feedbacks || [];
+        if (allFeedbacks.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">No feedback received yet.</td></tr>';
+          return;
+        }
+        renderFeedbackTable(allFeedbacks);
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--error)">Error loading feedback</td></tr>';
+      }
+    }
+
+    function filterFeedback(query) {
+      const lowerQ = query.toLowerCase();
+      const filtered = allFeedbacks.filter(f => 
+        (f.name || '').toLowerCase().includes(lowerQ) || 
+        (f.email || '').toLowerCase().includes(lowerQ) || 
+        (f.message || '').toLowerCase().includes(lowerQ)
+      );
+      renderFeedbackTable(filtered);
+    }
+
+    function renderFeedbackTable(feedbacks) {
+      const tbody = document.getElementById("feedback-table");
+      if(feedbacks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">No matching records found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = feedbacks.map(f => `
+        <tr>
+          <td style="font-size:12px;color:var(--text-secondary)">${new Date(f.created_at).toLocaleString('en-IN')}</td>
+          <td>
+            <div style="font-weight:600;font-size:13px">${f.user?.username ? '@'+f.user.username : 'Anonymous'}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${f.user?.email || ''}</div>
+          </td>
+          <td style="color:var(--gold);font-size:14px">${'<i class="fa-solid fa-star"></i>'.repeat(f.rating)}${'<i class="fa-regular fa-star"></i>'.repeat(5 - f.rating)}</td>
+          <td style="max-width:300px;white-space:normal;font-size:13px">${f.message}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadReports() {
+      const tbody = document.getElementById("reports-table");
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>';
+      
+      const res = await AdminAPI.getReports();
+      if (!res?.success) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--error)">Error loading reports</td></tr>';
+        return;
+      }
+
+      let reports = res.reports || [];
+      const filter = document.getElementById("report-filter").value;
+      if (filter === 'player' || filter === 'issue') reports = reports.filter(r => r.type === filter);
+      if (filter === 'open' || filter === 'resolved') reports = reports.filter(r => r.status === filter);
+
+      if (reports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No reports found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = reports.map(r => `
+        <tr>
+          <td>
+            <span class="badge ${r.type === 'player' ? 'badge-rejected' : 'badge-pending'}">${r.type.toUpperCase()}</span>
+            <div style="font-size:11px;margin-top:4px;color:var(--text-muted)">${r.type === 'player' ? r.reason : r.priority}</div>
+          </td>
+          <td>
+            <div style="font-size:12px;color:var(--text-secondary)">By: @${r.reporter?.username || 'Unknown'}</div>
+            <div style="font-weight:600;margin-top:2px">${r.type === 'player' ? 'Target: '+r.reported_user : 'Type: '+r.issue_type}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${new Date(r.created_at).toLocaleString('en-IN')}</div>
+          </td>
+          <td>
+            <div style="font-size:12px;max-width:250px;white-space:normal">${r.description}</div>
+          </td>
+          <td>
+             ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" style="font-size:11px;color:#5bc0eb;display:inline-block"><i class="fa-solid fa-image"></i> View Proof</a>` : '<span style="font-size:11px;color:var(--text-muted)">No Proof</span>'}
+          </td>
+          <td>
+             <span class="badge ${r.status === 'resolved' ? 'badge-verified' : 'badge-pending'}">${(r.status || 'open').toUpperCase()}</span>
+          </td>
+          <td>
+            <div class="action-btns" style="flex-direction:column">
+              ${r.status !== 'resolved' ? `<button class="btn-approve" onclick="resolveReport('${r.id}')"><i class="fa-solid fa-check"></i> Resolve</button>` : ''}
+              ${r.type === 'player' ? `<button class="btn-reject" style="margin-top:4px" onclick="banPlayer('${r.reported_user}')">Ban Player</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function resolveReport(id) {
+      if(!confirm("Mark this report as resolved?")) return;
+      const res = await AdminAPI.updateReportStatus(id, 'resolved');
+      if(res.success) {
+        Toast.success("Report resolved.");
+        loadReports();
+      } else Toast.error(res.message);
+    }
+    
+    function banPlayer(username) {
+        Toast.info("Use the Users tab and search '"+username+"' to ban them.");
+    }
+
+    async function adminLogout() {
+      await AuthAPI.logout();
+    }
+
+    // Set default start time to 30 mins from now
+    const dt = new Date(Date.now() + 30 * 60000);
+    document.getElementById("ct-start").value = dt.toISOString().slice(0, 16);
+
+    // Socket
+    const sock = initSocket();
+
+    loadDashboard();
+    setInterval(loadDashboard, 30000);
+  </script>
+</body>
+
+</html>

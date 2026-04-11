@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+</head>
+
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">WALLET</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-player-id" id="tb-pid">...</div>
+          <div class="topbar-avatar" id="tb-avatar">P</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- KYC Warning -->
+        <div id="kyc-warning"
+          style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <div>
+            <div style="font-weight:600;color:var(--warning)">KYC Verification Required</div>
+            <div style="font-size:12px;color:var(--text-secondary)">Complete KYC to use wallet features. <a
+                href="/pages/account.html" style="color:#5bc0eb">Verify Now →</a></div>
+          </div>
+        </div>
+
+        <!-- Wallet Overview -->
+        <div class="card mb-24"
+          style="background:linear-gradient(135deg,rgba(91,192,235,0.08),rgba(255,215,0,0.04));border-color:rgba(91,192,235,0.2)">
+          <div class="flex-between">
+            <div>
+              <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">TOTAL BALANCE
+              </div>
+              <div style="font-family:var(--font-display);font-size:48px;font-weight:900;color:var(--gold)"
+                id="wallet-balance">0</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">≈ ₹<span id="wallet-inr">0</span>
+                (1 coin = ₹1)</div>
+            </div>
+            <div style="font-size:60px"><i class="fa-solid fa-coins"></i></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:20px">
+            <button class="btn btn-primary btn-lg" id="btn-deposit" onclick="openDepositModal()">+ Add Money</button>
+            <button class="btn btn-secondary btn-lg" id="btn-withdraw" onclick="openWithdrawModal()">→ Withdraw</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid mb-24">
+          <div class="stat-card teal">
+            <div class="stat-label">Total Deposited</div>
+            <div class="stat-value" id="stat-deposited">0</div>
+            <div class="stat-sub">Coins</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-label">Total Withdrawn</div>
+            <div class="stat-value" id="stat-withdrawn">0</div>
+            <div class="stat-sub">Coins</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">Total Won</div>
+            <div class="stat-value" id="stat-won">0</div>
+            <div class="stat-sub">From tournaments</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">Total Spent</div>
+            <div class="stat-value" id="stat-spent">0</div>
+            <div class="stat-sub">Entry fees</div>
+          </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="card">
+          <div class="flex-between mb-16">
+            <div class="card-title" style="margin-bottom:0">Transaction History</div>
+            <div class="tabs" style="margin-bottom:0">
+              <button class="tab-btn active" onclick="filterTxn('all', this)">All</button>
+              <button class="tab-btn" onclick="filterTxn('deposit', this)">Deposits</button>
+              <button class="tab-btn" onclick="filterTxn('withdraw', this)">Withdrawals</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="txn-table">
+                <tr>
+                  <td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">
+                    <div class="spinner"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn btn-secondary" style="margin-top:14px;display:none" id="load-more-btn"
+            onclick="loadMore()">Load More</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPOSIT MODAL -->
+  <div class="modal-overlay" id="deposit-modal">
+    <div class="modal">
+      <div class="modal-title"><i class="fa-solid fa-credit-card"></i> Add Money</div>
+      <div class="modal-desc">Funds added via Razorpay. 1 Coin = ₹1</div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn btn-secondary btn-sm" onclick="setAmount(50)">₹50</button>
+        <button class="btn btn-secondary btn-sm" onclick="setAmount(100)">₹100</button>
+        <button class="btn btn-secondary btn-sm" onclick="setAmount(500)">₹500</button>
+        <button class="btn btn-secondary btn-sm" onclick="setAmount(1000)">₹1000</button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Enter Amount (₹)</label>
+        <input type="number" id="deposit-amount" class="input" placeholder="Min ₹10" min="10">
+      </div>
+      <div style="font-size:12px;color:#5bc0eb;margin-bottom:16px">You will receive: <span
+          id="coins-preview">0</span> coins</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+        <button class="btn btn-primary" id="pay-btn" onclick="initiatePayment()">Pay via Razorpay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WITHDRAW MODAL -->
+  <div class="modal-overlay" id="withdraw-modal">
+    <div class="modal">
+      <div class="modal-title">→ Withdraw Coins</div>
+      <div class="modal-desc">Min 30 coins. Admin will process manually.</div>
+      <div id="withdraw-balance-info"
+        style="background:rgba(91,192,235,0.08);border:1px solid rgba(91,192,235,0.2);padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:13px">
+        Available: <strong id="wd-available">0</strong> coins
+      </div>
+      <div class="input-group">
+        <label class="input-label">Coins to Withdraw</label>
+        <input type="number" id="withdraw-amount" class="input" placeholder="Min 30 coins" min="30">
+      </div>
+      <div id="wd-error" class="error-msg"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('withdraw-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitWithdraw()">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error();
+    const user = getUser();
+    loadSidebar();
+    document.getElementById('tb-pid').textContent = user.player_id;
+    document.getElementById('tb-avatar').textContent = user.username[0].toUpperCase();
+
+    let currentBalance = 0;
+    let currentPage = 1;
+    let currentFilter = 'all';
+
+    // Check KYC
+    // Fresh profile fetch பண்ணி kyc check பண்ணு
+    async function checkKYC() {
+      const res = await UserAPI.getProfile();
+      if (!res?.success) return;
+      const kyc = res.user.kyc_status;
+
+      if (kyc !== 'verified') {
+        document.getElementById('kyc-warning').style.display = 'flex';
+        document.getElementById('btn-deposit').disabled = true;
+        document.getElementById('btn-withdraw').disabled = true;
+      } else {
+        document.getElementById('kyc-warning').style.display = 'none';
+        document.getElementById('btn-deposit').disabled = false;
+        document.getElementById('btn-withdraw').disabled = false;
+      }
+
+      // localStorage also update பண்ணு
+      const updatedUser = { ...user, kyc_status: kyc };
+      localStorage.setItem('px_user', JSON.stringify(updatedUser));
+    }
+
+    async function loadWallet() {
+      const [walletRes, txnRes] = await Promise.all([WalletAPI.getBalance(), WalletAPI.getTransactions('all', 1)]);
+      if (walletRes?.success) {
+        currentBalance = walletRes.wallet.balance;
+        document.getElementById('wallet-balance').textContent = currentBalance.toLocaleString();
+        document.getElementById('wallet-inr').textContent = currentBalance.toLocaleString();
+        document.getElementById('stat-deposited').textContent = walletRes.wallet.total_deposited?.toLocaleString() || '0';
+        document.getElementById('stat-withdrawn').textContent = walletRes.wallet.total_withdrawn?.toLocaleString() || '0';
+        document.getElementById('wd-available').textContent = currentBalance;
+      }
+      if (txnRes?.success) renderTransactions(txnRes.transactions);
+    }
+
+    function renderTransactions(txns) {
+      const tbody = document.getElementById('txn-table');
+      if (!txns?.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">No transactions yet</td></tr>'; return; }
+      const typeLabels = { deposit: '<i class="fa-solid fa-credit-card"></i> Deposit', withdraw: '→ Withdraw', tournament_entry: '<i class="fa-solid fa-trophy"></i> Tournament Entry', tournament_prize: '<i class="fa-solid fa-medal" style="color:var(--gold);"></i> Prize Won', refund: '↩ Refund' };
+      const statusClass = { success: 'badge-verified', pending: 'badge-pending', failed: 'badge-rejected', cancelled: 'badge-rejected' };
+      tbody.innerHTML = txns.map(t => {
+        const isCredit = ['deposit', 'tournament_prize', 'refund'].includes(t.type);
+        return `<tr>
+      <td>${typeLabels[t.type] || t.type}</td>
+      <td class="${isCredit ? 'tx-credit' : 'tx-debit'}" style="font-weight:700;font-family:var(--font-display)">${isCredit ? '+' : '-'}${t.amount}</td>
+      <td><span class="badge ${statusClass[t.status] || 'badge-pending'}">${t.status}</span></td>
+      <td style="font-size:12px;color:var(--text-secondary)">${fmt.time(t.created_at)}</td>
+    </tr>`;
+      }).join('');
+    }
+
+    async function filterTxn(type, btn) {
+      currentFilter = type; currentPage = 1;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('txn-table').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px"><div class="spinner"></div></td></tr>';
+      const res = await WalletAPI.getTransactions(type, 1);
+      if (res?.success) renderTransactions(res.transactions);
+    }
+
+    async function loadMore() {
+      currentPage++;
+      const res = await WalletAPI.getTransactions(currentFilter, currentPage);
+      if (res?.success) {
+        const rows = document.getElementById('txn-table').innerHTML;
+        renderTransactions(res.transactions);
+        document.getElementById('txn-table').innerHTML = rows + document.getElementById('txn-table').innerHTML;
+      }
+    }
+
+    function openDepositModal() { document.getElementById('deposit-modal').classList.add('active'); }
+    function openWithdrawModal() { document.getElementById('withdraw-modal').classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function setAmount(amt) { document.getElementById('deposit-amount').value = amt; document.getElementById('coins-preview').textContent = amt; }
+    document.getElementById('deposit-amount').addEventListener('input', (e) => { document.getElementById('coins-preview').textContent = e.target.value || '0'; });
+
+    async function initiatePayment() {
+      const amount = parseInt(document.getElementById('deposit-amount').value);
+      if (!amount || amount < 10) return Toast.error('Minimum deposit is ₹10');
+      const btn = document.getElementById('pay-btn');
+      btn.disabled = true; btn.textContent = 'Creating order...';
+      const res = await WalletAPI.createDepositOrder(amount);
+      if (!res?.success) { Toast.error(res?.message || 'Failed to create order'); btn.disabled = false; btn.textContent = 'Pay via Razorpay'; return; }
+
+      const options = {
+        key: res.key_id || 'rzp_test_placeholder',
+        amount: res.order.amount,
+        currency: 'INR',
+        order_id: res.order.id,
+        name: 'PHOENIX X',
+        description: 'Add Coins to Wallet',
+        handler: async (response) => {
+          const verifyRes = await WalletAPI.verifyDeposit(response);
+          if (verifyRes?.success) { Toast.success('Payment successful! Coins added.'); closeModal('deposit-modal'); loadWallet(); }
+          else Toast.error('Payment verification failed.');
+        },
+        theme: { color: '#5bc0eb' },
+      };
+
+      if (window.Razorpay) { const rzp = new Razorpay(options); rzp.open(); }
+      else {
+        // Load Razorpay script dynamically
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => { const rzp = new Razorpay(options); rzp.open(); };
+        document.head.appendChild(script);
+      }
+      btn.disabled = false; btn.textContent = 'Pay via Razorpay';
+    }
+
+    async function submitWithdraw() {
+      const amount = parseInt(document.getElementById('withdraw-amount').value);
+      const errEl = document.getElementById('wd-error');
+      if (!amount || amount < 30) { errEl.textContent = 'Minimum withdrawal is 30 coins.'; return; }
+      if (amount > currentBalance) { errEl.textContent = 'Insufficient balance.'; return; }
+      errEl.textContent = '';
+      const res = await WalletAPI.requestWithdraw(amount);
+      if (res?.success) {
+        currentBalance = currentBalance - amount;
+        document.getElementById('wallet-balance').textContent = currentBalance.toLocaleString();
+        document.getElementById('wallet-inr').textContent = currentBalance.toLocaleString();
+        Toast.success('Withdrawal request submitted! Admin will process it.');
+        closeModal('withdraw-modal');
+        loadWallet();
+      } else {
+        Toast.error(res?.message || 'Failed to submit request.');
+      }
+    }
+
+    loadWallet();
+    checkKYC();
+  </script>
+</body>
+
+</html>

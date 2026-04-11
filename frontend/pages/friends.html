@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friends – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .friend-tabs {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .friend-tab {
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 14px;
+      padding-bottom: 8px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .friend-tab:hover { color: var(--text-primary); }
+    .friend-tab.active { color: #5bc0eb; border-bottom-color: #5bc0eb; }
+
+    .friend-page { display: none; }
+    .friend-page.active { display: block; animation: fadeIn 0.3s ease; }
+
+    .friend-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .friend-card:hover { border-color: var(--border-glow); box-shadow: var(--glow-teal); transform: translateY(-1px); }
+
+    .f-user { display: flex; align-items: center; gap: 12px; }
+    .f-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3da8d2, #5bc0eb);
+      color: #000; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .status-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      position: absolute; bottom: -2px; right: -2px;
+      border: 2px solid var(--bg-primary);
+    }
+    .status-dot.online { background: var(--success); }
+    .status-dot.offline { background: var(--text-muted); }
+
+    .f-info .f-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .f-info .f-seen { font-size: 11px; color: var(--text-muted); }
+
+    .f-actions { display: flex; gap: 8px; }
+
+    .req-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background: rgba(255,255,255,0.03);
+      border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 12px;
+    }
+    
+    .search-wrap { display: flex; gap: 12px; max-width: 500px; margin-bottom: 24px; }
+    .search-input { flex: 1; padding: 12px 16px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); color: #fff; outline:none; }
+    .search-input:focus { border-color: #5bc0eb; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><div class="page-title">SOCIAL</div></div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="tb-avatar">P</div>
+      </div>
+    </div>
+    
+    <div class="page-content" style="max-width:800px">
+      <div class="friend-tabs">
+        <div class="friend-tab active" onclick="switchTab('list')"><i class="fa-solid fa-users"></i> My Friends</div>
+        <div class="friend-tab" onclick="switchTab('requests')"><i class="fa-solid fa-envelope-open"></i> Requests <span id="req-badge" class="badge" style="background:var(--orange);color:#fff;display:none;margin-left:4px"></span></div>
+        <div class="friend-tab" onclick="switchTab('add')"><i class="fa-solid fa-plus"></i> Add Friend</div>
+      </div>
+
+      <!-- MY FRIENDS TAB -->
+      <div id="tab-list" class="friend-page active">
+        <div style="font-size:12px;color:#5bc0eb;letter-spacing:1px;font-weight:600;margin-bottom:12px">ONLINE</div>
+        <div id="online-friends">
+           <div style="text-align:center;padding:24px;color:var(--text-muted)"><div class="spinner"></div></div>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;font-weight:600;margin:32px 0 12px">OFFLINE</div>
+        <div id="offline-friends"></div>
+      </div>
+
+      <!-- REQUESTS TAB -->
+      <div id="tab-requests" class="friend-page">
+        <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;font-weight:600;margin-bottom:12px">INCOMING REQUESTS</div>
+        <div id="requests-list">
+          <div style="text-align:center;padding:24px;color:var(--text-muted)">No pending requests.</div>
+        </div>
+      </div>
+
+      <!-- ADD FRIEND TAB -->
+      <div id="tab-add" class="friend-page">
+        <div class="card">
+          <div class="card-title">Find friends</div>
+          <div class="search-wrap">
+            <input type="text" id="add-search" class="search-input" placeholder="Type @username...">
+            <button class="btn btn-primary" onclick="sendFriendRequest()">Send Request</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-muted)">They must accept your request before you can challenge them.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+
+function switchTab(tab) {
+  document.querySelectorAll('.friend-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.friend-page').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.friend-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+async function sendFriendRequest() {
+  const username = document.getElementById('add-search').value.trim();
+  if(!username) return Toast.error('Please enter a username');
+  
+  const res = await FriendAPI.sendRequest(username);
+  if(res.success) {
+    Toast.success('Friend Request Sent!');
+    document.getElementById('add-search').value = '';
+  } else {
+    Toast.error(res.message);
+  }
+}
+
+async function loadRequests() {
+  const res = await FriendAPI.getRequests();
+  if(!res.success) return;
+  const list = document.getElementById('requests-list');
+  const badge = document.getElementById('req-badge');
+  
+  if(res.requests.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No pending requests.</div>';
+    badge.style.display = 'none';
+    return;
+  }
+  
+  badge.textContent = res.requests.length;
+  badge.style.display = 'inline-block';
+  
+  list.innerHTML = res.requests.map(r => `
+    <div class="req-card">
+      <div class="f-user">
+        <div class="f-avatar" style="width:36px;height:36px;font-size:14px">${r.sender.username.replace('@','')[0].toUpperCase()}</div>
+        <div class="f-info"><div class="f-name">${r.sender.username}</div><div class="f-seen">${new Date(r.created_at).toLocaleString()}</div></div>
+      </div>
+      <div class="f-actions">
+        <button class="btn btn-secondary btn-sm" onclick="respondReq('${r.id}', 'reject')">Close</button>
+        <button class="btn btn-primary btn-sm" onclick="respondReq('${r.id}', 'accept')">Accept</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function respondReq(id, action) {
+  const res = await FriendAPI.respondRequest(id, action);
+  if(res.success) {
+    Toast.success(action === 'accept' ? 'Friend Added!' : 'Request ignored.');
+    loadRequests();
+    loadFriends();
+  } else Toast.error(res.message);
+}
+
+async function loadFriends() {
+  const res = await FriendAPI.getFriends();
+  if(!res.success) return;
+  
+  const onlineEl = document.getElementById('online-friends');
+  const offlineEl = document.getElementById('offline-friends');
+  
+  const online = res.friends.filter(f => f.is_online);
+  const offline = res.friends.filter(f => !f.is_online);
+  
+  const renderFriend = (f) => `
+    <div class="friend-card">
+      <div class="f-user">
+        <div class="f-avatar">
+          ${f.username.replace('@','')[0].toUpperCase()}
+          <div class="status-dot ${f.is_online ? 'online' : 'offline'}"></div>
+        </div>
+        <div class="f-info">
+          <div class="f-name">${f.username}</div>
+          <div class="f-seen">${f.is_online ? 'Online right now' : 'Last seen: ' + new Date(f.last_seen).toLocaleDateString()}</div>
+        </div>
+      </div>
+      <div class="f-actions">
+        ${f.is_online 
+          ? `<button class="btn btn-primary btn-sm" onclick="window.location='/pages/play.html?challenge=${f.friend_id}'"><i class="fa-solid fa-khanda"></i> Challenge</button>` 
+          : ''}
+        <button class="btn btn-danger btn-sm" style="background:transparent" onclick="removeFriend('${f.friendship_id}', '${f.username}')"><i class="fa-solid fa-user-xmark"></i></button>
+      </div>
+    </div>
+  `;
+
+  onlineEl.innerHTML = online.length ? online.map(renderFriend).join('') : '<div style="color:var(--text-muted);font-size:13px;padding:8px">No friends online right now.</div>';
+  offlineEl.innerHTML = offline.length ? offline.map(renderFriend).join('') : '<div style="color:var(--text-muted);font-size:13px;padding:8px">Your offline friends will appear here.</div>';
+}
+
+async function removeFriend(id, name) {
+  if(!confirm(`Remove ${name} from your friends list?`)) return;
+  const res = await FriendAPI.removeFriend(id);
+  if(res.success) { Toast.success('Friend removed.'); loadFriends(); }
+  else Toast.error(res.message);
+}
+
+// Initial Load
+loadRequests();
+loadFriends();
+setInterval(() => { loadRequests(); loadFriends(); }, 15000);
+</script>
+</body>
+</html>

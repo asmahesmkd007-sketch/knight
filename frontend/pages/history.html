@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match History – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><div class="page-title">MATCH HISTORY</div></div>
+      <div class="topbar-right">
+        <div class="topbar-player-id" id="tb-pid">...</div>
+        <div class="topbar-avatar" id="tb-avatar">P</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <!-- Stats Summary -->
+      <div class="stats-grid mb-24" id="history-stats">
+        <div class="stat-card orange"><div class="stat-label">Total Matches</div><div class="stat-value" id="hs-total">-</div></div>
+        <div class="stat-card teal"><div class="stat-label">Wins</div><div class="stat-value" id="hs-wins" style="color:var(--success)">-</div></div>
+        <div class="stat-card" style="background:var(--bg-card)"><div class="stat-label">Losses</div><div class="stat-value" id="hs-losses" style="color:var(--error)">-</div></div>
+        <div class="stat-card purple"><div class="stat-label">Win Rate</div><div class="stat-value" id="hs-wr">-%</div></div>
+      </div>
+
+      <div class="card">
+        <div class="flex-between mb-20">
+          <div class="card-title" style="margin-bottom:0">All Matches</div>
+          <div class="tabs" style="margin-bottom:0">
+            <button class="tab-btn active" onclick="filterMatches('all', this)">All</button>
+            <button class="tab-btn" onclick="filterMatches('wins', this)"><i class="fa-solid fa-check"></i> Wins</button>
+            <button class="tab-btn" onclick="filterMatches('losses', this)"><i class="fa-solid fa-xmark"></i> Losses</button>
+            <button class="tab-btn" onclick="filterMatches('draws', this)">½ Draws</button>
+          </div>
+        </div>
+
+        <div id="matches-list">
+          <div class="flex-center" style="padding:48px"><div class="spinner"></div></div>
+        </div>
+
+        <div style="text-align:center;margin-top:16px">
+          <button class="btn btn-secondary" id="load-more-btn" onclick="loadMore()" style="display:none">Load More</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-pid').textContent = user.player_id;
+document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+
+let currentFilter = 'all';
+let page = 1;
+
+async function loadStats() {
+  const res = await UserAPI.getStats();
+  if (!res?.success) return;
+  const s = res.stats;
+  document.getElementById('hs-total').textContent = s.total_matches || 0;
+  document.getElementById('hs-wins').textContent = s.wins || 0;
+  document.getElementById('hs-losses').textContent = s.losses || 0;
+  document.getElementById('hs-wr').textContent = (s.win_rate || 0) + '%';
+}
+
+async function loadMatches(append = false) {
+  const res = await GameAPI.getHistory(currentFilter, page);
+  if (!res?.success) return;
+  if (!append) document.getElementById('matches-list').innerHTML = '';
+  if (!res.matches?.length && !append) {
+    document.getElementById('matches-list').innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-chess-pawn"></i></div><div>No matches found</div></div>';
+    return;
+  }
+
+  const modeLabels = { random: '<i class="fa-solid fa-dice"></i> Random', friend: '<i class="fa-solid fa-users"></i> Friend', room: '<i class="fa-solid fa-door-open"></i> Room', bot: '<i class="fa-solid fa-robot"></i> Bot', tournament: '<i class="fa-solid fa-trophy"></i> Tournament' };
+  const html = res.matches.map(m => {
+    const isP1 = m.player1_id?.id === user.id || m.player1_id === user.id;
+    const opponent = isP1 ? m.player2_id : m.player1_id;
+    const myResult = m.result === 'draw' ? 'draw' : (m.winner_id === user.id ? 'win' : 'loss');
+    const iqChange = isP1 ? (m.iq_change_p1 || 0) : (m.iq_change_p2 || 0);
+    const resultConfig = { win: { class: 'result-win', label: '<i class="fa-solid fa-check"></i> Win', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' }, loss: { class: 'result-loss', label: '<i class="fa-solid fa-xmark"></i> Loss', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' }, draw: { class: 'result-draw', label: '½ Draw', bg: 'rgba(255,255,255,0.04)', border: 'var(--border)' } };
+    const rc = resultConfig[myResult];
+    return `<div style="background:${rc.bg};border:1px solid ${rc.border};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
+      <div style="width:56px;text-align:center;flex-shrink:0">
+        <div class="${rc.class}" style="font-weight:800;font-size:16px;font-family:var(--font-display)">${rc.label}</div>
+        <div style="font-size:10px;color:${iqChange >= 0 ? 'var(--success)' : 'var(--error)'};margin-top:2px;font-weight:700">${iqChange >= 0 ? '+' : ''}${iqChange} IQ</div>
+      </div>
+      <div class="avatar-initial" style="width:40px;height:40px;font-size:16px">${(opponent?.username || (m.match_type === 'bot' ? '<i class="fa-solid fa-robot"></i>' : '?')).replace('@', '')[0].toUpperCase()}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px">${m.match_type === 'bot' ? `Bot (IQ ${m.bot_difficulty || '?'})` : fmt.username(opponent?.username || 'Unknown')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${modeLabels[m.match_type] || m.match_type} · ${m.timer_type ? m.timer_type + ' min' : 'No timer'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:var(--text-muted)">${fmt.relTime(m.createdAt)}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:3px">${new Date(m.createdAt).toLocaleDateString('en-IN')}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (append) document.getElementById('matches-list').innerHTML += html;
+  else document.getElementById('matches-list').innerHTML = html;
+  document.getElementById('load-more-btn').style.display = res.pages > page ? 'inline-flex' : 'none';
+}
+
+function filterMatches(filter, btn) {
+  currentFilter = filter; page = 1;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('matches-list').innerHTML = '<div class="flex-center" style="padding:32px"><div class="spinner"></div></div>';
+  loadMatches();
+}
+
+function loadMore() { page++; loadMatches(true); }
+
+loadStats();
+loadMatches();
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paid Tournament – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .prize-badge { background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; padding: 8px 14px; text-align: center; }
+    .prize-badge .pos { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; }
+    .prize-badge .amt { font-family: var(--font-display); font-size: 18px; color: var(--gold); font-weight: 700; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title">PAID TOURNAMENT</div>
+        <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+      </div>
+      <div class="topbar-right">
+        <div style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.2);padding:4px 14px;border-radius:20px;font-family:var(--font-display);font-size:12px;color:var(--gold)">
+          <i class="fa-solid fa-coins"></i> <span id="header-balance">0</span> Coins
+        </div>
+        <div class="topbar-avatar" id="tb-avatar">P</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <!-- KYC Warning -->
+      <div id="kyc-warn" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px">
+        <div style="font-weight:600;color:var(--error)"><i class="fa-solid fa-triangle-exclamation"></i> KYC Required for Paid Tournaments</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Complete KYC verification to join. <a href="/pages/account.html" style="color:#5bc0eb">Verify Now →</a></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs mb-24">
+        <button class="tab-btn active" onclick="switchTab('live', this)"><i class="fa-solid fa-circle" style="color:var(--error);"></i> Live</button>
+        <button class="tab-btn" onclick="switchTab('upcoming', this)"><i class="fa-solid fa-clock"></i> Upcoming</button>
+      </div>
+
+      <!-- Tournament Grid -->
+      <div id="tournament-grid" class="grid-auto">
+        <div class="skeleton" style="height:220px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:220px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:220px;border-radius:var(--radius)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY MODAL -->
+<div class="modal-overlay" id="entry-modal">
+  <div class="modal" style="max-width:500px;width:95%">
+    <div class="flex-between mb-8">
+      <div class="modal-title" id="entry-t-name">Tournament</div>
+      <button onclick="document.getElementById('entry-modal').classList.remove('active')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px" id="entry-t-meta">...</div>
+
+    <!-- Prize Pool -->
+    <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:12px;padding:16px;margin-bottom:20px">
+      <div style="text-align:center;margin-bottom:12px;font-family:var(--font-display);font-size:11px;color:var(--text-muted);letter-spacing:1px">PRIZE POOL</div>
+      <div style="text-align:center;font-family:var(--font-display);font-size:32px;font-weight:900;color:var(--gold);margin-bottom:12px" id="entry-pool">0 Coins</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <div class="prize-badge"><div class="pos">1ST</div><div class="amt" id="prize-1st">0</div></div>
+        <div class="prize-badge"><div class="pos">2ND</div><div class="amt" id="prize-2nd">0</div></div>
+        <div class="prize-badge"><div class="pos">3RD</div><div class="amt" id="prize-3rd">0</div></div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:20px">
+      <div class="flex-between" style="margin-bottom:8px">
+        <span style="font-size:13px;color:var(--text-secondary)">Entry Fee</span>
+        <span style="font-family:var(--font-display);font-size:16px;color:var(--orange)" id="entry-fee-label">0 Coins</span>
+      </div>
+      <div class="flex-between">
+        <span style="font-size:13px;color:var(--text-secondary)">Your Balance</span>
+        <span style="font-family:var(--font-display);font-size:16px;color:#5bc0eb" id="entry-balance-label">0 Coins</span>
+      </div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px" class="flex-between">
+        <span style="font-size:13px;font-weight:600">Balance After</span>
+        <span style="font-family:var(--font-display);font-size:16px;font-weight:700" id="entry-after-label">0 Coins</span>
+      </div>
+    </div>
+
+    <div id="entry-error" class="error-msg" style="margin-bottom:12px;text-align:center"></div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="document.getElementById('entry-modal').classList.remove('active')">Cancel</button>
+      <button class="btn btn-primary btn-lg" id="confirm-join-btn" onclick="confirmJoin()"><i class="fa-solid fa-coins"></i> Confirm Entry</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-avatar').textContent = user.username[0].toUpperCase();
+
+if (user.kyc_status !== 'verified') document.getElementById('kyc-warn').style.display = 'block';
+
+let currentTab = 'live';
+let selectedTournament = null;
+let userBalance = 0;
+
+async function loadBalance() {
+  const res = await WalletAPI.getBalance();
+  if (res?.success) { userBalance = res.wallet.balance; document.getElementById('header-balance').textContent = userBalance.toLocaleString(); }
+}
+
+async function loadTournaments() {
+  const res = await TournamentAPI.getAll('paid', currentTab === 'live' ? 'live' : 'upcoming');
+  const grid = document.getElementById('tournament-grid');
+  if (!res?.success || !res.tournaments?.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)">
+      <div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-trophy"></i></div>
+      <div style="font-weight:600">No ${currentTab} paid tournaments</div>
+      <div style="font-size:12px;margin-top:6px">Check back soon or ask admin to create one</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = res.tournaments.map(t => {
+    const pct = Math.round((t.current_players / t.max_players) * 100);
+    const isJoined = t.players?.some(p => (p.user_id?.id || p.user_id) === user.id);
+    const canAfford = userBalance >= t.entry_fee;
+    return `<div class="tournament-card" onclick="openEntry('${t.id}')">
+      <div class="flex-between mb-12">
+        <span class="tournament-card timer-badge">${t.timer_type}min</span>
+        <span class="badge ${t.status === 'live' ? 'badge-live' : 'badge-upcoming'}">${t.status === 'live' ? '<i class="fa-solid fa-circle" style="color:var(--error);"></i> LIVE' : '<i class="fa-solid fa-clock"></i> SOON'}</span>
+      </div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:2px">${t.name}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">${t.format === 'quick' ? '<i class="fa-solid fa-bolt"></i> Quick (20min)' : t.format === 'battle' ? '<i class="fa-solid fa-khanda"></i> Battle (30min)' : '<i class="fa-solid fa-trophy"></i> Standard'}</div>
+      <div style="font-family:var(--font-display);font-size:24px;font-weight:900;color:var(--gold);margin-bottom:4px">${t.prize_pool?.toLocaleString() || 0} <span style="font-size:12px;color:var(--text-secondary)">Coins</span></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Prize Pool</div>
+      <div class="flex-between" style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">
+        <span>${t.current_players}/${t.max_players} players</span>
+        <span style="color:var(--orange)">Entry: ${t.entry_fee} <i class="fa-solid fa-coins"></i></span>
+      </div>
+      <div class="tournament-card players-bar"><div class="tournament-card players-fill" style="width:${pct}%"></div></div>
+      <div style="margin-top:12px">
+        ${isJoined ? (t.status === 'live' ? '<span class="badge badge-verified" style="width:100%;justify-content:center;cursor:pointer" onclick="event.stopPropagation(); window.location.href=\'/pages/tournament-live.html?id='+t.id+'\'">▶ Enter Live Area</span>' : '<span class="badge badge-verified" style="width:100%;justify-content:center"><i class="fa-solid fa-check"></i> Joined</span>') :
+          !canAfford ? '<span style="font-size:11px;color:var(--error)"><i class="fa-solid fa-triangle-exclamation"></i> Insufficient coins</span>' :
+          '<button class="btn btn-primary btn-full btn-sm">Join Tournament</button>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openEntry(id) {
+  selectedTournament = id;
+  const res = await TournamentAPI.getById(id);
+  if (!res?.success) return;
+  const t = res.tournament;
+  document.getElementById('entry-t-name').textContent = t.name;
+  document.getElementById('entry-t-meta').textContent = `${t.timer_type}min · ${t.current_players}/${t.max_players} players`;
+  document.getElementById('entry-pool').textContent = (t.prize_pool || 0).toLocaleString() + ' Coins';
+  document.getElementById('prize-1st').innerHTML = (t.prize_distribution?.first || 0) + ' <i class="fa-solid fa-coins"></i>';
+  document.getElementById('prize-2nd').innerHTML = (t.prize_distribution?.second || 0) + ' <i class="fa-solid fa-coins"></i>';
+  document.getElementById('prize-3rd').innerHTML = (t.prize_distribution?.third || 0) + ' <i class="fa-solid fa-coins"></i>';
+  document.getElementById('entry-fee-label').textContent = t.entry_fee + ' Coins';
+  document.getElementById('entry-balance-label').textContent = userBalance + ' Coins';
+  const after = userBalance - t.entry_fee;
+  document.getElementById('entry-after-label').textContent = after + ' Coins';
+  document.getElementById('entry-after-label').style.color = after < 0 ? 'var(--error)' : 'var(--success)';
+
+  const errEl = document.getElementById('entry-error');
+  const btn = document.getElementById('confirm-join-btn');
+  const isJoined = t.players?.some(p => (p.user_id?.id || p.user_id) === user.id);
+  
+  if (isJoined && t.status === 'live') {
+    btn.textContent = '▶ Enter Live Area'; 
+    btn.disabled = false;
+    btn.onclick = () => window.location.href = '/pages/tournament-live.html?id=' + t.id;
+    errEl.textContent = '';
+  }
+  else if (isJoined) { errEl.innerHTML = '<i class="fa-solid fa-check"></i> Already joined!'; btn.disabled = true; }
+  else if (userBalance < t.entry_fee) { errEl.textContent = `Insufficient coins. Need ${t.entry_fee - userBalance} more.`; btn.disabled = true; }
+  else if (user.kyc_status !== 'verified') { errEl.textContent = 'KYC verification required.'; btn.disabled = true; }
+  else { 
+     errEl.textContent = ''; 
+     btn.disabled = false; 
+     btn.innerHTML = '<i class="fa-solid fa-coins"></i> Confirm Entry';
+     btn.onclick = () => confirmJoin();
+  }
+
+  document.getElementById('entry-modal').classList.add('active');
+}
+
+async function confirmJoin() {
+  if (!selectedTournament) return;
+  const btn = document.getElementById('confirm-join-btn');
+  btn.disabled = true; btn.textContent = 'Joining...';
+  const res = await TournamentAPI.join(selectedTournament);
+  if (res?.success) {
+    Toast.success('Joined! Entry coins deducted. Good luck! <i class="fa-solid fa-trophy"></i>');
+    
+    if (currentTab === 'live') {
+       window.location.href = '/pages/tournament-live.html?id=' + selectedTournament;
+    } else {
+       document.getElementById('entry-modal').classList.remove('active');
+       loadBalance(); loadTournaments();
+    }
+  } else {
+    Toast.error(res?.message || 'Failed to join.');
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-coins"></i> Confirm Entry';
+  }
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadTournaments();
+}
+
+loadBalance();
+loadTournaments();
+setInterval(loadTournaments, 30000);
+</script>
+</body>
+</html>

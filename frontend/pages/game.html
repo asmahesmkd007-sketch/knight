@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    .game-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .board-section { flex-shrink: 0; }
+    .side-panel { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 260px; }
+    .player-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+    .player-bar.active { border-color: #5bc0eb; background: rgba(91,192,235,0.06); }
+    .player-timer { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: #5bc0eb; margin-left: auto; }
+    .player-timer.low { color: var(--error); animation: pulse-red 1s infinite; }
+    .move-list { height: 200px; overflow-y: auto; padding: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+    .move-item { display: inline-block; padding: 3px 8px; font-family: monospace; font-size: 12px; color: var(--text-secondary); }
+    .move-number { color: var(--text-muted); font-size: 11px; }
+    .game-result-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 500; align-items: center; justify-content: center; }
+    .game-result-overlay.active { display: flex; }
+    .result-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 48px 40px; text-align: center; max-width: 400px; }
+    .result-icon { font-size: 60px; margin-bottom: 16px; }
+    .result-title { font-family: var(--font-display); font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+    .result-iq { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+    #board { width: min(500px, 90vw); }
+    .highlight-selected { background: rgba(255, 107, 53, 0.4) !important; }
+    .highlight-move { background: rgba(91,192,235, 0.4) !important; cursor: pointer; }
+    .highlight-move::after { content:''; display:block; width:20px; height:20px; background:rgba(0,0,0,0.2); border-radius:50%; margin:auto; transform:translateY(15px); }
+    .chat-card { display: flex; flex-direction: column; flex: 1; max-height: 280px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.02); border-radius: 8px; font-size: 12px; }
+    .chat-messages::-webkit-scrollbar { width: 3px; }
+    .msg { padding: 8px 12px; border-radius: 12px; max-width: 90%; word-break: break-word; }
+    .msg.system { background: rgba(0,0,0,0.05); color: var(--text-muted); align-self: center; font-size: 11px; font-style: italic; text-align: center; max-width: 100%; border-radius: 4px; padding: 4px 8px; }
+    .msg.me { background: rgba(0, 161, 155, 0.15); color: var(--teal); align-self: flex-end; border-bottom-right-radius: 2px; }
+    .msg.opp { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); align-self: flex-start; border-bottom-left-radius: 2px; }
+    .msg-name { font-size: 10px; font-weight: 700; margin-bottom: 2px; opacity: 0.8; }
+    .chat-input-wrap { display: flex; gap: 8px; margin-top: 12px; }
+    .chat-input-wrap input { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .chat-input-wrap input:focus { border-color: var(--teal); }
+    .chat-input-wrap button { width: 38px; border-radius: 8px; border: none; background: var(--teal); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+    .chat-input-wrap button:hover { opacity: 0.9; transform: scale(1.05); }
+    .chat-input-wrap button:active { transform: scale(0.95); }
+    @media (max-width: 900px) { .game-layout { flex-direction: column; } .side-panel { width: 100%; } }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title" id="game-title"><i class="fa-solid fa-chess-pawn"></i> CHESS GAME</div>
+        <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+      </div>
+      <div class="topbar-right">
+        <button id="btn-undo" class="btn btn-secondary btn-sm" style="display:none" onclick="undoMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+        <button class="btn btn-danger btn-sm" onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="game-layout">
+        <div class="board-section">
+          <div class="player-bar mb-16" id="opponent-bar">
+            <div class="avatar-initial" id="opp-avatar">?</div>
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+              <div style="display:flex;align-items:center;gap:8px">
+                 <div style="font-weight:600" id="opp-name">Opponent</div>
+                 <div style="font-size:11px;color:var(--text-muted)" id="opp-iq">IQ: ...</div>
+              </div>
+              <div id="opp-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
+            </div>
+            <div class="player-timer" id="opp-timer">5:00</div>
+          </div>
+
+          <!-- Chess Board -->
+          <div id="board"></div>
+
+          <div class="player-bar" id="my-bar" style="margin-top:16px">
+            <div class="avatar-initial" id="my-avatar">P</div>
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-weight:600" id="my-name">You</div>
+                <div style="font-size:11px;color:var(--text-muted)" id="my-iq">IQ: ...</div>
+              </div>
+              <div id="my-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
+            </div>
+            <div class="player-timer" id="my-timer">5:00</div>
+          </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="side-panel">
+          <div class="card">
+            <div class="card-title">Move History</div>
+            <div class="move-list" id="move-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Game Status</div>
+            <div id="game-status" style="font-size:13px;color:var(--text-secondary)">Waiting for opponent...</div>
+            <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+              <div>Mode: <span id="info-mode" style="color:#5bc0eb">-</span></div>
+              <div style="margin-top:4px">Color: <span id="info-color" style="color:#5bc0eb">-</span></div>
+            </div>
+          </div>
+
+          <div class="card" id="bot-thinking" style="display:none">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="spinner" style="width:20px;height:20px;border-width:2px"></div>
+              <span style="font-size:13px;color:var(--text-secondary)"><i class="fa-solid fa-robot"></i> Bot is thinking...</span>
+            </div>
+          </div>
+          
+          <div class="card chat-card">
+            <div class="card-title" style="margin-bottom:8px"><i class="fa-solid fa-comments"></i> In-Game Chat</div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="msg system">GLHF! Keep chat respectful!</div>
+            </div>
+            <div class="chat-input-wrap">
+              <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+              <button onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="game-result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="result-icon" id="result-icon"><i class="fa-solid fa-chess-pawn"></i></div>
+    <div class="result-title" id="result-title">Game Over</div>
+    <div class="result-iq" id="result-iq"></div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="/pages/play.html" class="btn btn-primary">Play Again</a>
+      <a href="/pages/dashboard.html" class="btn btn-secondary">Dashboard</a>
+      <a href="/pages/history.html" class="btn btn-secondary">Match History</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+
+const params = new URLSearchParams(window.location.search);
+const matchData = JSON.parse(localStorage.getItem('px_match') || '{}');
+const matchId = params.get('matchId') || matchData.matchId;
+const mode = params.get('mode') || matchData.mode || 'random';
+const myColor = mode === 'bot' ? (localStorage.getItem('px_bot_color') || 'white') : (matchData.color || 'white');
+const opponentData = matchData.opponent || {};
+const botIQ = parseInt(params.get('iq') || localStorage.getItem('px_bot_iq') || '100');
+const timerType = matchData.timer || 5;
+
+let chess = new Chess();
+let board = null;
+let myTime = timerType * 60;
+let oppTime = timerType * 60;
+let timerInterval = null;
+let gameActive = false;
+let moveCount = 0;
+let selectedSquare = null;
+
+function removeHighlights() {
+  $('#board .square-55d63').removeClass('highlight-move highlight-selected');
+}
+
+function highlightSquare(square, type) {
+  $('#board .square-' + square).addClass('highlight-' + type);
+}
+
+function executeMove(from, to, promotion) {
+  const move = chess.move({ from, to, promotion });
+  if (move === null) return false;
+  
+  removeHighlights();
+  selectedSquare = null;
+  board.position(chess.fen());
+  addMoveToList(move.san);
+  updatePlayerBar();
+  
+  if (mode === 'bot') {
+    if (chess.game_over()) { showResult(); return true; }
+    document.getElementById('bot-thinking').style.display = 'block';
+    
+    // Use setTimeout so the UI can render the "thinking" spinner before the heavy minimax thread blocks execution
+    setTimeout(makeBotMove, 100);
+  } else {
+    SocketActions.makeMove(matchId, { from: move.from, to: move.to, promotion }, user.id);
+    if (chess.game_over()) showResult();
+  }
+  return true;
+}
+
+// Ensure clicking empty squares works
+$(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
+  if (!gameActive || chess.game_over() || !selectedSquare) return;
+  const square = $(this).attr('data-square');
+  const moves = chess.moves({ square: selectedSquare, verbose: true });
+  const isLegal = moves.some(m => m.to === square);
+  if (isLegal) {
+    executeMove(selectedSquare, square, 'q');
+  }
+});
+
+// Setup UI
+document.getElementById('my-name').textContent = fmt.username(user.username);
+document.getElementById('my-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+document.getElementById('my-iq').textContent = 'IQ: ' + user.iq_level;
+document.getElementById('info-mode').textContent = mode;
+document.getElementById('info-color').textContent = myColor === 'white' ? '⬜ White' : '⬛ Black';
+
+if (mode === 'bot') {
+  const customName = localStorage.getItem('px_bot_name') || 'Bot Engine';
+  document.getElementById('opp-name').innerHTML = `${escapeHTML(customName)} <i class="fa-solid fa-robot" style="margin-left:4px;color:var(--text-secondary)"></i>`;
+  document.getElementById('opp-avatar').innerHTML = '<i class="fa-solid fa-microchip"></i>';
+  document.getElementById('opp-iq').textContent = 'IQ: ' + botIQ;
+  
+  // Hide timers for bot matches explicitly
+  document.getElementById('my-timer').style.display = 'none';
+  document.getElementById('opp-timer').style.display = 'none';
+} else if (opponentData.username) {
+  document.getElementById('opp-name').textContent = fmt.username(opponentData.username);
+  document.getElementById('opp-avatar').textContent = (opponentData.username || '?').replace('@', '')[0].toUpperCase();
+}
+
+// Init board
+function initBoard() {
+  board = Chessboard('board', {
+    draggable: true,
+    position: 'start',
+    orientation: myColor,
+    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onSnapEnd: onSnapEnd,
+  });
+}
+
+function onDragStart(source, piece) {
+  if (!gameActive) return false;
+  if (chess.game_over()) return false;
+  
+  const myColorChar = myColor === 'white' ? 'w' : 'b';
+  const isMyPiece = piece.charAt(0) === myColorChar;
+
+  // Handle capture by clicking enemy piece
+  if (selectedSquare && !isMyPiece) {
+    const moves = chess.moves({ square: selectedSquare, verbose: true });
+    const isLegal = moves.some(m => m.to === source);
+    if (isLegal) {
+      executeMove(selectedSquare, source, 'q');
+      return false; // Prevent drag
+    }
+  }
+
+  if (chess.turn() !== myColorChar) return false;
+  if (!isMyPiece) return false;
+
+  // Show highlights for clicked piece
+  removeHighlights();
+  selectedSquare = source;
+  highlightSquare(source, 'selected');
+  const moves = chess.moves({ square: source, verbose: true });
+  moves.forEach(m => highlightSquare(m.to, 'move'));
+}
+
+function onDrop(source, target) {
+  if (source === target) return; // Released on the same square (click to select mode)
+  
+  removeHighlights();
+  const moves = chess.moves({ square: source, verbose: true });
+  const isLegal = moves.some(m => m.to === target);
+  
+  if (!isLegal) return 'snapback';
+  
+  selectedSquare = null;
+  executeMove(source, target, 'q');
+}
+
+function onSnapEnd() { board.position(chess.fen()); }
+
+// ─── BOT ENGINE LOGIC ───
+const pieceValues = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 };
+
+const pawnEvalWhite = [
+  [0,  0,  0,  0,  0,  0,  0,  0],
+  [5, 10, 10,-20,-20, 10, 10,  5],
+  [5, -5,-10,  0,  0,-10, -5,  5],
+  [0,  0,  0, 20, 20,  0,  0,  0],
+  [5,  5, 10, 25, 25, 10,  5,  5],
+  [10, 10, 20, 30, 30, 20, 10, 10],
+  [50, 50, 50, 50, 50, 50, 50, 50],
+  [0,  0,  0,  0,  0,  0,  0,  0]
+];
+const knightEval = [
+  [-50,-40,-30,-30,-30,-30,-40,-50],
+  [-40,-20,  0,  0,  0,  0,-20,-40],
+  [-30,  0, 10, 15, 15, 10,  0,-30],
+  [-30,  5, 15, 20, 20, 15,  5,-30],
+  [-30,  0, 15, 20, 20, 15,  0,-30],
+  [-30,  5, 10, 15, 15, 10,  5,-30],
+  [-40,-20,  0,  5,  5,  0,-20,-40],
+  [-50,-40,-30,-30,-30,-30,-40,-50]
+];
+
+function evaluateBoard(game, iq) {
+  let totalEval = 0;
+  const brd = game.board();
+  
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
+      if (brd[i][j]) {
+        let val = pieceValues[brd[i][j].type] || 0;
+        
+        // Add positional evaluation mapping (center control) for better opening replication (Only for >600 IQ)
+        if (iq > 600) {
+           let rank = brd[i][j].color === 'w' ? i : 7 - i;
+           if (brd[i][j].type === 'p') val += (pawnEvalWhite[rank][j] / 10);
+           if (brd[i][j].type === 'n') val += (knightEval[rank][j] / 10);
+        }
+
+        totalEval += (brd[i][j].color === 'w' ? val : -val);
+      }
+    }
+  }
+  return totalEval;
+}
+
+function minimax(game, depth, alpha, beta, isMaximizing) {
+  if (depth === 0 || game.game_over()) return evaluateBoard(game, botIQ);
+
+  let moves = game.moves();
+  moves.sort((a,b) => (b.includes('x') ? 10 : 0) - (a.includes('x') ? 10 : 0));
+  
+  if (isMaximizing) {
+    let bestVal = -Infinity;
+    for (let i = 0; i < moves.length; i++) {
+      game.move(moves[i]);
+      bestVal = Math.max(bestVal, minimax(game, depth - 1, alpha, beta, false));
+      game.undo();
+      alpha = Math.max(alpha, bestVal);
+      if (beta <= alpha) break; // Alpha-beta pruning
+    }
+    return bestVal;
+  } else {
+    let bestVal = Infinity;
+    for (let i = 0; i < moves.length; i++) {
+      game.move(moves[i]);
+      bestVal = Math.min(bestVal, minimax(game, depth - 1, alpha, beta, true));
+      game.undo();
+      beta = Math.min(beta, bestVal);
+      if (beta <= alpha) break; // Alpha-beta pruning
+    }
+    return bestVal;
+  }
+}
+
+function getBestMove(game, depth) {
+  const moves = game.moves();
+  const isMaximizing = game.turn() === 'w';
+  let bestMove = null;
+  let bestVal = isMaximizing ? -Infinity : Infinity;
+
+  // Shuffle moves but prioritize captures strongly to speed up deep alpha-beta pruning branches!
+  moves.sort((a, b) => {
+     let aVal = a.includes('x') ? 10 : (a.includes('+') ? 5 : 0);
+     let bVal = b.includes('x') ? 10 : (b.includes('+') ? 5 : 0);
+     if (aVal === bVal) return Math.random() - 0.5;
+     return bVal - aVal;
+  });
+
+  for (let i = 0; i < moves.length; i++) {
+    game.move(moves[i]);
+    let boardVal = minimax(game, depth - 1, -Infinity, Infinity, !isMaximizing);
+    game.undo();
+    
+    if (isMaximizing) {
+      if (boardVal > bestVal) { bestVal = boardVal; bestMove = moves[i]; }
+    } else {
+      if (boardVal < bestVal) { bestVal = boardVal; bestMove = moves[i]; }
+    }
+  }
+  return bestMove || moves[0];
+}
+
+function makeBotMove() {
+  const moves = chess.moves();
+  if (moves.length === 0 || chess.game_over()) { document.getElementById('bot-thinking').style.display = 'none'; showResult(); return; }
+  
+  let move;
+  
+  // Strict mappings to mirror Chess.com ranges
+  // 1. Determine blunder chance based on ELO/IQ
+  let blunderChance = 0;
+  let depth = 1;
+  
+  if (botIQ < 600) { blunderChance = 0.40; depth = 1; }
+  else if (botIQ < 900) { blunderChance = 0.15; depth = 2; }
+  else if (botIQ < 1400) { blunderChance = 0.05; depth = 3; }
+  else { depth = 3; blunderChance = 0.0; } // Capped at Depth 3 to prevent JS thread locking and UI stutters
+  
+  // 2. Execute blunder or calculate depth
+  if (Math.random() < blunderChance) {
+      move = moves[Math.floor(Math.random() * moves.length)];
+  } else {
+      move = getBestMove(chess, depth);
+  }
+
+  chess.move(move);
+  board.position(chess.fen());
+  addMoveToList(move);
+  updatePlayerBar();
+  document.getElementById('bot-thinking').style.display = 'none';
+  if (chess.game_over()) showResult();
+}
+
+function addMoveToList(san) {
+  moveCount++;
+  const list = document.getElementById('move-list');
+  if (moveCount % 2 === 1) {
+    const numEl = document.createElement('span');
+    numEl.className = 'move-number';
+    numEl.textContent = Math.ceil(moveCount / 2) + '. ';
+    list.appendChild(numEl);
+  }
+  const moveEl = document.createElement('span');
+  moveEl.className = 'move-item';
+  moveEl.textContent = san + ' ';
+  list.appendChild(moveEl);
+  list.scrollTop = list.scrollHeight;
+}
+
+function updatePlayerBar() {
+  const myColorChar = myColor === 'white' ? 'w' : 'b';
+  const oppColorChar = myColor === 'white' ? 'b' : 'w';
+  const myTurn = chess.turn() === myColorChar;
+  document.getElementById('my-bar').classList.toggle('active', myTurn);
+  document.getElementById('opponent-bar').classList.toggle('active', !myTurn);
+  document.getElementById('game-status').innerHTML = myTurn ? '<i class="fa-solid fa-circle" style="color:var(--success);"></i> Your turn' : '⏳ Opponent\'s turn';
+
+  const init = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+  const cur = { w: { p:0, n:0, b:0, r:0, q:0 }, b: { p:0, n:0, b:0, r:0, q:0 } };
+  let wMat = 0, bMat = 0;
+  const pVals = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  
+  chess.board().forEach(row => row.forEach(p => { 
+    if(p) { 
+      cur[p.color][p.type]++; 
+      if(p.color === 'w') wMat += pVals[p.type]; else bMat += pVals[p.type];
+    } 
+  }));
+
+  const myMat = myColor === 'white' ? wMat : bMat;
+  const oppMat = myColor === 'white' ? bMat : wMat;
+  const myAdv = myMat - oppMat, oppAdv = oppMat - myMat;
+
+  let myCap = '', oppCap = '';
+  const pieceOrder = ['p', 'b', 'n', 'r', 'q'];
+  const pIcons = { p: 'fa-chess-pawn', n: 'fa-chess-knight', b: 'fa-chess-bishop', r: 'fa-chess-rook', q: 'fa-chess-queen' };
+
+  for(let type of pieceOrder) {
+     for(let i=0; i < (init[type] - cur[oppColorChar][type]); i++) {
+        myCap += `<i class="fa-solid ${pIcons[type]}" style="margin-right:2px"></i>`;
+     }
+     for(let i=0; i < (init[type] - cur[myColorChar][type]); i++) {
+        oppCap += `<i class="fa-solid ${pIcons[type]}" style="margin-right:2px"></i>`;
+     }
+  }
+
+  if (myAdv > 0) myCap += `<span style="font-size:11px;margin-left:4px;opacity:0.7">+${myAdv}</span>`;
+  if (oppAdv > 0) oppCap += `<span style="font-size:11px;margin-left:4px;opacity:0.7">+${oppAdv}</span>`;
+
+  document.getElementById('my-captured').innerHTML = myCap;
+  document.getElementById('opp-captured').innerHTML = oppCap;
+}
+
+function startTimer() {
+  document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+  document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
+  if (mode === 'bot') return; // No timer for bot
+  timerInterval = setInterval(() => {
+    const myColorChar = myColor === 'white' ? 'w' : 'b';
+    if (chess.turn() === myColorChar) {
+      myTime--;
+      const el = document.getElementById('my-timer');
+      el.textContent = fmt.countdown(myTime);
+      el.classList.toggle('low', myTime < 30);
+      if (myTime <= 0) { clearInterval(timerInterval); showResult('timeout_loss'); }
+    } else {
+      oppTime--;
+      if (oppTime <= 0) oppTime = 0; // prevent negative timer
+      const el = document.getElementById('opp-timer');
+      el.textContent = fmt.countdown(oppTime);
+      el.classList.toggle('low', oppTime < 30 && oppTime > 0);
+      if (oppTime === 0) clearInterval(timerInterval); // wait for server to end game
+    }
+  }, 1000);
+}
+
+function showResult(reason) {
+  clearInterval(timerInterval);
+  gameActive = false;
+  const overlay = document.getElementById('result-overlay');
+  const icon = document.getElementById('result-icon');
+  const title = document.getElementById('result-title');
+  const iqEl = document.getElementById('result-iq');
+  overlay.classList.add('active');
+
+  if (reason === 'timeout_loss') {
+    icon.textContent = '<i class="fa-solid fa-clock"></i>'; title.textContent = 'Time\'s Up!'; title.style.color = 'var(--error)'; iqEl.textContent = '-5 IQ';
+  } else if (chess.in_checkmate()) {
+    const myColorChar = myColor === 'white' ? 'w' : 'b';
+    if (chess.turn() !== myColorChar) {
+      icon.textContent = '<i class="fa-solid fa-trophy"></i>'; title.textContent = 'You Won!'; title.style.color = '#5bc0eb'; iqEl.textContent = '+15 IQ';
+    } else {
+      icon.textContent = '<i class="fa-solid fa-face-frown"></i>'; title.textContent = 'You Lost!'; title.style.color = 'var(--error)'; iqEl.textContent = '-5 IQ';
+    }
+  } else if (chess.in_draw() || chess.in_stalemate()) {
+    icon.textContent = '<i class="fa-solid fa-handshake"></i>'; title.textContent = 'Draw!'; title.style.color = 'var(--text-secondary)'; iqEl.textContent = '+10 IQ';
+  } else {
+    icon.textContent = '<i class="fa-solid fa-flag-checkered"></i>'; title.textContent = 'Game Over'; iqEl.textContent = '';
+  }
+}
+
+function resignGame() {
+  if (!gameActive) return;
+  if (confirm('Are you sure you want to resign?')) {
+    if (mode !== 'bot') SocketActions.resign(matchId, user.id);
+    chess = new Chess();
+    showResult('resign');
+  }
+}
+
+function undoMove() {
+  if (mode !== 'bot' || chess.game_over() || !gameActive) return;
+  
+  // Can only undo if at least one full turn has passed (bot played)
+  if (moveCount < 2) {
+    Toast.info("Nothing to undo yet.");
+    return;
+  }
+  
+  // Undo Bot
+  chess.undo();
+  // Undo Player
+  chess.undo();
+  
+  board.position(chess.fen());
+  
+  // Remove last 2 items from DOM
+  const list = document.getElementById('move-list');
+  if (list.lastChild) list.removeChild(list.lastChild); // bot move text
+  if (list.lastChild) list.removeChild(list.lastChild); // my move text
+  
+  // If the previous child was a number line with no moves, remove the number
+  if (list.lastChild && list.lastChild.className === 'move-number') {
+      list.removeChild(list.lastChild);
+  }
+  
+  moveCount -= 2;
+  updatePlayerBar();
+  Toast.success("Move Undone!");
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg || (!gameActive && mode !== 'bot')) return; // Allow chat after game over ONLY for bot maybe? Or just keep it generic
+  
+  if (user?.settings?.chat_enabled === false) {
+     appendChat('System', 'You have disabled chat in your settings!', 'system');
+     input.value = '';
+     return;
+  }
+
+  appendChat('You', msg, 'me');
+  input.value = '';
+  
+  if (mode !== 'bot') {
+    // Send to real player
+    _socket?.emit('chat_msg', { matchId, username: user.username, message: msg });
+  } else {
+    // Trigger localized AI bot logic
+    setTimeout(() => { triggerBotResponse(msg); }, 800 + Math.random() * 1200);
+  }
+}
+
+function appendChat(sender, message, type) {
+  const box = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'msg ' + type;
+  if(type !== 'system') {
+     el.innerHTML = `<div class="msg-name">${sender}</div><div>${escapeHTML(message)}</div>`;
+  } else {
+     el.textContent = message;
+  }
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag])); }
+
+function triggerBotResponse(userMsg) {
+  const text = userMsg.toLowerCase();
+  let reply = "I am focusing on my calculations. I cannot be distracted.";
+  
+  if (text.includes("hello") || text.includes("hi") || text.includes("hey")) {
+      const intros = ["Greetings human.", "Hi! Prepare to lose your elo.", "Hello! Are you ready for some tactical depth?", "Sys-online. Acknowledged."];
+      reply = intros[Math.floor(Math.random() * intros.length)];
+  } else if (text.includes("resign")) {
+      reply = "I am a silicon entity. I calculate checkmates, I do not resign.";
+  } else if (text.includes("why") || text.includes("what")) {
+      reply = "My neural network evaluated that line as mathematically superior.";
+  } else if (text.includes("gg") || text.includes("good game")) {
+      reply = "GG indeed. My CPU enjoyed processing this match.";
+  } else if (text.includes("cheat") || text.includes("engine")) {
+      reply = "I literally am an engine. What did you expect?";
+  } else if (text.includes("undo") || text.includes("takeback")) {
+      reply = "You may use the Undo button at the top to revert mistakes. I will allow it.";
+  } else if (text.includes("hah")) {
+      reply = "01001000 01000001 01001000. That means 'Laugh'.";
+  }
+
+  appendChat('Bot' + botIQ, reply, 'opp');
+}
+
+// Socket listeners
+const sock = initSocket();
+
+sock.on('move_error', (data) => {
+  Toast.error(data.message || 'Move failed/rejected.');
+  // Undo the move locally
+  chess.undo();
+  board.position(chess.fen());
+  if (moveCount > 0) {
+    const list = document.getElementById('move-list');
+    if (list.lastChild) list.removeChild(list.lastChild);
+    moveCount--;
+  }
+  updatePlayerBar();
+});
+
+sock.on('move_made', (data) => {
+  if (data.fen) { chess.load(data.fen); board.position(data.fen); }
+  if (data.move) addMoveToList(data.move.san);
+  updatePlayerBar();
+  if (chess.game_over()) showResult();
+});
+sock.on('timer_update', (data) => {
+  myTime = myColor === 'white' ? data.white_time : data.black_time;
+  oppTime = myColor === 'white' ? data.black_time : data.white_time;
+  document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+  document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
+  document.getElementById('my-timer').classList.toggle('low', myTime < 30);
+  document.getElementById('opp-timer').classList.toggle('low', oppTime < 30);
+});
+sock.on('chat_msg', (data) => {
+  if (user?.settings?.chat_enabled === false) return; // Mute locally if disabled
+  const senderName = data.username || 'Opponent';
+  if (data.username === user.username) return; // Ignore own bounces
+  appendChat(fmt.username(senderName), data.message, 'opp');
+});
+
+sock.on('game_over', (data) => {
+  clearInterval(timerInterval);
+  gameActive = false;
+  const won = data.winnerId === user.id;
+  const isDraw = data.result === 'draw';
+  document.getElementById('result-overlay').classList.add('active');
+  document.getElementById('result-icon').textContent = isDraw ? '<i class="fa-solid fa-handshake"></i>' : (won ? '<i class="fa-solid fa-trophy"></i>' : '<i class="fa-solid fa-face-frown"></i>');
+  document.getElementById('result-title').textContent = isDraw ? 'Draw!' : (won ? 'You Won! <i class="fa-solid fa-champagne-glasses"></i>' : 'You Lost');
+  document.getElementById('result-title').style.color = isDraw ? '' : (won ? '#5bc0eb' : 'var(--error)');
+  document.getElementById('result-iq').textContent = data.reason === 'disconnect' ? 'Opponent disconnected' : '';
+});
+
+// Start game
+initBoard();
+gameActive = true;
+startTimer();
+updatePlayerBar();
+
+if (mode === 'bot') {
+  document.getElementById('btn-undo').style.display = 'inline-flex';
+  if (myColor === 'black') {
+     document.getElementById('bot-thinking').style.display = 'block';
+     setTimeout(makeBotMove, 800);
+  }
+}
+
+document.getElementById('game-status').innerHTML = myColor === 'white' ? '<i class="fa-solid fa-circle" style="color:var(--success);"></i> Your turn (White)' : '⏳ Waiting (Black)';
+document.getElementById('game-title').innerHTML = mode === 'bot' ? `<i class="fa-solid fa-chess-pawn"></i> vs Bot (IQ ${botIQ})` : '<i class="fa-solid fa-chess-pawn"></i> LIVE GAME';
+Toast.info(mode === 'bot' ? `Playing vs Bot (IQ ${botIQ})` : 'Game started! Good luck!');
+</script>
+</body>
+</html>

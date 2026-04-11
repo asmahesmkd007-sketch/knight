@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><div class="page-title">SETTINGS</div></div>
+      <div class="topbar-right">
+        <span id="save-indicator" style="font-size:12px;color:var(--success);opacity:0;transition:opacity 0.3s"><i class="fa-solid fa-check"></i> Saved</span>
+        <div class="topbar-avatar" id="tb-avatar">P</div>
+      </div>
+    </div>
+    <div class="page-content" style="max-width:680px">
+      <!-- Theme & Game -->
+      <div class="card mb-20">
+        <div class="card-title"><i class="fa-solid fa-palette"></i> Theme & Display</div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Dark Mode</div><div class="toggle-desc">Toggle between dark and light theme</div></div>
+          <label class="toggle"><input type="checkbox" id="s-theme" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Result Animations</div><div class="toggle-desc">Show animations when game ends</div></div>
+          <label class="toggle"><input type="checkbox" id="s-result-anim" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="input-group" style="margin-top:16px;margin-bottom:0">
+          <label class="input-label">Language</label>
+          <select id="s-language" class="input" onchange="saveSetting()">
+            <option value="en">🇬🇧 English</option>
+            <option value="ta">🇮🇳 Tamil</option>
+            <option value="hi">🇮🇳 Hindi</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Game Settings -->
+      <div class="card mb-20">
+        <div class="card-title"><i class="fa-solid fa-chess-pawn"></i> Chess Game Settings</div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Highlight Moves</div><div class="toggle-desc">Highlight the last move made on board</div></div>
+          <label class="toggle"><input type="checkbox" id="s-highlight" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Show Legal Moves</div><div class="toggle-desc">Show valid moves when piece is selected</div></div>
+          <label class="toggle"><input type="checkbox" id="s-legal" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Enable Pre-moves</div><div class="toggle-desc">Queue moves before opponent finishes</div></div>
+          <label class="toggle"><input type="checkbox" id="s-premoves" onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="toggle-wrap" style="border-bottom:none">
+          <div><div class="toggle-label">Global Chat</div><div class="toggle-desc">Enable or disable Gaming World Chat</div></div>
+          <label class="toggle"><input type="checkbox" id="s-chat" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="card mb-20">
+        <div class="card-title"><i class="fa-solid fa-bell"></i> Notifications</div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Match Found Alert</div><div class="toggle-desc">Notify when opponent is found</div></div>
+          <label class="toggle"><input type="checkbox" id="s-notif-match" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Tournament Alerts</div><div class="toggle-desc">Notify about tournament start/end</div></div>
+          <label class="toggle"><input type="checkbox" id="s-notif-tour" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="toggle-wrap" style="border-bottom:none">
+          <div><div class="toggle-label">Friend Request Alerts</div><div class="toggle-desc">Notify when someone challenges you</div></div>
+          <label class="toggle"><input type="checkbox" id="s-notif-friend" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+      </div>
+
+      <!-- Privacy -->
+      <div class="card mb-20">
+        <div class="card-title"><i class="fa-solid fa-lock"></i> Privacy</div>
+        <div class="toggle-wrap">
+          <div><div class="toggle-label">Show Online Status</div><div class="toggle-desc">Let others see when you're online</div></div>
+          <label class="toggle"><input type="checkbox" id="s-online-status" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
+        </div>
+        <div class="input-group" style="margin-top:8px">
+          <label class="input-label">Profile Visibility</label>
+          <select id="s-visibility" class="input" onchange="saveSetting()">
+            <option value="public"><i class="fa-solid fa-globe"></i> Public</option>
+            <option value="private"><i class="fa-solid fa-lock"></i> Private</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Allow Challenges From</label>
+          <select id="s-friend-req" class="input" onchange="saveSetting()">
+            <option value="everyone"><i class="fa-solid fa-users"></i> Everyone</option>
+            <option value="friends"><i class="fa-solid fa-handshake"></i> Friends Only</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:0">
+          <label class="input-label">Incoming Challenge Behavior</label>
+          <select id="s-challenge" class="input" onchange="saveSetting()">
+            <option value="auto_accept"><i class="fa-solid fa-check-circle"></i> Auto Accept</option>
+            <option value="auto_reject"><i class="fa-solid fa-circle-xmark"></i> Auto Reject</option>
+            <option value="manual"><i class="fa-solid fa-hand-pointer"></i> Manual (Ask me)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="card" style="border-color:rgba(239,68,68,0.2)">
+        <div class="card-title" style="color:var(--error)"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-danger" onclick="clearCache()"><i class="fa-solid fa-trash"></i> Clear Local Cache</button>
+          <a href="/pages/account.html" class="btn btn-secondary"><i class="fa-solid fa-lock"></i> Change Password</a>
+          <button class="btn btn-danger" onclick="confirmLogout()"><i class="fa-solid fa-door-open"></i> Logout All Devices</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+
+let saveTimeout = null;
+
+async function loadSettings() {
+  const res = await UserAPI.getProfile();
+  if (!res?.success) return;
+  const s = res.user.settings || {};
+  document.getElementById('s-theme').checked = s.theme === 'dark'; // Default to light mode
+  document.getElementById('s-highlight').checked = s.highlight_moves !== false;
+  document.getElementById('s-legal').checked = s.legal_moves !== false;
+  document.getElementById('s-premoves').checked = s.premoves === true;
+  document.getElementById('s-result-anim').checked = s.result_animation !== false;
+  document.getElementById('s-chat').checked = s.chat_enabled !== false;
+  document.getElementById('s-language').value = s.language || 'en';
+  document.getElementById('s-notif-match').checked = s.notifications?.match_found !== false;
+  document.getElementById('s-notif-tour').checked = s.notifications?.tournament !== false;
+  document.getElementById('s-notif-friend').checked = s.notifications?.friend_request !== false;
+  document.getElementById('s-online-status').checked = s.privacy?.online_status !== false;
+  document.getElementById('s-visibility').value = s.privacy?.visibility || 'public';
+  document.getElementById('s-friend-req').value = s.privacy?.friend_requests || 'everyone';
+  document.getElementById('s-challenge').value = s.challenge_mode || 'auto_accept';
+}
+
+function saveSetting() {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    const settings = {
+      theme: document.getElementById('s-theme').checked ? 'dark' : 'light',
+      highlight_moves: document.getElementById('s-highlight').checked,
+      legal_moves: document.getElementById('s-legal').checked,
+      premoves: document.getElementById('s-premoves').checked,
+      result_animation: document.getElementById('s-result-anim').checked,
+      chat_enabled: document.getElementById('s-chat').checked,
+      language: document.getElementById('s-language').value,
+      notifications: { match_found: document.getElementById('s-notif-match').checked, tournament: document.getElementById('s-notif-tour').checked, friend_request: document.getElementById('s-notif-friend').checked },
+      privacy: { online_status: document.getElementById('s-online-status').checked, visibility: document.getElementById('s-visibility').value, friend_requests: document.getElementById('s-friend-req').value },
+      challenge_mode: document.getElementById('s-challenge').value,
+    };
+    
+    // Live apply the theme
+    document.documentElement.setAttribute('data-theme', settings.theme);
+    
+    // Also update local storage object preemptively for instant reload sync
+    let u = getUser();
+    if(u) { u.settings = Object.assign(u.settings || {}, settings); localStorage.setItem('px_user', JSON.stringify(u)); }
+
+    const res = await UserAPI.updateSettings(settings);
+    if (res?.success) {
+      const el = document.getElementById('save-indicator');
+      el.style.opacity = '1';
+      setTimeout(() => el.style.opacity = '0', 2000);
+    }
+  }, 600);
+}
+
+function clearCache() {
+  const keep = { px_token: localStorage.getItem('px_token'), px_user: localStorage.getItem('px_user') };
+  localStorage.clear();
+  Object.entries(keep).forEach(([k, v]) => v && localStorage.setItem(k, v));
+  Toast.success('Cache cleared!');
+}
+
+async function confirmLogout() {
+  if (!confirm('Log out from all devices?')) return;
+  await AuthAPI.logout();
+}
+
+loadSettings();
+</script>
+</body>
+</html>

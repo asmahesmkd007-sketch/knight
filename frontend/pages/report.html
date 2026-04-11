@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report a Problem – PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .report-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      animation: fadeUp 0.5s ease-out;
+    }
+    .report-title {
+      font-size: 24px;
+      font-family: var(--font-display);
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .report-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    
+    .type-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .type-btn {
+      flex: 1;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .type-btn.active {
+      background: rgba(255, 107, 53, 0.1);
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    .report-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .report-input:focus {
+      outline: none;
+      border-color: #5bc0eb;
+      background: rgba(91,192,235, 0.05);
+    }
+    textarea.report-input {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .file-upload {
+      position: relative;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .file-upload:hover { border-color: #5bc0eb; }
+    .file-upload input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+    .file-upload-txt { font-size: 13px; color: var(--text-secondary); }
+    .file-upload-txt i { font-size: 20px; color: #5bc0eb; display: block; margin-bottom: 8px; }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.2s;
+    }
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
+    }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .dynamic-section { display: none; }
+    .dynamic-section.active { display: block; animation: fadeIn 0.3s; }
+
+    .status-msg {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .status-success { background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-error { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><div class="page-title">REPORT A PROBLEM</div></div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="tb-avatar">P</div>
+      </div>
+    </div>
+    
+    <div class="page-content" style="max-width:680px">
+      <div class="report-card">
+        <h2 class="report-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--orange)"></i> Submit a Report</h2>
+        <p class="report-subtitle">Securely report players or system issues directly to the administration.</p>
+        
+        <form id="report-form">
+          <div class="type-selector">
+            <div class="type-btn active" onclick="setReportType('issue')"><i class="fa-solid fa-bug"></i> Report Issue</div>
+            <div class="type-btn" onclick="setReportType('player')"><i class="fa-solid fa-user-xmark"></i> Report Player</div>
+          </div>
+          
+          <input type="hidden" id="r-type" value="issue">
+          
+          <div class="grid-2">
+            <div><label class="input-label">Name (Optional)</label><input type="text" id="r-name" class="report-input" placeholder="Your Name"></div>
+            <div><label class="input-label">Email (Optional)</label><input type="email" id="r-email" class="report-input" placeholder="Email Address"></div>
+          </div>
+
+          <!-- Issue Section -->
+          <div id="section-issue" class="dynamic-section active">
+            <div class="grid-2">
+              <div>
+                <label class="input-label">Issue Type</label>
+                <select id="r-issue-type" class="report-input">
+                  <option value="Bug">Technical Bug</option>
+                  <option value="Payment">Payment / Wallet</option>
+                  <option value="Account">Account / KYC</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="input-label">Priority</label>
+                <select id="r-priority" class="report-input">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High" style="color:var(--error)">High</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Player Section -->
+          <div id="section-player" class="dynamic-section">
+            <div class="grid-2">
+              <div>
+                <label class="input-label">Reported Username</label>
+                <input type="text" id="r-username" class="report-input" placeholder="(e.g., @cheater99)">
+              </div>
+              <div>
+                <label class="input-label">Reason</label>
+                <select id="r-reason" class="report-input">
+                  <option value="Cheating">Cheating / Engine Usage</option>
+                  <option value="Abuse">Verbal Abuse / Harassment</option>
+                  <option value="Spam">Spam / Scam</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <label class="input-label">Description (Required)</label>
+          <textarea id="r-desc" class="report-input" placeholder="Please describe the issue or incident in detail..." required></textarea>
+          
+          <div class="file-upload">
+            <input type="file" id="r-file" accept="image/png, image/jpeg, image/jpg">
+            <div class="file-upload-txt" id="file-lbl">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Attach Screenshot (Optional, Max 5MB)</span>
+            </div>
+          </div>
+
+          <button type="submit" id="r-submit" class="btn btn-orange btn-submit">Submit Report</button>
+          
+          <div id="r-status" class="status-msg"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+
+document.getElementById('r-email').value = user.email || '';
+document.getElementById('r-name').value = user.username ? fmt.username(user.username) : '';
+
+// Handle Image Name Preview
+let base64Image = null;
+document.getElementById('r-file').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  const lbl = document.getElementById('file-lbl');
+  
+  if (!file) {
+    base64Image = null;
+    lbl.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Attach Screenshot (Optional, Max 5MB)</span>';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    Toast.error("File is too large! Maximum allowed is 5MB.");
+    e.target.value = '';
+    return;
+  }
+  
+  lbl.innerHTML = `<i class="fa-solid fa-check" style="color:var(--success)"></i><span style="color:#5bc0eb">${file.name} attached</span>`;
+  
+  // Convert to Base64
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => { base64Image = reader.result; };
+});
+
+function setReportType(type) {
+  document.getElementById('r-type').value = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.dynamic-section').forEach(s => s.classList.remove('active'));
+  
+  if(type === 'issue') {
+    document.querySelectorAll('.type-btn')[0].classList.add('active');
+    document.getElementById('section-issue').classList.add('active');
+  } else {
+    document.querySelectorAll('.type-btn')[1].classList.add('active');
+    document.getElementById('section-player').classList.add('active');
+  }
+}
+
+// Check for passed username query param (e.g., from game page)
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('reportUser')) {
+  setReportType('player');
+  document.getElementById('r-username').value = urlParams.get('reportUser');
+}
+
+
+
+document.getElementById('report-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const submitBtn = document.getElementById('r-submit');
+  const statusMsg = document.getElementById('r-status');
+  
+  const type = document.getElementById('r-type').value;
+  const name = document.getElementById('r-name').value;
+  const email = document.getElementById('r-email').value;
+  const description = document.getElementById('r-desc').value;
+
+  const data = { type, description };
+  if(base64Image) data.image_base64 = base64Image;
+
+  if (type === 'player') {
+    data.reported_user = document.getElementById('r-username').value;
+    data.reason = document.getElementById('r-reason').value;
+    if(!data.reported_user) return Toast.error('Please specify the username of the player you are reporting.');
+  } else {
+    data.issue_type = document.getElementById('r-issue-type').value;
+    data.priority = document.getElementById('r-priority').value;
+  }
+
+  // UI Loading State
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block"></div><span>Processing...</span>';
+  statusMsg.style.display = 'none';
+  statusMsg.className = 'status-msg';
+
+  try {
+    // Phase 1: Submit to backend & get screenshot URL
+    const res = await UserAPI.submitReport(data);
+    
+    if (!res.success) {
+      throw new Error(res.message || "Failed to submit report");
+    }
+
+
+
+    // Show Success UI
+    statusMsg.innerHTML = '<i class="fa-solid fa-check-circle"></i> Thank you. Your report has been submitted to the admin team.';
+    statusMsg.classList.add('status-success');
+    statusMsg.style.display = 'block';
+    
+    // Reset inputs
+    document.getElementById('r-desc').value = '';
+    document.getElementById('r-file').value = '';
+    document.getElementById('file-lbl').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Attach Screenshot (Optional, Max 5MB)</span>';
+    base64Image = null;
+    
+  } catch (error) {
+    console.error("Report System Error:", error);
+    statusMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${error.message || 'Error compiling report. Please try again later.'}`;
+    statusMsg.classList.add('status-error');
+    statusMsg.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Submit Report';
+  }
+});
+</script>
+</body>
+</html>
