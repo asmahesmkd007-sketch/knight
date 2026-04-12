@@ -63,6 +63,8 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      width: 100%;
+      min-height: 400px;
     }
 
     .status-overlay {
@@ -75,6 +77,7 @@
       justify-content: center;
       z-index: 10;
       text-align: center;
+      border-radius: 12px;
     }
 
     .status-overlay.hidden {
@@ -146,6 +149,11 @@
     @media (max-width: 900px) {
       .arena-layout {
         flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      .game-panel {
+        min-height: 350px;
       }
 
       .leaderboard-panel {
