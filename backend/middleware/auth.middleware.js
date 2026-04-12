@@ -29,6 +29,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Account is blocked.' });
     }
 
+    profile.email = user.email; // Inject email from auth.users
     req.user = profile;
     req.supabase_token = token;
     next();

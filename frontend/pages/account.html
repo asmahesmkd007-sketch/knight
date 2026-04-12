@@ -246,11 +246,14 @@
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
 <script>
 if (!requireAuth()) throw new Error();
 const user = getUser();
 loadSidebar();
+initSocket();
 
 let kycType = 'aadhaar';
 let avatarBase64 = '';
@@ -402,11 +405,11 @@ async function loadProfile() {
   document.getElementById('edit-email').value = u.email;
   document.getElementById('edit-phone').value = u.phone || '';
   document.getElementById('g-iq').textContent = u.iq_level;
-  document.getElementById('g-matches').textContent = u.stats?.total_matches || 0;
-  document.getElementById('g-winrate').textContent = (u.stats?.win_rate || 0) + '%';
-  document.getElementById('g-streak').textContent = u.stats?.best_streak || 0;
-  document.getElementById('g-winrate-pct').textContent = (u.stats?.win_rate || 0) + '%';
-  document.getElementById('wr-bar').style.width = (u.stats?.win_rate || 0) + '%';
+  document.getElementById('g-matches').textContent = u.total_matches || 0;
+  document.getElementById('g-winrate').textContent = (u.win_rate || 0) + '%';
+  document.getElementById('g-streak').textContent = u.best_streak || 0;
+  document.getElementById('g-winrate-pct').textContent = (u.win_rate || 0) + '%';
+  document.getElementById('wr-bar').style.width = (u.win_rate || 0) + '%';
 
   const rankMap = { Bronze: 'badge-bronze', Silver: 'badge-silver', Gold: 'badge-gold', Platinum: 'badge-platinum' };
   document.getElementById('ph-rank-badge').className = 'badge ' + (rankMap[u.rank] || 'badge-bronze');
