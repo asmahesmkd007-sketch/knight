@@ -33,6 +33,14 @@ module.exports = (io) => {
 
     // ─── AUTHENTICATE ───────────────────────────────────────
     socket.on('authenticate', async ({ userId, username }) => {
+      // Single-Device Enforcement
+      if (userSockets.has(userId) && userSockets.get(userId).size > 0) {
+          // They already have an active session
+          socket.emit('auth_error', { message: 'Your account is actively running on another device or window. Access blocked.' });
+          socket.disconnect(true);
+          return;
+      }
+
       socketToUser.set(socket.id, { userId, username });
       userToSocket.set(userId, socket.id);
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
