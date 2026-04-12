@@ -35,7 +35,7 @@
       <div class="topbar-left"><div class="page-title">PLAY CHESS</div></div>
       <div class="topbar-right">
         <div class="topbar-player-id" id="tb-pid">...</div>
-        <div class="topbar-avatar" id="tb-avatar">P</div>
+        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
       </div>
     </div>
     <div class="page-content">
@@ -92,7 +92,10 @@
               <div class="timer-btn" onclick="selectTimer(10, this)">10<div class="timer-sub">Classical</div></div>
             </div>
             
-            <div class="card-title">Challenge a Friend</div>
+            <div class="flex-between" style="margin-bottom:16px">
+              <div class="card-title" style="margin:0">Challenge a Friend</div>
+              <a href="/pages/friends.html" class="btn btn-secondary btn-sm" style="padding:6px 12px;font-size:11px"><i class="fa-solid fa-user-plus"></i> Add Friend</a>
+            </div>
             <div id="play-friends-list" style="max-height:250px;overflow-y:auto">
                 <div style="text-align:center;padding:24px;color:var(--text-muted)"><div class="spinner"></div></div>
             </div>

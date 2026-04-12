@@ -5,7 +5,7 @@
     <div class="tagline"></div>
   </div>
   <div class="sidebar-user">
-    <div class="sidebar-avatar" id="sb-avatar">P</div>
+    <div class="sidebar-avatar" id="sb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
     <div class="sidebar-user-info">
       <div class="name" id="sb-username">Loading...</div>
       <div class="iq">IQ: <span id="sb-iq">100</span></div>
@@ -68,7 +68,13 @@
       const adminLnk = document.getElementById('sb-admin');
       if (u) u.textContent = fmt.username(user.username || 'Player');
       if (iq) iq.textContent = user.iq_level || 100;
-      if (av) av.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+      
+      if (user.profile_image) {
+        if (av) av.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } else {
+        if (av) av.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+      }
+
       if (adminLnk && user.is_admin) adminLnk.style.display = '';
     }
     const cur = window.location.pathname.split('/').pop().replace('.html', '');

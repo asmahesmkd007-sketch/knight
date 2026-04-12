@@ -26,7 +26,7 @@
             <div id="notif-list"><div style="padding:20px;text-align:center;color:var(--text-muted)">No notifications</div></div>
           </div>
         </div>
-        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/settings.html'">P</div>
+        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
       </div>
     </div>
 
@@ -179,12 +179,20 @@ document.getElementById('tb-player-id').addEventListener('click', () => {
 if (user.profile_image) {
   document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
 } else {
+  if (user.profile_image) {
+  document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+} else {
   document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+}
 }
 
 // Dashboard info
 document.getElementById('dash-username').textContent = user.full_name || fmt.username(user.username);
-document.getElementById('dash-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+if (user.profile_image) {
+  document.getElementById('dash-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+} else {
+  document.getElementById('dash-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+}
 document.getElementById('dash-iq').textContent = user.iq_level || 100;
 
 const kycBadgeMap = { verified: '<span class="badge badge-verified"><i class="fa-solid fa-check"></i> Verified</span>', pending: '<span class="badge badge-pending">⏳ KYC Pending</span>', not_verified: '<span class="badge badge-rejected"><i class="fa-solid fa-triangle-exclamation"></i> KYC Required</span>' };

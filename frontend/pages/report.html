@@ -133,7 +133,7 @@
     <div class="topbar">
       <div class="topbar-left"><div class="page-title">REPORT A PROBLEM</div></div>
       <div class="topbar-right">
-        <div class="topbar-avatar" id="tb-avatar">P</div>
+        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
       </div>
     </div>
     
@@ -223,7 +223,11 @@
 if (!requireAuth()) throw new Error();
 const user = getUser();
 loadSidebar();
-document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+if (user.profile_image) {
+  document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+} else {
+  document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+}
 
 document.getElementById('r-email').value = user.email || '';
 document.getElementById('r-name').value = user.username ? fmt.username(user.username) : '';
