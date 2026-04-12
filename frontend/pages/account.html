@@ -372,7 +372,7 @@ function checkStrength(val) {
   const strong = val.length >= 8 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val);
   const medium = val.length >= 6 && (/[A-Z]/.test(val) || /[0-9]/.test(val));
   bar.className = 'strength-bar ' + (strong ? 'strength-strong' : medium ? 'strength-medium' : 'strength-weak');
-  label.textContent = strong ? '<i class="fa-solid fa-dumbbell"></i> Strong' : medium ? '<i class="fa-solid fa-thumbs-up"></i> Medium' : '<i class="fa-solid fa-triangle-exclamation"></i> Weak';
+  label.innerHTML = strong ? '<i class="fa-solid fa-dumbbell"></i> Strong' : medium ? '<i class="fa-solid fa-thumbs-up"></i> Medium' : '<i class="fa-solid fa-triangle-exclamation"></i> Weak';
   label.style.color = strong ? 'var(--success)' : medium ? 'var(--warning)' : 'var(--error)';
 }
 

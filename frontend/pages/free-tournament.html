@@ -148,7 +148,7 @@ async function openDetail(id) {
   if (!res?.success) return;
   const t = res.tournament;
   document.getElementById('modal-name').textContent = t.name;
-  document.getElementById('modal-status-text').textContent = t.status === 'live' ? '<i class="fa-solid fa-circle" style="color:var(--error);"></i> Live Now' : '<i class="fa-solid fa-clock"></i> Upcoming';
+  document.getElementById('modal-status-text').innerHTML = t.status === 'live' ? '<i class="fa-solid fa-circle" style="color:var(--error);"></i> Live Now' : '<i class="fa-solid fa-clock"></i> Upcoming';
   document.getElementById('modal-timer').textContent = t.timer_type + ' min';
   document.getElementById('modal-players').textContent = t.current_players + '/' + t.max_players;
   document.getElementById('modal-players-label').textContent = t.current_players + '/' + t.max_players;

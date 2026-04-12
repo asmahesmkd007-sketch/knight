@@ -706,7 +706,7 @@ sock.on('game_over', (data) => {
   const isDraw = data.result === 'draw';
   document.getElementById('result-overlay').classList.add('active');
   document.getElementById('result-icon').innerHTML = isDraw ? '<i class="fa-solid fa-handshake"></i>' : (won ? '<i class="fa-solid fa-trophy"></i>' : '<i class="fa-solid fa-face-frown"></i>');
-  document.getElementById('result-title').textContent = isDraw ? 'Draw!' : (won ? 'You Won! <i class="fa-solid fa-champagne-glasses"></i>' : 'You Lost');
+  document.getElementById('result-title').innerHTML = isDraw ? 'Draw!' : (won ? 'You Won! <i class="fa-solid fa-champagne-glasses"></i>' : 'You Lost');
   document.getElementById('result-title').style.color = isDraw ? '' : (won ? '#5bc0eb' : 'var(--error)');
 
   let reasonMsg = '';
