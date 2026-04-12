@@ -34,21 +34,21 @@
       </div>
 
       <!-- Tabs & Filters -->
-      <div class="flex-between mb-24" style="align-items:center;">
-        <div class="tabs">
+      <div class="flex-between mb-24" style="align-items:center; flex-wrap:wrap; gap:16px;">
+        <div class="tabs" style="margin-bottom: 0;">
           <button class="tab-btn active" onclick="switchTab('live', this)"><i class="fa-solid fa-circle" style="color:var(--error);"></i> Live</button>
           <button class="tab-btn" onclick="switchTab('upcoming', this)"><i class="fa-solid fa-clock"></i> Upcoming</button>
         </div>
         
         <!-- Filters -->
-        <div class="flex" style="gap:12px;">
-          <select id="filter-min" class="input-field" style="padding:8px 12px; width:auto; border-radius:8px;" onchange="renderTournaments()">
+        <div class="flex" style="gap:12px; flex-wrap:wrap;">
+          <select id="filter-min" class="input" style="padding:8px 12px; width:auto; border-radius:8px; cursor:pointer;" onchange="renderTournaments()">
             <option value="all">Timer (All)</option>
             <option value="1">1 Min</option>
             <option value="3">3 Min</option>
             <option value="5">5 Min</option>
           </select>
-          <select id="filter-entry" class="input-field" style="padding:8px 12px; width:auto; border-radius:8px;" onchange="renderTournaments()">
+          <select id="filter-entry" class="input" style="padding:8px 12px; width:auto; border-radius:8px; cursor:pointer;" onchange="renderTournaments()">
             <option value="all">Entry (All)</option>
             <option value="5">5 Coins</option>
             <option value="10">10 Coins</option>
