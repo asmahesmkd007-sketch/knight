@@ -5,33 +5,64 @@
   <title>Dashboard – PHOENIX X</title>
   <link rel="stylesheet" href="/css/global.css">
   <style>
-    /* Welcome Overlay Styles */
+    /* Welcome Overlay Styles - REDESIGNED LUX GOLD LOOK */
     .welcome-overlay {
       position: fixed; inset: 0; z-index: 9999;
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(20px);
+      background: radial-gradient(circle at center, rgba(10,10,10,0.4) 0%, rgba(0,0,0,0.85) 100%);
+      backdrop-filter: blur(25px);
       display: none; align-items: center; justify-content: center;
-      opacity: 0; transition: opacity 0.5s ease;
+      opacity: 0; transition: opacity 0.8s ease;
     }
     .welcome-overlay.active { display: flex; opacity: 1; }
+    
     .welcome-card {
-       background: rgba(255,255,255,0.03);
-       border: 1px solid rgba(212,175,55,0.3);
-       border-radius: 24px; padding: 40px;
-       display: flex; flex-direction: column; align-items: center; gap: 20px;
-       transform: translateY(30px) scale(0.9);
-       transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-       box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(212,175,55,0.1);
+       position: relative;
+       display: flex; flex-direction: column; align-items: center; gap: 15px;
+       padding: 60px; text-align: center;
+       transform: scale(0.85); transition: all 1s cubic-bezier(0.2, 1, 0.3, 1);
     }
-    .welcome-overlay.active .welcome-card { transform: translateY(0) scale(1); }
+    .welcome-overlay.active .welcome-card { transform: scale(1); }
+    
+    .welcome-avatar-hex {
+       position: relative; width: 140px; height: 140px;
+       margin-bottom: 20px;
+    }
+    .welcome-avatar-hex::before {
+       content: ''; position: absolute; inset: -10px;
+       border: 2px solid var(--gold); border-radius: 50%;
+       border-top-color: transparent; border-bottom-color: transparent;
+       animation: rotate-ring 3s linear infinite;
+       box-shadow: 0 0 30px rgba(212,175,55,0.4);
+    }
     .welcome-avatar {
-       width: 100px; height: 100px; border-radius: 50%;
-       border: 3px solid var(--teal);
-       box-shadow: 0 0 20px rgba(212,175,55,0.4);
-       object-fit: cover;
+       width: 100%; height: 100%; border-radius: 50%;
+       object-fit: cover; border: 4px solid #000;
+       position: relative; z-index: 2;
     }
-    .welcome-text { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: #fff; text-align: center; }
-    .welcome-sub { font-size: 14px; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; }
+    
+    @keyframes rotate-ring { to { transform: rotate(360deg); } }
+
+    .shimmer-text {
+       font-family: var(--font-display);
+       background: linear-gradient(90deg, #888 20%, #fff 50%, #888 80%);
+       background-size: 200% auto;
+       -webkit-background-clip: text;
+       -webkit-text-fill-color: transparent;
+       animation: shimmer-reveal 2.5s linear infinite;
+       font-size: 14px; letter-spacing: 6px; text-transform: uppercase; font-weight: 700;
+       opacity: 0; transform: translateY(10px); transition: all 1s 0.3s;
+    }
+    .welcome-overlay.active .shimmer-text { opacity: 1; transform: translateY(0); }
+    
+    .username-reveal {
+       font-family: var(--font-display); font-size: 48px; font-weight: 900;
+       color: #fff; text-shadow: 0 0 40px rgba(255,255,255,0.2);
+       letter-spacing: -2px; opacity: 0; transform: scale(1.1);
+       transition: all 1.2s 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+    }
+    .welcome-overlay.active .username-reveal { opacity: 1; transform: scale(1); letter-spacing: 1px; }
+
+    @keyframes shimmer-reveal { to { background-position: 200% center; } }
 
     /* Performance stabilization to prevent 'shaking' */
     .stat-value { min-height: 38px; display: flex; align-items: center; }
@@ -44,10 +75,10 @@
   <!-- WELCOME OVERLAY -->
   <div id="welcome-overlay" class="welcome-overlay">
      <div class="welcome-card">
-        <div id="welcome-avatar-container"></div>
-        <div class="welcome-sub" id="welcome-sub-text">Welcome Back</div>
-        <div class="welcome-text" id="welcome-username-text">Explorer</div>
-        <div style="font-size: 12px; color: var(--gold); margin-top: 10px;">
+        <div class="welcome-avatar-hex" id="welcome-avatar-container"></div>
+        <div class="shimmer-text">Welcome Back</div>
+        <div class="username-reveal" id="welcome-username-text">Explorer</div>
+        <div style="font-size: 11px; color: var(--gold); margin-top: 15px; letter-spacing: 3px; opacity: 0.7;">
            <i class="fa-solid fa-chess-king"></i> PHOENIX X ELITE
         </div>
      </div>

@@ -311,7 +311,6 @@
       if (res?.success) {
         setSession(res.token, res.refresh_token, res.user);
         sessionStorage.setItem('px_just_logged_in', 'true');
-        Toast.success('Welcome back, ' + fmt.username(res.user.username) + '! <i class="fa-solid fa-chess-king"></i>');
         setTimeout(() => window.location.href = '/pages/dashboard.html', 100);
       } else {
         document.getElementById('login-err').textContent = res?.message || 'Login failed.';
@@ -345,7 +344,6 @@
       if (res?.success) {
         setSession(res.token, res.refresh_token, res.user);
         sessionStorage.setItem('px_just_logged_in', 'true');
-        Toast.success('Account created! Welcome to PHOENIX X!');
         setTimeout(() => window.location.href = '/pages/dashboard.html', 100);
       } else {
         document.getElementById('register-err').textContent = res?.message || 'Registration failed.';
@@ -405,7 +403,6 @@
         if (res?.success) {
           setSession(res.token, res.refresh_token, res.user);
           sessionStorage.setItem('px_just_logged_in', 'true');
-          Toast.success('Welcome, ' + fmt.username(res.user.username) + '! <i class="fa-solid fa-chess-king"></i>');
           // Clear the hash so it doesn't re-trigger
           history.replaceState(null, '', window.location.pathname);
           setTimeout(() => window.location.href = '/pages/dashboard.html', 100);
