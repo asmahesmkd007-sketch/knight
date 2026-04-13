@@ -37,7 +37,12 @@ const joinTournament = async (req, res) => {
   try {
     const { data: tournament } = await supabase.from('tournaments').select('*').eq('id', req.params.id).single();
     if (!tournament) return res.status(404).json({ success: false, message: 'Tournament not found.' });
-    if (tournament.status === 'completed' || tournament.status === 'cancelled' || tournament.status === 'live') return res.status(400).json({ success: false, message: 'Tournament is locked or already finished.' });
+    if (tournament.status === 'completed' || tournament.status === 'cancelled') {
+        return res.status(400).json({ success: false, message: 'Tournament is already finished or cancelled.' });
+    }
+    if (tournament.status === 'live' && tournament.type === 'paid') {
+        return res.status(400).json({ success: false, message: 'Paid tournaments are locked once live.' });
+    }
     if (tournament.current_players >= tournament.max_players) return res.status(400).json({ success: false, message: 'Tournament is full.' });
 
     // Check already joined

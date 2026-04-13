@@ -44,6 +44,10 @@ module.exports = (io) => {
       userToSocket.set(userId, socket.id);
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
       userSockets.get(userId).add(socket.id);
+
+      // Force live info sync to client directly once authenticated successfully
+      socket.emit('live_info', { online_users: onlineCount, active_matches: activeGames.size });
+
       
       // Attempt to rejoin active generic match
       for (const [matchId, game] of activeGames.entries()) {
