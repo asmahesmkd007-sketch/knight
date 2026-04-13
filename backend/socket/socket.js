@@ -52,14 +52,34 @@ module.exports = (io) => {
       
       // Attempt to rejoin active generic match
       for (const [matchId, game] of activeGames.entries()) {
-        if (game.player1.userId === userId) {
-          game.player1.socketId = socket.id;
-          if (game.disconnectTimeout) { clearTimeout(game.disconnectTimeout); game.disconnectTimeout = null; }
-          socket.emit('match_sync', { fen: game.chess.fen(), white_time: game.player1.time, black_time: game.player2.time, moveCount: game.moveCount || 0 });
-        } else if (game.player2.userId === userId) {
-          game.player2.socketId = socket.id;
-          if (game.disconnectTimeout) { clearTimeout(game.disconnectTimeout); game.disconnectTimeout = null; }
-          socket.emit('match_sync', { fen: game.chess.fen(), white_time: game.player1.time, black_time: game.player2.time, moveCount: game.moveCount || 0 });
+        const isP1 = game.player1.userId === userId;
+        const isP2 = game.player2.userId === userId;
+
+        if (isP1 || isP2) {
+          if (isP1) {
+            game.player1.socketId = socket.id;
+          } else {
+            game.player2.socketId = socket.id;
+          }
+
+          if (game.disconnectTimeout) { 
+            clearTimeout(game.disconnectTimeout); 
+            game.disconnectTimeout = null; 
+          }
+
+          socket.emit('match_sync', {
+            matchId,
+            fen: game.chess.fen(),
+            pgn: game.chess.pgn(),
+            white_time: game.player1.time,
+            black_time: game.player2.time,
+            moveCount: game.moveCount || 0,
+            myColor: isP1 ? 'white' : 'black',
+            opponent: {
+              userId: isP1 ? game.player2.userId : game.player1.userId,
+              username: isP1 ? game.player2.username : game.player1.username
+            }
+          });
         }
       }
 
@@ -398,8 +418,8 @@ module.exports = (io) => {
         chess,
         matchId: match.id,
         tournamentId: p2.tournamentId || null,
-        player1: { userId: p1.userId, socketId: p1.socketId, time: t * 60 },
-        player2: { userId: p2.userId, socketId: p2.socketId || socket.id, time: t * 60 },
+        player1: { userId: p1.userId, username: p1.username, socketId: p1.socketId, time: t * 60 },
+        player2: { userId: p2.userId, username: p2.username, socketId: p2.socketId || socket.id, time: t * 60 },
         timer_type: t,
         interval: null,
         moveCount: 0,

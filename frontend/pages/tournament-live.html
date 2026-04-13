@@ -746,11 +746,34 @@ sock.on('search_cancelled', () => { showLobby('Ready to Play', 'Join the queue t
       updateLastMoveHighlight(data.lastMove?.from, data.lastMove?.to);
       updatePlayerBars();
     });
-sock.on('match_found', (data) => {
-  matchId = data.matchId;
-  Toast.info('Match Found!');
-  setupGame(data.color, data.opponent);
+sock.on('match_sync', (data) => {
+  if (data.pgn) {
+    chess.load_pgn(data.pgn);
+    board.position(chess.fen());
+  } else if (data.fen) {
+    chess.load(data.fen);
+    board.position(data.fen);
+  }
+
+  // Restore opponent info if it was lost/missing
+  if (data.opponent) {
+    if (!gameActive) {
+       setupGame(data.myColor, data.opponent, data.fen || 'start');
+    }
+    document.getElementById('opp-name').textContent = fmt.username(data.opponent.username);
+    document.getElementById('opp-avatar').textContent = (data.opponent.username || '?').replace('@', '')[0].toUpperCase();
+  }
+
+  // Sync timers
+  myColor = data.myColor || myColor;
+  myTime = myColor === 'white' ? data.white_time : data.black_time;
+  oppTime = myColor === 'white' ? data.black_time : data.white_time;
+  document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+  document.getElementById('opp-timer').textContent = fmt.countdown(Math.max(0, oppTime));
+
+  updatePlayerBars();
 });
+
 sock.on('move_made', (data) => {
   if (data.fen) { chess.load(data.fen); board.position(data.fen); updatePlayerBars(); }
 });

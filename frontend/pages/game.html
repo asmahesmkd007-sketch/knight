@@ -731,17 +731,40 @@ function triggerBotResponse(userMsg) {
 const sock = initSocket();
 
 sock.on('match_sync', (data) => {
-  if (data.fen) {
+  if (data.pgn) {
+    chess.load_pgn(data.pgn);
+    board.position(chess.fen());
+    
+    // Reconstruct move history list
+    const list = document.getElementById('move-list');
+    list.innerHTML = '';
+    moveCount = 0;
+    const history = chess.history();
+    history.forEach(san => addMoveToList(san));
+  } else if (data.fen) {
     chess.load(data.fen);
     board.position(data.fen);
-    setTimeout(updateLastMoveHighlight, 250);
   }
+
+  // Update last move highlight
+  setTimeout(updateLastMoveHighlight, 250);
+
+  // Sync timers
   myTime = myColor === 'white' ? data.white_time : data.black_time;
   oppTime = myColor === 'white' ? data.black_time : data.white_time;
+  document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+  document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
   
   if (data.moveCount) {
     moveCount = data.moveCount;
   }
+
+  // Restore opponent info if it was lost/missing
+  if (data.opponent) {
+    document.getElementById('opp-name').textContent = fmt.username(data.opponent.username);
+    document.getElementById('opp-avatar').textContent = (data.opponent.username || '?').replace('@', '')[0].toUpperCase();
+  }
+
   updatePlayerBar();
 });
 
