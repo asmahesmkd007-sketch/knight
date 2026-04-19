@@ -319,6 +319,9 @@
         sock.on(`tournament_sync_${tournamentId}`, (state) => {
              if (gameActive) return; 
              
+             // Update Global Panel Timer
+             document.getElementById('global-timer').textContent = fmt.countdown(state.countdown);
+
              if (state.status === 'going_live') {
                   showLobby('Tournament FULL!', `Tournament is full. Preparing Arena...`, true, false);
                   document.getElementById('status-title').innerHTML = `GOING LIVE IN <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
