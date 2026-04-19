@@ -273,19 +273,20 @@
       });
 
       // Group by timer type
-      const grouped = { 1: [], 3: [], 5: [] };
+      const grouped = { 1: [], 3: [], 5: [], 10: [] };
       filteredList.forEach(t => { if (grouped[t.timer_type]) grouped[t.timer_type].push(t); });
 
       let html = '';
-      // If 'all' is selected for both filters, show the "Main" view (only 2 per category)
       const isDefaultView = filterMin === 'all' && filterEntry === 'all';
+      let hasResults = false;
 
-      for (const timer of [1, 3, 5]) {
+      for (const timer of [1, 3, 5, 10]) {
         let list = grouped[timer];
         if (!list.length) continue;
 
+        hasResults = true;
         if (isDefaultView) {
-          list = list.slice(0, 4); // Show 4 per timer category
+          list = list.slice(0, 4); 
         }
 
         html += `<div style="margin-bottom:32px;">
@@ -299,11 +300,15 @@
      </div>`;
       }
 
-      if (html === '') {
-        html = `<div style="text-align:center;padding:48px;color:var(--text-muted)">No tournaments match your filters.</div>`;
+      if (!hasResults) {
+        displayArea.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)">
+          <div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-filter"></i></div>
+          <div style="font-weight:600">No matching tournaments found</div>
+          <div style="font-size:12px;margin-top:6px">Try changing your filters</div>
+        </div>`;
+      } else {
+        displayArea.innerHTML = html;
       }
-
-      displayArea.innerHTML = html;
     }
 
     async function openEntry(id) {
