@@ -92,8 +92,9 @@ class TournamentManager {
                 if (tState.countdown <= 0) {
                     tState.status = 'LIVE';
                     tState.countdown = 2 * 60; // 2 minutes countdown in LIVE state
-                    // Update DB to live
-                    supabase.from('tournaments').update({ status: 'live' }).eq('id', tId).then();
+                    // Update DB to live and set new start_time for the next transition
+                    const nextStartTime = new Date(Date.now() + 2 * 60000).toISOString();
+                    supabase.from('tournaments').update({ status: 'live', start_time: nextStartTime }).eq('id', tId).then();
                     this.io.to(`tournament_${tId}`).emit('tournament_msg', { message: 'Tournament LIVE – Get Ready!' });
                 }
                 this.broadcastState(tId);
