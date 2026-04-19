@@ -209,7 +209,7 @@
 
     function createCardHTML(t) {
       const pct = Math.round((t.current_players / t.max_players) * 100);
-      const isJoined = t.players?.some(p => (p.user_id?.id || p.user_id) === user.id);
+      const isJoined = t.tournament_players?.some(p => (p.user_id?.id || p.user_id) === user.id);
       const canAfford = userBalance >= t.entry_fee;
       const formatName = t.timer_type === 5 ? 'Hybrid (100P)' : `Knockout (${t.max_players}P)`;
 
