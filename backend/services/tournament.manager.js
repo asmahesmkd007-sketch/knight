@@ -23,7 +23,7 @@ class TournamentManager {
             const { data: liveTourneys } = await supabase.from('tournaments')
                 .select('*')
                 .eq('type', 'paid')
-                .in('status', ['full', 'live']);
+                .in('status', ['full', 'live', 'starting', 'playing', 'rest']);
             
             if (!liveTourneys) return;
 
