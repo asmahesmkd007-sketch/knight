@@ -319,14 +319,12 @@
         sock.on(`tournament_sync_${tournamentId}`, (state) => {
              if (gameActive) return; 
              
-             if (state.status === 'full') {
-                  showLobby('Tournament FULL!', `Live countdown: ${fmt.countdown(state.countdown)}`, false, false);
-             } else if (state.status === 'live') {
-                  // The user wants a big "Start In" timer here.
-                  showLobby('Preparing Matches', `Tournament Arena is LIVE. Round 1 starting in ${fmt.countdown(state.countdown)}`, true, false);
-                  document.getElementById('status-title').innerHTML = `STARTING IN <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
+             if (state.status === 'going_live') {
+                  showLobby('Tournament FULL!', `Tournament is full. Preparing Arena...`, true, false);
+                  document.getElementById('status-title').innerHTML = `GOING LIVE IN <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
              } else if (state.status === 'starting') {
-                  showLobby('Starting Soon', `Prepare for battle! Brackets are generating...`, true, false);
+                  showLobby('Preparing Matches', `Brackets are generating...`, true, false);
+                  document.getElementById('status-title').innerHTML = `STARTING IN <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
              } else if (state.status.startsWith('round_') || state.status === 'final') {
                   const roundLabel = state.status.replace('_', ' ').toUpperCase();
                   showLobby(`${roundLabel} Ongoing`, `Waiting for your next pairing or round end.`, true, false);
@@ -513,13 +511,18 @@
       
       const won = data.winnerId === user.id;
       const isDraw = data.result === 'draw';
+      
+      // 🏆 DISPLAY HYBRID SCORES
+      const myPoints = myColor === 'white' ? data.p1_score : data.p2_score;
+      const oppPoints = myColor === 'white' ? data.p2_score : data.p1_score;
 
-      let msg = isDraw ? "Match Drawn." : (won ? "You Won! Moving to next stage." : "You Lost. Better luck next time.");
+      let msg = isDraw ? `Match Drawn. Points: ${myPoints}` : (won ? `You Won! Points: ${myPoints} vs ${oppPoints}` : `You Lost. Points: ${myPoints} vs ${oppPoints}`);
       
       if (data.reason === 'cheat_detected' && won) {
          msg = "Opponent Banned! You Won!";
       }
       
+      document.getElementById('my-score').textContent = `Points: ${myPoints}`;
       showLobby('Match Over', msg, false, false);
 
       setTimeout(() => {

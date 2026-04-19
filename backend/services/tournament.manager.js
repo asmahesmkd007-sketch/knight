@@ -28,18 +28,20 @@ class TournamentManager {
 
             for (const t of liveTourneys) {
                 if (!activeTourneys.has(t.id)) {
-                    // It's a new live tournament not yet picked up by the manager!
+                    // Fetch players sorted by created_at to maintain "Slot" order (1-16)
                     const { data: players } = await supabase.from('tournament_players')
                         .select('*, profiles(username, rank)')
-                        .eq('tournament_id', t.id);
+                        .eq('tournament_id', t.id)
+                        .order('created_at', { ascending: true });
                     
-                    const playersData = (players || []).map(p => ({
+                    const playersData = (players || []).map((p, index) => ({
                          user_id: p.user_id,
                          username: p.profiles?.username || 'Unknown',
                          rank: p.profiles?.rank || 'Bronze',
                          socketId: null,
                          points: 0,
-                         status: 'alive'
+                         status: 'alive',
+                         slot: index + 1 // Assign Slot 1-16
                     }));
 
                     this.startLiveTournament(t.id, playersData, t);
@@ -60,7 +62,7 @@ class TournamentManager {
             max: tData.max_players,
             timer: tData.timer_type,
             status: tData.status === 'full' ? 'going_live' : 'starting',
-            countdown: tData.status === 'full' ? 60 : 15, // 60s if full, 15s if live
+            countdown: tData.start_time ? Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000)) : (tData.status === 'full' ? 120 : 15),
             round: 0,
             matches: [],
             prize_pool: tData.prize_pool || 0
@@ -126,13 +128,18 @@ class TournamentManager {
         const phaseName = tState.players.length === 2 ? 'final' : (tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`);
         await supabase.from('tournaments').update({ phase: phaseName, status: 'live' }).eq('id', tState.id);
 
-        const pool = [...tState.players].sort(() => 0.5 - Math.random());
+        // SEQUENTIAL PAIRING (Slot 1 vs 2, 3 vs 4...)
+        // No random sorting anymore!
+        const pool = [...tState.players]; 
         while (pool.length >= 2) {
-            await this.setupMatch(pool.pop(), pool.pop(), tState);
+            const p1 = pool.shift();
+            const p2 = pool.shift();
+            await this.setupMatch(p1, p2, tState);
         }
 
         if (pool.length === 1) {
-            const pBye = pool.pop();
+            const pBye = pool.shift();
+            pBye.score = 999; // Automated win for bye
             if (pBye.socketId) this.io.to(pBye.socketId).emit('tournament_msg', { message: 'You got a BYE! Advancing to next round.' });
         }
         this.broadcastState(tState.id);
@@ -152,9 +159,10 @@ class TournamentManager {
         const match = {
             id: matchId, tournamentId: tState.id, roomId, status: 'playing',
             chess: new Chess(), turn: 'w',
-            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: p1.socketId },
-            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: p2.socketId },
-            winnerId: null
+            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: p1.socketId, score: 0 },
+            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: p2.socketId, score: 0 },
+            winnerId: null,
+            fen: 'start'
         };
         
         activeTournamentMatches.set(matchId, match);
@@ -173,27 +181,72 @@ class TournamentManager {
     }
 
     static processRoundResults(tState) {
-        const winners = new Set();
+        const winners = [];
+        
         tState.matches.forEach(m => {
-            if (m.winnerId) winners.add(m.winnerId);
-            else winners.add(Math.random() > 0.5 ? m.player1.userId : m.player2.userId); // Tiebreak
+            // Determine winner based on Hybrid Score (Points)
+            if (m.player1.score > m.player2.score) {
+                winners.push(tState.players.find(p => p.user_id === m.player1.userId));
+            } else if (m.player2.score > m.player1.score) {
+                winners.push(tState.players.find(p => p.user_id === m.player2.userId));
+            } else {
+                // Tiebreak: Checkmate winner or random if draw
+                if (m.winnerId) winners.push(tState.players.find(p => p.user_id === m.winnerId));
+                else winners.push(Math.random() > 0.5 ? tState.players.find(p => p.user_id === m.player1.userId) : tState.players.find(p => p.user_id === m.player2.userId));
+            }
         });
 
         // Add byes
         const playedIds = new Set();
         tState.matches.forEach(m => { playedIds.add(m.player1.userId); playedIds.add(m.player2.userId); });
-        tState.players.forEach(p => { if (!playedIds.has(p.user_id)) winners.add(p.user_id); });
+        tState.players.forEach(p => { 
+            if (!playedIds.has(p.user_id)) winners.push(p); 
+        });
 
-        tState.players = tState.players.filter(p => winners.has(p.user_id));
+        // Re-assign slots for next round based on arrival in winners list
+        tState.players = winners.map((p, idx) => ({ ...p, slot: idx + 1 }));
     }
 
     static async resolveMatch(matchId, result, winnerId, reason) {
         const match = activeTournamentMatches.get(matchId);
         if (!match) return;
+        
         match.status = 'finished';
         match.winnerId = winnerId;
-        this.io.to(match.roomId).emit('game_over', { result, winnerId, reason, fen: match.chess.fen() });
-        processMatchResult(matchId, result, winnerId, match.chess.fen()).catch(()=>{});
+        match.fen = match.chess.fen();
+
+        // 🏆 HYBRID SCORING CALCULATION
+        const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
+        const calculatePoints = (fen, color) => {
+            const board = fen.split(' ')[0];
+            let pts = 0;
+            const target = color === 'w' ? 'PRNBQ' : 'prnbq';
+            for (const char of board) {
+                if (target.includes(char)) pts += pieceValues[char.toLowerCase()];
+            }
+            return pts;
+        };
+
+        const p1Pieces = calculatePoints(match.fen, 'w');
+        const p2Pieces = calculatePoints(match.fen, 'b');
+
+        // Result Points: Win=10, Draw=5, Loss=0
+        let p1Result = 0, p2Result = 0;
+        if (result === 'player1_win') { p1Result = 10; p2Result = 0; }
+        else if (result === 'player2_win') { p1Result = 0; p2Result = 10; }
+        else { p1Result = 5; p2Result = 5; }
+
+        match.player1.score = p1Pieces + p1Result;
+        match.player2.score = p2Pieces + p2Result;
+
+        console.log(`Match ${matchId} resolved: P1(${match.player1.score}) vs P2(${match.player2.score})`);
+
+        this.io.to(match.roomId).emit('game_over', { 
+            result, winnerId, reason, fen: match.fen,
+            p1_score: match.player1.score, p2_score: match.player2.score 
+        });
+
+        processMatchResult(matchId, result, winnerId, match.fen).catch(()=>{});
         activeTournamentMatches.delete(matchId);
     }
 
@@ -206,7 +259,9 @@ class TournamentManager {
             const moveData = match.chess.move(moveSan);
             if (!moveData) return false;
             match.turn = match.chess.turn();
-            this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.chess.fen(), turn: match.turn });
+            match.fen = match.chess.fen();
+            this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.fen, turn: match.turn });
+            
             if (match.chess.isGameOver()) {
                 const result = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
                 const winnerId = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? match.player2.userId : match.player1.userId) : null;

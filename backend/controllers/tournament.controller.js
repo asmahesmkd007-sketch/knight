@@ -76,9 +76,17 @@ const joinTournament = async (req, res) => {
     
     const newCount = tournament.current_players + 1;
     let newStatus = 'upcoming';
-    if (newCount >= tournament.max_players) newStatus = 'full';
+    let updateData = { current_players: newCount };
+    
+    if (newCount >= tournament.max_players) {
+        newStatus = 'full';
+        updateData.status = 'full';
+        updateData.start_time = new Date(Date.now() + 120000).toISOString(); // 2 Minute Countdown starts now
+    } else {
+        updateData.status = 'upcoming';
+    }
 
-    await supabase.from('tournaments').update({ current_players: newCount, status: newStatus }).eq('id', req.params.id);
+    await supabase.from('tournaments').update(updateData).eq('id', req.params.id);
 
     res.json({ success: true, message: 'Joined successfully!' });
   } catch (err) {
