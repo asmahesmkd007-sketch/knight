@@ -301,13 +301,18 @@ class TournamentManager {
         activeTourneys.delete(tId);
     }
 
-    static broadcastState(tId) {
-        const tState = activeTourneys.get(tId);
+    static broadcastState(tournamentId) {
+        if (!this.io) return;
+        const tState = activeTourneys.get(tournamentId);
         if (!tState) return;
-        this.io.to(`tournament_${tId}`).emit(`tournament_sync_${tId}`, {
-             status: tState.status, countdown: tState.countdown,
-             round: tState.round, players_alive: tState.players.length, tr_id: tState.tr_id
-        });
+
+        // Emit to the specific room
+        this.io.to(`tournament_${tournamentId}`).emit(`tournament_sync_${tournamentId}`, tState);
+        
+        // Fallback: Global broadcast for critical state changes (starting, round_start)
+        if (['starting', 'rest'].includes(tState.status)) {
+            this.io.emit(`tournament_global_sync_${tournamentId}`, tState);
+        }
     }
 
     static rejoinMatch(socket, matchId, userId) {
