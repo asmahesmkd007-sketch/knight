@@ -311,12 +311,37 @@ class TournamentManager {
 
         const tIdStr = String(tournamentId);
 
+        // CREATE A CLEAN SERIALIZABLE STATE
+        const cleanState = {
+            id: tState.id,
+            tr_id: tState.tr_id,
+            status: tState.status,
+            countdown: tState.countdown,
+            round: tState.round,
+            players: tState.players.map(p => ({
+                user_id: p.user_id,
+                username: p.username,
+                rank: p.rank,
+                points: p.points,
+                status: p.status,
+                slot: p.slot
+            })),
+            matches: tState.matches.map(m => ({
+                id: m.id,
+                roomId: m.roomId,
+                status: m.status,
+                player1: { userId: m.player1.userId, time: m.player1.time, score: m.player1.score },
+                player2: { userId: m.player2.userId, time: m.player2.time, score: m.player2.score },
+                fen: m.fen
+            }))
+        };
+
         // Emit to the specific room
-        this.io.to(`tournament_${tIdStr}`).emit(`tournament_sync_${tIdStr}`, tState);
+        this.io.to(`tournament_${tIdStr}`).emit(`tournament_sync_${tIdStr}`, cleanState);
         
         // Fallback: Global broadcast for critical state changes
         if (['starting', 'rest'].includes(tState.status)) {
-            this.io.emit(`tournament_global_sync_${tIdStr}`, tState);
+            this.io.emit(`tournament_global_sync_${tIdStr}`, cleanState);
         }
     }
 
