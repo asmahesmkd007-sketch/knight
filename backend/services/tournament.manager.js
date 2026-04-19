@@ -99,7 +99,6 @@ class TournamentManager {
                 if (tState.countdown <= 0) {
                     this.nextRound(tState);
                 }
-                this.broadcastState(tId);
             } 
             else if (tState.status === 'playing') {
                 const allDone = tState.matches.every(m => m.status === 'finished');
@@ -107,9 +106,10 @@ class TournamentManager {
                     tState.status = 'rest';
                     tState.countdown = 15;
                     this.processRoundResults(tState);
-                    this.broadcastState(tId);
                 }
             }
+            // Always broadcast state every second to keep everyone synced!
+            this.broadcastState(tId);
         });
 
         // Tick Active Matches
