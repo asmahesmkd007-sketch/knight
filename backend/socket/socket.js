@@ -46,6 +46,9 @@ module.exports = (io) => {
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
       userSockets.get(userId).add(socket.id);
       
+      // Join user to their own private room for targeted events
+      socket.join(`user_${userId}`);
+
       // Force live info sync to client directly once authenticated successfully
       broadcastLiveInfo(io);
       socket.emit('live_info', { online_users: userSockets.size, active_matches: activeGames.size });

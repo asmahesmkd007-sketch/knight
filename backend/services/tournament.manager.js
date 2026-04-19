@@ -10,26 +10,33 @@ const activeTournamentMatches = new Map();
 class TournamentManager {
     static init(io, userToSocket) {
         this.io = io;
+<<<<<<< HEAD
         this.userToSocket = userToSocket;
         // Check every second for advancing timers and states inside activeTourneys
+=======
+        // Check every second for advancing timers and states
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
         setInterval(() => this.tick(), 1000);
-        // Check every 10 seconds for new tournaments transitioning to live
-        setInterval(() => this.pollLiveTournaments(), 10000);
+        // Poll for tournaments transitioning states in DB
+        setInterval(() => this.pollTournaments(), 5000);
     }
 
-    static async pollLiveTournaments() {
+    static async pollTournaments() {
         try {
-            // Find paid tournaments that are 'live'
-            const { data: liveTourneys } = await supabase.from('tournaments')
+            // Pick up tournaments that are 'full' or 'live' but not in memory
+            const { data: tourneys } = await supabase.from('tournaments')
                 .select('*')
                 .eq('type', 'paid')
+<<<<<<< HEAD
                 .in('status', ['full', 'live', 'starting', 'playing', 'rest']);
+=======
+                .in('phase', ['full', 'live', 'starting', 'round_1', 'round_2', 'round_3', 'final']);
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
             
-            if (!liveTourneys) return;
+            if (!tourneys) return;
 
-            for (const t of liveTourneys) {
+            for (const t of tourneys) {
                 if (!activeTourneys.has(t.id)) {
-                    // It's a new live tournament not yet picked up by the manager!
                     // Load players
                     const { data: players } = await supabase.from('tournament_players')
                         .select('*, profiles(username, rank)')
@@ -39,18 +46,25 @@ class TournamentManager {
                          user_id: p.user_id,
                          username: p.profiles?.username || 'Unknown',
                          rank: p.profiles?.rank || 'Bronze',
-                         socketId: null // They must reconnect to update this!
+                         socketId: null,
+                         status: p.status // 'active' or 'eliminated'
                     }));
 
+<<<<<<< HEAD
                     await this.startLiveTournament(t.id, playersData, t);
                     console.log(`🚀 TournamentManager picked up and RECOVERED Live TR: ${t.id} (${playersData.length} players)`);
+=======
+                    this.initializeActiveTournament(t.id, playersData, t);
+                    console.log(`🚀 TournamentManager picked up TR: ${t.id} (${t.phase})`);
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
                 }
             }
         } catch(e) {
-            console.error('pollLiveTournaments err:', e);
+            console.error('pollTournaments err:', e);
         }
     }
 
+<<<<<<< HEAD
     static async startLiveTournament(tournamentId, playersData, tData) {
         // format configuration
         const tState = {
@@ -66,19 +80,28 @@ class TournamentManager {
             prize_first: tData.prize_first || 0,
             prize_second: tData.prize_second || 0,
             prize_third: tData.prize_third || 0
+=======
+    static initializeActiveTournament(tournamentId, playersData, tData) {
+        const tState = {
+            id: tournamentId,
+            players: playersData.filter(p => p.status === 'active'),
+            allPlayers: playersData,
+            max: tData.max_players,
+            timer: tData.timer_type,
+            status: tData.phase, // 'full', 'live', 'starting', 'round_1', etc.
+            countdown: 0,
+            round: 0,
+            matches: [],
+            prize_pool: tData.prize_pool || 0
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
         };
-        
-        // initialize points
-        tState.players.forEach(p => p.points = 0);
-        tState.allPlayers.forEach(p => p.points = 0);
 
-        // Join players to tournament room
-        playersData.forEach(p => {
-          if (p.socketId) {
-            const s = this.io.sockets.sockets.get(p.socketId);
-            if (s) s.join(`tournament_${tournamentId}`);
-          }
-        });
+        // Initialize countdowns based on pickup phase
+        if (tState.status === 'full') {
+            tState.countdown = 2 * 60; // 2 min to LIVE
+        } else if (tState.status === 'live') {
+            tState.countdown = 5 * 60; // 5 min to STARTING
+        }
 
         // If it's already playing, recover matches from DB
         if (['starting', 'playing', 'rest'].includes(tState.status)) {
@@ -107,6 +130,7 @@ class TournamentManager {
 
     static tick() {
         activeTourneys.forEach((tState, tId) => {
+<<<<<<< HEAD
             if (tState.status === 'FULL') {
                 tState.countdown--;
                 if (tState.countdown <= 0) {
@@ -145,31 +169,69 @@ class TournamentManager {
                 }
             }
             else if (tState.status === 'rest') {
+=======
+            // 1. Lifecycle Management
+            if (tState.status === 'full') {
                 tState.countdown--;
                 if (tState.countdown <= 0) {
+                    this.transitionToLive(tState);
+                }
+            } 
+            else if (tState.status === 'live') {
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
+                tState.countdown--;
+                if (tState.countdown <= 0) {
+                    this.transitionToStarting(tState);
+                }
+            }
+            else if (tState.status === 'starting') {
+                // Wait for players to freeze and matches to generate
+                this.transitionToRound(tState, 1);
+            }
+            else if (tState.status.startsWith('round_') || tState.status === 'final') {
+                // Check if all matches in current round are finished
+                const allDone = tState.matches.every(m => m.status === 'finished');
+                if (allDone && tState.matches.length > 0) {
+                    this.processRoundEnd(tState);
+                }
+            }
+            else if (tState.status === 'rest') {
+                tState.countdown--;
+                if (tState.countdown <= 0) {
+                    const nextRound = tState.round + 1;
                     if (tState.players.length <= 1) {
                         this.finishTournament(tId, tState);
                     } else {
+<<<<<<< HEAD
                         tState.round++;
                         tState.status = 'playing';
                         this.createRoundMatches(tState).catch(console.error);
+=======
+                        this.transitionToRound(tState, nextRound);
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
                     }
-                } else if (tState.countdown <= 5) {
-                    this.broadcastState(tId);
                 }
+            }
+
+            // Broadcast every 5s or when close to transition
+            if (tState.countdown % 5 === 0 || tState.countdown <= 10) {
+                this.broadcastState(tId);
             }
         });
 
-        // Tick Active Matches explicitly (Decoupled from standard `match_found` random logic)
+        // 2. Active Match Timers (Server-Authoritative)
         activeTournamentMatches.forEach((match, matchId) => {
             if (match.status !== 'playing') return;
 
-            // Strict server timer minus
             if (match.turn === 'w') match.player1.time--;
             else match.player2.time--;
 
+            // Sync timers every 5s or when low
             if (match.player1.time % 5 === 0 || match.player1.time <= 10 || match.player2.time <= 10) {
-                this.io.to(match.roomId).emit('timer_update', { white_time: match.player1.time, black_time: match.player2.time });
+                this.io.to(match.roomId).emit('timer_update', { 
+                    white_time: Math.max(0, match.player1.time), 
+                    black_time: Math.max(0, match.player2.time) 
+                });
             }
 
             if (match.player1.time <= 0 || match.player2.time <= 0) {
@@ -180,23 +242,21 @@ class TournamentManager {
         });
     }
 
-    static async transitionInitialRound(tState) {
-        tState.round = 1;
-        await this.createRoundMatches(tState);
+    static async transitionToLive(tState) {
+        tState.status = 'live';
+        tState.countdown = 5 * 60; // 5 minutes to STARTING
+        await supabase.from('tournaments').update({ status: 'live', phase: 'live' }).eq('id', tState.id);
+        this.io.to(`tournament_${tState.id}`).emit('tournament_msg', { message: 'Tournament is now LIVE! Starting in 5 minutes.' });
+        this.broadcastState(tState.id);
     }
 
-    static processHybridLeaderboard(tState) {
-        // Sort remaining players by points!
-        tState.players.sort((a,b) => b.points - a.points);
-        const top16 = tState.players.slice(0, 16);
-        const eliminated = tState.players.slice(16);
-        
-        eliminated.forEach(p => { p.status = 'eliminated'; this.notifyEliminated(p, tState); });
-        
-        // Retain only top 16 for standard knockout!
-        tState.players = top16;
+    static async transitionToStarting(tState) {
+        tState.status = 'starting';
+        await supabase.from('tournaments').update({ phase: 'starting' }).eq('id', tState.id);
+        this.broadcastState(tState.id);
     }
 
+<<<<<<< HEAD
     static processKnockoutResults(tState) {
         // Everyone who lost the match is eliminated
         const advanced = [];
@@ -259,6 +319,16 @@ class TournamentManager {
         supabase.from('tournaments').update({ end_time: endTime }).eq('id', tState.id).then();
 
         // Random pairing
+=======
+    static async transitionToRound(tState, roundNum) {
+        tState.round = roundNum;
+        tState.status = roundNum === 4 ? 'final' : `round_${roundNum}`;
+        tState.matches = [];
+        
+        await supabase.from('tournaments').update({ phase: tState.status }).eq('id', tState.id);
+
+        // Fresh Shuffle Each Round
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
         const pool = [...tState.players];
         pool.sort(() => 0.5 - Math.random());
 
@@ -268,17 +338,16 @@ class TournamentManager {
             await this.setupMatch(p1, p2, tState);
         }
 
-        // Handle bye if pool.length == 1
+        // Handle bye
         if (pool.length === 1) {
             const pBye = pool.pop();
-            this.io.to(pBye.socketId).emit('tournament_msg', { message: 'You got a BYE this round! Sit tight.' });
+            this.io.to(`tournament_${tState.id}`).emit('tournament_msg', { message: `${pBye.username} gets a BYE this round!` });
         }
         
         this.broadcastState(tState.id);
     }
 
     static async setupMatch(p1, p2, tState) {
-        // Save legitimately to database so stats don't silent fail
         const { data: dbMatch, error } = await supabase.from('matches').insert({
             player1_id: p1.user_id,
             player2_id: p2.user_id,
@@ -290,10 +359,7 @@ class TournamentManager {
             start_time: new Date().toISOString()
         }).select().single();
 
-        if (error || !dbMatch) {
-            console.error('Failed to create DB match for Tournament:', error);
-            return;
-        }
+        if (error || !dbMatch) return;
 
         const matchId = `tr_${tState.id}_${p1.user_id.slice(0, 4)}_${p2.user_id.slice(0, 4)}`;
         const roomId = `match_${matchId}`;
@@ -306,15 +372,21 @@ class TournamentManager {
             round: tState.round,
             chess: new Chess(),
             turn: 'w',
+<<<<<<< HEAD
             player1: { userId: p1.user_id, username: p1.username, time: tState.timer * 60, socketId: sid1 },
             player2: { userId: p2.user_id, username: p2.username, time: tState.timer * 60, socketId: sid2 },
             status: 'playing',
+=======
+            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: p1.socketId, username: p1.username },
+            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: p2.socketId, username: p2.username },
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
             winnerId: null
         };
 
         tState.matches.push(match);
         activeTournamentMatches.set(matchId, match);
 
+<<<<<<< HEAD
         // [LOG] MATCH STARTED
         console.log(`[DEBUG] MATCH STARTED: ${matchId} | ${p1.username} vs ${p2.username}`);
 
@@ -355,6 +427,53 @@ class TournamentManager {
         if (sid2) {
             this.io.to(sid2).emit('match_start', { ...eventData, color: 'black', opponent: p1 });
         }
+=======
+        // Notify players
+        this.io.to(`user_${p1.user_id}`).emit('match_found_tr', { 
+            matchId, roomId, color: 'white', opponent: p2, duration: tState.timer * 60, round: tState.round 
+        });
+        this.io.to(`user_${p2.user_id}`).emit('match_found_tr', { 
+            matchId, roomId, color: 'black', opponent: p1, duration: tState.timer * 60, round: tState.round 
+        });
+    }
+
+    static processRoundEnd(tState) {
+        const advanced = [];
+        const eliminated = [];
+
+        tState.matches.forEach(m => {
+            const winnerId = m.winnerId;
+            const loserId = m.player1.userId === winnerId ? m.player2.userId : m.player1.userId;
+            
+            const winner = tState.players.find(p => p.user_id === winnerId);
+            const loser = tState.players.find(p => p.user_id === loserId);
+
+            if (winner) advanced.push(winner);
+            if (loser) {
+                loser.status = 'eliminated';
+                eliminated.push(loser);
+            }
+        });
+
+        // Add byes to advanced
+        tState.players.forEach(p => {
+            const played = tState.matches.some(m => m.player1.userId === p.user_id || m.player2.userId === p.user_id);
+            if (!played && p.status === 'active') {
+                advanced.push(p);
+            }
+        });
+
+        // Update DB statuses
+        eliminated.forEach(async p => {
+            await supabase.from('tournament_players').update({ status: 'eliminated' }).eq('tournament_id', tState.id).eq('user_id', p.user_id);
+            this.io.to(`user_${p.user_id}`).emit('tournament_eliminated', { message: 'Eliminated from tournament.' });
+        });
+
+        tState.players = advanced;
+        tState.status = 'rest';
+        tState.countdown = 15; // 15s Round Gap
+        this.broadcastState(tState.id);
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
     }
 
     static handleMove(userId, matchId, moveSan) {
@@ -370,18 +489,13 @@ class TournamentManager {
             if (!moveData) return false;
 
             match.turn = match.chess.turn();
-
-            // Handle points accumulation for Type 3 Hybrid Qualifiers
-            const tState = activeTourneys.get(match.tournamentId);
-            if (tState && tState.timer === 5 && tState.round === 1 && tState.max === 100) {
-                if (moveData.captured) {
-                    const pts = { 'p': 1, 'n': 2, 'b': 2, 'r': 2, 'q': 5 }[moveData.captured] || 0;
-                    const capturer = tState.players.find(p => p.user_id === userId);
-                    if (capturer) capturer.points += pts;
-                }
-            }
-
-            this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.chess.fen(), turn: match.turn });
+            this.io.to(match.roomId).emit('move_made', { 
+                move: moveData, 
+                fen: match.chess.fen(), 
+                turn: match.turn,
+                white_time: match.player1.time,
+                black_time: match.player2.time
+            });
 
             if (match.chess.isGameOver()) {
                 let result = 'draw';
@@ -392,61 +506,31 @@ class TournamentManager {
                 }
                 this.resolveMatch(matchId, result, winnerId, 'board');
             }
-
             return true;
         } catch(e) { return false; }
     }
 
     static resolveMatch(matchId, result, winnerId, reason) {
         const match = activeTournamentMatches.get(matchId);
-        if (!match) return;
+        if (!match || match.status === 'finished') return;
 
         match.status = 'finished';
         match.winnerId = winnerId;
         
-        // Apply Win/Draw points for Hybrid Qualifiers
-        const tState = activeTourneys.get(match.tournamentId);
-        if (tState && tState.timer === 5 && tState.round === 1 && tState.max === 100) {
-             const p1 = tState.players.find(p => p.user_id === match.player1.userId);
-             const p2 = tState.players.find(p => p.user_id === match.player2.userId);
-             if (winnerId) {
-                  const winner = winnerId === p1?.user_id ? p1 : p2;
-                  if (winner) winner.points += 10;
-             } else {
-                  if (p1) p1.points += 5;
-                  if (p2) p2.points += 5;
-             }
-         }
-
         this.io.to(match.roomId).emit('game_over', { result, winnerId, reason, fen: match.chess.fen() });
-        // processMatchResult DB persist happens asynchronously
         processMatchResult(matchId, result, winnerId, match.chess.fen()).catch(()=>{});
-        
         activeTournamentMatches.delete(matchId);
     }
 
     static async finishTournament(tId, tState) {
         tState.status = 'completed';
-        this.broadcastState(tId);
+        await supabase.from('tournaments').update({ status: 'completed', phase: 'completed' }).eq('id', tId);
         
-        // Save to DB
-        await supabase.from('tournaments').update({ status: 'completed' }).eq('id', tId);
-
-        // Calculate and Distribute Prizes 
-        // Logic heavily relies on tState.prize_cfg ('top3', 'top6', 'top16')
-        const winner = tState.players[0]; // If there's 1 left, that's the ultimate winner
-        
+        const winner = tState.players[0];
         if (winner) {
-            console.log(`Tournament ${tId} Won by ${winner.user_id}! Distributing prizes.`);
+            console.log(`🏆 Tournament ${tId} Won by ${winner.user_id}!`);
             const { data: tData } = await supabase.from('tournaments').select('*').eq('id', tId).single();
             if (tData) {
-                // Sync points to DB before distributing prizes
-                for (const p of tState.allPlayers) {
-                  await supabase.from('tournament_players')
-                    .update({ score: p.points || 0 })
-                    .eq('tournament_id', tId)
-                    .eq('user_id', p.user_id);
-                }
                 const { distributeTournamentPrizes } = require('../controllers/tournament.controller');
                 await distributeTournamentPrizes(tData);
 
@@ -470,7 +554,7 @@ class TournamentManager {
                 }
             }
         }
-
+        this.broadcastState(tId);
         activeTourneys.delete(tId);
     }
 
@@ -489,7 +573,7 @@ class TournamentManager {
 
         this.io.to(`tournament_${tId}`).emit(`tournament_sync_${tId}`, {
              status: tState.status,
-             countdown: tState.countdown,
+             countdown: Math.max(0, tState.countdown),
              round: tState.round,
              players_alive: tState.players.length,
              matches: syncMatches,
@@ -497,6 +581,7 @@ class TournamentManager {
         });
     }
 
+<<<<<<< HEAD
     static notifyEliminated(player, tState) {
         // Use the userToSocket mapping passed during init
         const sid = this.userToSocket ? this.userToSocket.get(player.user_id) : null;
@@ -528,6 +613,25 @@ class TournamentManager {
             white_time: match.player1.time,
             black_time: match.player2.time,
             status: match.status
+=======
+    static rejoinMatch(socket, matchId, userId) {
+        const match = activeTournamentMatches.get(matchId);
+        if (!match) return false;
+        
+        if (match.player1.userId === userId) { match.player1.socketId = socket.id; }
+        else if (match.player2.userId === userId) { match.player2.socketId = socket.id; }
+        else return false;
+
+        socket.join(match.roomId);
+        socket.emit('match_rejoined', { 
+            roomId: match.roomId,
+            fen: match.chess.fen(), 
+            turn: match.turn,
+            white_time: match.player1.time,
+            black_time: match.player2.time,
+            color: match.player1.userId === userId ? 'white' : 'black',
+            opponent: match.player1.userId === userId ? { user_id: match.player2.userId, username: match.player2.username } : { user_id: match.player1.userId, username: match.player1.username }
+>>>>>>> 726a883 (feat: upgrade paid tournament to 1-min knockout with automated lifecycle and prize distribution)
         });
         
         console.log(`[DEBUG] REJOINED: User ${userId} recovered match ${matchId}`);
