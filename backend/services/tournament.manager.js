@@ -201,7 +201,21 @@ class TournamentManager {
             }
         });
 
-        eliminated.forEach(p => { p.status = 'eliminated'; this.notifyEliminated(p, tState); });
+        eliminated.forEach(p => { 
+            p.status = 'eliminated'; 
+            this.notifyEliminated(p, tState); 
+        });
+
+        // Increment score for winners to reflect their progress on the leaderboard
+        advanced.forEach(p => {
+            p.score = (p.score || 0) + 1;
+            // Update score in DB too
+            supabase.from('tournament_players')
+                .update({ score: p.score })
+                .eq('tournament_id', tState.id)
+                .eq('user_id', p.user_id)
+                .then();
+        });
         
         // Wait, what if someone had a bye (no opponent)?
         const advancedIds = new Set(advanced.map(p => p.user_id));
@@ -432,13 +446,16 @@ class TournamentManager {
              countdown: tState.countdown,
              round: tState.round,
              players_alive: tState.players.length,
-             matches: syncMatches
+             matches: syncMatches,
+             players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, score: p.score }))
         });
     }
 
     static notifyEliminated(player, tState) {
-        if (!player.socketId) return;
-        this.io.to(player.socketId).emit('tournament_eliminated', {
+        const { userToSocket } = require('../socket/socket');
+        const sid = this.userToSocket ? this.userToSocket.get(player.user_id) : null;
+        if (!sid) return;
+        this.io.to(sid).emit('tournament_eliminated', {
             message: 'You have been eliminated.'
         });
     }

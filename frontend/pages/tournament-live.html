@@ -379,19 +379,20 @@
 
       sock.on(`tournament_sync_${tournamentId}`, (state) => {
         if (gameActive) return; // Don't disrupt active gameplay UI 
-
         if (state.status === 'FULL') {
           showLobby('Tournament FULL', `Starting in ${fmt.countdown(state.countdown)}`, false, false);
         } else if (state.status === 'LIVE') {
           showLobby('Tournament LIVE', `Matchmaking starts in ${fmt.countdown(state.countdown)}`, true, false);
-        } else if (state.status === 'STARTING') {
+        } else if (state.status === 'starting') {
           showLobby('Starting Matches...', 'Preparing Round 1 brackets.', true, false);
         } else if (state.status === 'playing') {
           showLobby(`Round ${state.round} Ongoing`, `Matches are currently being played. Waiting for your slot or round completion.`, true, false);
           if (state.matches) renderBracket(state.matches);
+          if (state.players) renderLeaderboard(state.players); // Live Leaderboard Update
         } else if (state.status === 'rest') {
           showLobby(`Round Finished`, `Awesome! Next round brackets generating in ${state.countdown}s`, false, false);
           if (state.matches) renderBracket(state.matches);
+          if (state.players) renderLeaderboard(state.players); // Live Leaderboard Update
         } else if (state.status === 'completed') {
           if (globalCountdownInterval) clearInterval(globalCountdownInterval);
           showLobby('Tournament Ended', 'All rounds completed! Checking results...', false);
@@ -454,8 +455,8 @@
 
       const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
       const html = sorted.map((p, i) => {
-        const name = p.profiles?.username || 'Player';
-        const isMe = p.user_id === user.id;
+        const name = p.username || p.profiles?.username || 'Player';
+        const isMe = (p.user_id?.id || p.user_id) === user.id;
         return `
           <div class="leaderboard-row ${isMe ? 'me' : ''}" >
             <div class="rank-num ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''}">${i + 1}</div>
