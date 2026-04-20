@@ -297,7 +297,9 @@
         return;
       }
 
-      startGlobalTimer();
+      if (tournamentConfig.status === 'upcoming') {
+          startGlobalTimer();
+      }
       refreshLeaderboard();
 
       if (tournamentConfig.type === 'paid') {
@@ -367,9 +369,15 @@
         });
 
         sock.on('tr_timer', (data) => {
-             document.getElementById('global-timer').textContent = fmt.countdown(data.countdown);
-             if (document.getElementById('status-title').innerHTML.includes('STARTING IN')) {
-                  document.getElementById('status-title').innerHTML = `STARTING IN: <span style="color:var(--gold)">${fmt.countdown(data.countdown)}</span>`;
+             const timeStr = fmt.countdown(data.countdown);
+             document.getElementById('global-timer').textContent = timeStr;
+             
+             const statusTitle = document.getElementById('status-title');
+             if (statusTitle.innerHTML.includes('STARTING IN')) {
+                  statusTitle.innerHTML = `STARTING IN: <span style="color:var(--gold)">${timeStr}</span>`;
+             } else if (statusTitle.innerHTML.includes('In Progress')) {
+                  // Optional: Update board overlay with tournament time too? 
+                  // For now keep it clean
              }
         });
 

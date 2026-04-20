@@ -126,21 +126,28 @@ class TournamentManager {
                     
                     if (tState.countdown <= 0 && !tState.nextRoundPending) {
                         tState.nextRoundPending = true;
-                        console.log(`🎮 TR-${tState.tr_id} Lobby ends. Starting Round 1.`);
                         tState.phase = 'round_1';
                         tState.round = 1;
+                        tState.countdown = 600; // 10 minute overall tournament timer
                         this.nextRound(tState).finally(() => tState.nextRoundPending = false);
                     }
                     if (tState.countdown % 10 === 0) this.broadcastState(tId);
                 } 
-                else if (tState.matches.length > 0) {
-                    const allDone = tState.matches.every(m => m.status === 'finished');
-                    if (allDone && !tState.nextRoundPending) {
-                        console.log(`🏁 TR-${tState.tr_id} Round ${tState.round} finished.`);
-                        tState.status = 'rest';
-                        tState.countdown = 15;
-                        this.processRoundResults(tState);
-                        this.broadcastState(tId);
+                else {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                    if (tState.countdown <= 0) {
+                         // Fail-safe: Tournament took too long (10 mins)
+                         // this.finishTournament(tId, tState);
+                    }
+                    if (tState.matches.length > 0) {
+                        const allDone = tState.matches.every(m => m.status === 'finished');
+                        if (allDone && !tState.nextRoundPending) {
+                            tState.status = 'rest';
+                            tState.countdown = 15;
+                            this.processRoundResults(tState);
+                            this.broadcastState(tId);
+                        }
                     }
                 }
             }
