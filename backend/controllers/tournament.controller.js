@@ -122,7 +122,7 @@ const joinTournament = async (req, res) => {
     
     if (countErr) console.error('Count error:', countErr);
     
-    const finalCount = actualCount || (tournament.current_players + 1);
+    const finalCount = (actualCount !== null && actualCount !== undefined) ? actualCount : (tournament.current_players + 1);
     let updateData = { current_players: finalCount };
     
     // CHECK IF FULL (16/16) → Trigger LOCKED
