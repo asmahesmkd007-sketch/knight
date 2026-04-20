@@ -14,6 +14,30 @@ class TournamentManager {
 
     static async pollLiveTournaments() {
         try {
+            // SELF-HEALING: Detect and fix stuck 'upcoming' tournaments that are actually full
+            const { data: upcomingPaid } = await supabase.from('tournaments')
+                .select('id, tr_id, status, max_players').eq('type', 'paid').eq('status', 'upcoming');
+            
+            if (upcomingPaid) {
+                for (const ut of upcomingPaid) {
+                    const { count } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', ut.id);
+                    if (count >= (ut.max_players || 16)) {
+                        console.log(`🔧 Self-healing TR-${ut.tr_id}: Forcing LOCKED (Actual count: ${count})`);
+                        // Set current_players to exactly 16 for consistency
+                        await supabase.from('tournaments').update({ 
+                            status: 'locked', 
+                            current_players: 16,
+                            start_time: new Date(Date.now() + 5000).toISOString() 
+                        }).eq('id', ut.id);
+                        
+                        const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+                        autoCreatePaidTournaments().catch(()=>{});
+
+                        this.pickupTournament(ut.id).catch(()=>{});
+                    }
+                }
+            }
+
             const { data: tourneys } = await supabase.from('tournaments')
                 .select('*').eq('type', 'paid')
                 .in('status', ['full', 'locked', 'starting', 'playing']);
@@ -21,25 +45,30 @@ class TournamentManager {
 
             for (const t of tourneys) {
                 if (activeTourneys.has(t.id)) continue;
-
-                let { data: players } = await supabase.from('tournament_players')
-                    .select('*, profiles(username, rank)').eq('tournament_id', t.id);
-                if (!players || players.length === 0) {
-                    await new Promise(r => setTimeout(r, 2000));
-                    const retry = await supabase.from('tournament_players')
-                        .select('*, profiles(username, rank)').eq('tournament_id', t.id);
-                    players = retry.data;
-                }
-                if (!players || players.length === 0) continue;
-
-                const playersData = players.map((p, i) => ({
-                    user_id: p.user_id, username: p.profiles?.username || 'Unknown',
-                    rank: p.profiles?.rank || 'Bronze', points: 0, status: 'alive', slot: i + 1
-                }));
-                console.log(`✅ Picked up TR-${t.tr_id} with ${playersData.length} players`);
-                this.startTournament(t.id, playersData, t);
+                await this.pickupTournament(t.id);
             }
         } catch(e) { console.error('pollLiveTournaments err:', e); }
+    }
+
+    static async pickupTournament(tournamentId) {
+        if (activeTourneys.has(tournamentId)) return;
+        
+        const { data: t } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
+        if (!t || !['locked', 'starting', 'playing', 'full'].includes(t.status)) return;
+
+        let { data: players } = await supabase.from('tournament_players')
+            .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
+            .order('created_at', { ascending: true }) // Take first 16 by join time
+            .limit(16);
+        
+        if (!players || players.length === 0) return;
+
+        const playersData = players.map((p, i) => ({
+            user_id: p.user_id, username: p.profiles?.username || 'Unknown',
+            rank: p.profiles?.rank || 'Bronze', score: 0, status: 'alive', slot: i + 1
+        }));
+
+        this.startTournament(tournamentId, playersData, t);
     }
 
     static startTournament(tournamentId, playersData, tData) {
@@ -165,11 +194,13 @@ class TournamentManager {
             if (s1.size > 0 && s2.size > 0) {
                 await this.setupMatch(p1, p2, tState);
             } else if (s1.size > 0 && s2.size === 0) {
-                p1.points += 15; // Auto-win points
+                p1.score += 15; // Auto-win score
                 console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p1.username} (Opponent ${p2.username} absent)`);
+                supabase.from('tournament_players').update({ score: p1.score }).eq('tournament_id', tState.id).eq('user_id', p1.user_id).then(()=>{});
             } else if (s1.size === 0 && s2.size > 0) {
-                p2.points += 15;
+                p2.score += 15;
                 console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p2.username} (Opponent ${p1.username} absent)`);
+                supabase.from('tournament_players').update({ score: p2.score }).eq('tournament_id', tState.id).eq('user_id', p2.user_id).then(()=>{});
             } else {
                 console.log(`❌ Double No-Show TR-${tState.tr_id}: ${p1.username} & ${p2.username}`);
             }
@@ -251,7 +282,7 @@ class TournamentManager {
             if (!matchedIds.has(p.user_id)) {
                 // Check if online (auto-win recipients stay, absent get eliminated)
                 const online = (userSockets.get(p.user_id) || new Set()).size > 0;
-                if (online || p.points > 0) winners.push(p);
+                if (online || p.score > 0) winners.push(p);
             }
         });
 
@@ -274,12 +305,17 @@ class TournamentManager {
             return pts;
         };
 
-        const p1P = calcPieces(match.fen, 'w'), p2P = calcPieces(match.fen, 'b');
+        const p1Pts = calcPieces(match.fen, 'w'), p2Pts = calcPieces(match.fen, 'b');
         let p1R = 0, p2R = 0;
         if (result === 'player1_win') p1R = 10; else if (result === 'player2_win') p2R = 10; else { p1R = 5; p2R = 5; }
-        match.player1.score = p1P + p1R;
-        match.player2.score = p2P + p2R;
+        match.player1.score += p1Pts + p1R;
+        match.player2.score += p2Pts + p2R;
 
+        // Sync to DB for Admin/Prize distribution
+        supabase.from('tournament_players').update({ score: match.player1.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player1.userId).then(()=>{});
+        supabase.from('tournament_players').update({ score: match.player2.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player2.userId).then(()=>{});
+
+        this.broadcastState(match.tournamentId);
         this.io.to(match.roomId).emit('game_over', {
             result, winnerId, reason, fen: match.fen,
             p1_score: match.player1.score, p2_score: match.player2.score
@@ -326,7 +362,7 @@ class TournamentManager {
         const cleanState = {
             id: tState.id, tr_id: tState.tr_id, status: tState.status,
             countdown: tState.countdown, round: tState.round,
-            players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, points: p.points, status: p.status, slot: p.slot })),
+            players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, score: p.score, status: p.status, slot: p.slot })),
             matches: tState.matches.map(m => ({
                 id: m.id, roomId: m.roomId, status: m.status,
                 player1: { userId: m.player1.userId, time: m.player1.time, score: m.player1.score },

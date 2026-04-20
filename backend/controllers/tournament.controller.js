@@ -81,6 +81,14 @@ const joinTournament = async (req, res) => {
     const { data: already } = await supabase.from('tournament_players').select('id').eq('tournament_id', req.params.id).eq('user_id', req.user.id).maybeSingle();
     if (already) return res.status(400).json({ success: false, message: 'Already joined.' });
 
+    // FRESH COUNT CHECK (to prevent race conditions)
+    const { count: currentCount } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', req.params.id);
+    if (currentCount >= (tournament.max_players || 16)) {
+        // Auto-lock if it somehow stayed 'upcoming'
+        await supabase.from('tournaments').update({ status: 'locked' }).eq('id', req.params.id);
+        return res.status(400).json({ success: false, message: 'Tournament is full.' });
+    }
+
     // PAID TOURNAMENT: Coin LOCK system
     if (tournament.type === 'paid') {
       // KYC check
@@ -101,25 +109,36 @@ const joinTournament = async (req, res) => {
     }
 
     // Add player to tournament
-    await supabase.from('tournament_players').insert({ tournament_id: req.params.id, user_id: req.user.id });
+    const { error: insErr } = await supabase.from('tournament_players').insert({ tournament_id: req.params.id, user_id: req.user.id });
+    if (insErr) {
+        console.error('Join insert error:', insErr);
+        return res.status(500).json({ success: false, message: 'Failed to join.' });
+    }
     
-    const newCount = tournament.current_players + 1;
-    let updateData = { current_players: newCount };
+    // FETCH ACCURATE COUNT from tournament_players to avoid race conditions
+    const { count: actualCount, error: countErr } = await supabase.from('tournament_players')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', req.params.id);
+    
+    if (countErr) console.error('Count error:', countErr);
+    
+    const finalCount = actualCount || (tournament.current_players + 1);
+    let updateData = { current_players: finalCount };
     
     // CHECK IF FULL (16/16) → Trigger LOCKED
-    if (newCount >= tournament.max_players) {
+    if (finalCount >= tournament.max_players) {
         updateData.status = 'locked';
         // Set start_time to now + 2 minutes (LOCKED duration)
         updateData.start_time = new Date(Date.now() + 2 * 60 * 1000).toISOString();
-        console.log(`🔒 TR-${tournament.tr_id} is FULL (${newCount}/${tournament.max_players}). Starting LOCKED countdown.`);
+        console.log(`🔒 TR-${tournament.tr_id} is FULL (${finalCount}/${tournament.max_players}). Starting LOCKED countdown.`);
     }
 
     await supabase.from('tournaments').update(updateData).eq('id', req.params.id);
 
     // Wake up TournamentManager to pickup the FULL tournament
-    if (newCount >= tournament.max_players) {
+    if (finalCount >= tournament.max_players) {
       const TournamentManager = require('../services/tournament.manager');
-      TournamentManager.pollLiveTournaments().catch(()=>{});
+      TournamentManager.pickupTournament(req.params.id).catch(()=>{});
       
       // Auto-create replacement tournament for same entry fee
       autoCreatePaidTournaments().catch(()=>{});
