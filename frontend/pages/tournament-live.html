@@ -283,8 +283,12 @@
       // Initialize Empty Board immediately
       if (!board) {
         board = Chessboard('board', {
+          draggable: true,
           position: 'start',
           pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+          onDragStart: onDragStart,
+          onDrop: onDrop,
+          onSnapEnd: () => board.position(chess.fen())
         });
       }
 
@@ -479,7 +483,7 @@
       } else {
         board.orientation(myColor);
         board.position(chess.fen());
-        board.start(); // Ensure it's active
+        // board.start() removed - it incorrectly resets position to 'start'
       }
 
       startMatchTimer();
