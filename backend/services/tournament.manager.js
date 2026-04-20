@@ -25,9 +25,9 @@ class TournamentManager {
                         console.log(`🔧 Self-healing TR-${ut.tr_id}: Forcing LOCKED (Actual count: ${count})`);
                         // Set current_players to exactly 16 for consistency
                         await supabase.from('tournaments').update({ 
-                            status: 'locked', 
+                            status: 'full', 
                             current_players: 16,
-                            start_time: new Date(Date.now() + 5000).toISOString() 
+                            start_time: new Date(Date.now() + 120000).toISOString() 
                         }).eq('id', ut.id);
                         
                         const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
@@ -40,7 +40,7 @@ class TournamentManager {
 
             const { data: tourneys } = await supabase.from('tournaments')
                 .select('*').eq('type', 'paid')
-                .in('status', ['full', 'locked', 'starting', 'playing']);
+                .in('status', ['full', 'starting', 'live']);
             if (!tourneys) return;
 
             for (const t of tourneys) {
@@ -79,17 +79,17 @@ class TournamentManager {
             id: tournamentId, tr_id: tData.tr_id,
             players: [...playersData], allPlayers: [...playersData],
             max: tData.max_players, timer: tData.timer_type,
-            status: 'locked', countdown,
+            status: 'full', countdown,
             round: 0, matches: [], prize_pool: tData.prize_pool || 0
         };
         activeTourneys.set(tournamentId, tState);
-        supabase.from('tournaments').update({ status: 'locked', phase: 'locked' }).eq('id', tournamentId).then(() => {});
+        supabase.from('tournaments').update({ status: 'full', phase: 'full' }).eq('id', tournamentId).then(() => {});
     }
 
     static tick() {
         activeTourneys.forEach((tState, tId) => {
-            // LOCKED → STARTING
-            if (tState.status === 'locked') {
+            // FULL → STARTING
+            if (tState.status === 'full') {
                 tState.countdown--;
                 this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
 
@@ -111,8 +111,8 @@ class TournamentManager {
                 if (tState.countdown <= 0) this.nextRound(tState);
                 else if (tState.countdown % 5 === 0) this.broadcastState(tId);
             }
-            // PLAYING → check all matches done
-            else if (tState.status === 'playing') {
+            // LIVE → check all matches done
+            else if (tState.status === 'live') {
                 const allDone = tState.matches.every(m => m.status === 'finished');
                 if (allDone && tState.matches.length > 0) {
                     tState.status = 'rest';
@@ -174,12 +174,12 @@ class TournamentManager {
         if (tState.players.length <= 1) return this.finishTournament(tState.id, tState);
 
         tState.round++;
-        tState.status = 'playing';
+        tState.status = 'live';
         tState.matches = [];
 
         const phaseName = tState.players.length === 2 ? 'final' :
             tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`;
-        await supabase.from('tournaments').update({ phase: phaseName, status: 'playing' }).eq('id', tState.id);
+        await supabase.from('tournaments').update({ phase: phaseName, status: 'live' }).eq('id', tState.id);
 
         // Random shuffle
         const pool = [...tState.players].sort(() => Math.random() - 0.5);
@@ -239,7 +239,7 @@ class TournamentManager {
             winnerId: null, fen: 'start', disconnectGrace: null, disconnectedPlayer: null
         };
         
-        if (match.player1.connected && match.player2.connected) match.status = 'playing';
+        if (match.player1.connected && match.player2.connected) match.status = 'live';
 
         activeTournamentMatches.set(matchId, match);
         tState.matches.push(match);
@@ -326,7 +326,7 @@ class TournamentManager {
 
     static handleMove(userId, matchId, moveSan) {
         const match = activeTournamentMatches.get(matchId);
-        if (!match || match.status !== 'playing') return false;
+        if (!match || match.status !== 'live') return false;
         if ((match.turn === 'w' && match.player1.userId !== userId) || (match.turn === 'b' && match.player2.userId !== userId)) return false;
         try {
             const moveData = match.chess.move(moveSan);
@@ -371,7 +371,7 @@ class TournamentManager {
             }))
         };
         this.io.to(`tournament_${tIdStr}`).emit(`tournament_sync_${tIdStr}`, cleanState);
-        if (['locked', 'starting', 'rest', 'completed'].includes(tState.status)) {
+        if (['full', 'starting', 'rest', 'completed'].includes(tState.status)) {
             this.io.emit(`tournament_global_sync_${tIdStr}`, cleanState);
         }
     }
@@ -384,7 +384,7 @@ class TournamentManager {
         else return false;
 
         if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) {
-            match.status = 'playing';
+            match.status = 'live';
         }
         if (match.disconnectGrace !== null) { match.disconnectGrace = null; match.disconnectedPlayer = null; }
         socket.join(match.roomId);
@@ -400,7 +400,7 @@ class TournamentManager {
 
     static handleDisconnect(userId) {
         activeTournamentMatches.forEach((match) => {
-            if (match.status !== 'playing') return;
+            if (match.status !== 'live') return;
             if (match.player1.userId === userId) { match.disconnectGrace = 3; match.disconnectedPlayer = 'p1'; }
             else if (match.player2.userId === userId) { match.disconnectGrace = 3; match.disconnectedPlayer = 'p2'; }
         });

@@ -220,14 +220,13 @@
 
     function createCardHTML(t) {
       const isFull = t.status === 'full';
-      const isLocked = t.status === 'locked';
-      const isPlaying = t.status === 'playing' || t.status === 'starting';
+      const isPlaying = t.status === 'live' || t.status === 'starting';
       const isJoined = t.is_joined;
       const pct = Math.round((t.current_players / t.max_players) * 100);
 
       let statusBadge = '';
-      if (t.status === 'locked') statusBadge = '<span class="badge badge-pending"><i class="fa-solid fa-lock"></i> LOCKED</span>';
-      else if (t.status === 'starting' || t.status === 'playing') statusBadge = '<span class="badge badge-live"><i class="fa-solid fa-play"></i> PLAYING</span>';
+      if (t.status === 'full') statusBadge = '<span class="badge badge-pending"><i class="fa-solid fa-lock"></i> LOCKED</span>';
+      else if (t.status === 'starting' || t.status === 'live') statusBadge = '<span class="badge badge-live"><i class="fa-solid fa-play"></i> PLAYING</span>';
       else statusBadge = '<span class="badge badge-upcoming">UPCOMING</span>';
 
       return `<div class="tournament-card" onclick="openEntry('${t.id}')">
