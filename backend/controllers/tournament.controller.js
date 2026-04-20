@@ -207,7 +207,6 @@ const autoCreatePaidTournaments = async () => {
           phase: 'upcoming'
         });
         console.log(`🏆 Created ${trId}: ${entry} Coin - 1 Min Knockout TR`);
-      }
     }
   } catch(e) { console.error('Auto-create paid error:', e); }
 };
