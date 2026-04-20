@@ -204,7 +204,7 @@ class TournamentManager {
     }
 
     static async nextRound(tState) {
-        if (tState.players.length <= 1) return this.finishTournament(tState.id, tState);
+        if (tState.players.filter(p => p.status === 'alive').length <= 1) return this.finishTournament(tState.id, tState);
 
         tState.matches = []; // Clear previous round matches
 
@@ -220,7 +220,8 @@ class TournamentManager {
 
         await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
 
-        const pool = [...tState.players].sort(() => Math.random() - 0.5);
+        const pool = tState.players.filter(p => p.status === 'alive').sort(() => Math.random() - 0.5);
+        if (pool.length <= 1) return this.finishTournament(tState.id, tState);
 
         while (pool.length >= 2) {
             const p1 = pool.shift(); 
@@ -291,43 +292,27 @@ class TournamentManager {
     }
 
     static processRoundResults(tState) {
-        const winners = [];
         const { userSockets } = require('../socket/socket');
+        const roundWinners = new Set();
 
         tState.matches.forEach(m => {
             if (m.winnerId) {
-                const w = tState.players.find(p => p.user_id === m.winnerId);
-                if (w) winners.push(w);
+                roundWinners.add(m.winnerId);
             } else {
-                if (m.player1.score > m.player2.score) winners.push(tState.players.find(p => p.user_id === m.player1.userId));
-                else if (m.player2.score > m.player1.score) winners.push(tState.players.find(p => p.user_id === m.player2.userId));
-                else {
-                    const t1 = (tState.timer * 60) - m.player1.time;
-                    const t2 = (tState.timer * 60) - m.player2.time;
-                    if (t1 < t2) winners.push(tState.players.find(p => p.user_id === m.player1.userId));
-                    else if (t2 < t1) winners.push(tState.players.find(p => p.user_id === m.player2.userId));
-                    else winners.push(Math.random() > 0.5 ? tState.players.find(p => p.user_id === m.player1.userId) : tState.players.find(p => p.user_id === m.player2.userId));
-                }
+                // If draw or other, decide a winner for progression
+                const winnerId = (m.player1.score > m.player2.score) ? m.player1.userId : 
+                               (m.player2.score > m.player1.score) ? m.player2.userId : 
+                               (Math.random() > 0.5 ? m.player1.userId : m.player2.userId);
+                roundWinners.add(winnerId);
             }
         });
 
-        const matchedIds = new Set();
-        tState.matches.forEach(m => { matchedIds.add(m.player1.userId); matchedIds.add(m.player2.userId); });
+        // Update status for all participants in this round
         tState.players.forEach(p => {
-            if (!matchedIds.has(p.user_id)) {
-                const online = (userSockets.get(p.user_id) || new Set()).size > 0;
-                if (online || p.score > 0) winners.push(p);
-            }
-        });
-
-        const oldPlayerIds = new Set(tState.players.map(p => p.user_id));
-        tState.players = winners.filter(Boolean).map((p, idx) => ({ ...p, slot: idx + 1 }));
-        const newPlayerIds = new Set(tState.players.map(p => p.user_id));
-
-        // Notify eliminated players
-        oldPlayerIds.forEach(id => {
-            if (!newPlayerIds.has(id)) {
-                const sockets = userSockets.get(id);
+            if (p.status === 'alive' && !roundWinners.has(p.user_id)) {
+                p.status = 'eliminated';
+                // Notify eliminated player
+                const sockets = userSockets.get(p.user_id);
                 if (sockets) {
                     sockets.forEach(sid => {
                         this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
@@ -351,13 +336,32 @@ class TournamentManager {
         const { userSockets } = require('../socket/socket');
         const tState = activeTourneys.get(match.tournamentId);
         if (tState) {
-            const loserId = (winnerId === match.player1.userId) ? match.player2.userId : (result === 'player1_win' ? match.player2.userId : (result === 'player2_win' ? match.player1.userId : null));
-            if (loserId) {
-                const pIdx = tState.players.findIndex(p => p.user_id === loserId);
+            let actualWinnerId = winnerId;
+            let actualLoserId = null;
+
+            if (result === 'player1_win') {
+                actualWinnerId = match.player1.userId;
+                actualLoserId = match.player2.userId;
+            } else if (result === 'player2_win') {
+                actualWinnerId = match.player2.userId;
+                actualLoserId = match.player1.userId;
+            } else if (result === 'draw') {
+                // Randomly advance one in knockout draw
+                if (Math.random() > 0.5) {
+                    actualWinnerId = match.player1.userId;
+                    actualLoserId = match.player2.userId;
+                } else {
+                    actualWinnerId = match.player2.userId;
+                    actualLoserId = match.player1.userId;
+                }
+            }
+
+            if (actualLoserId) {
+                const pIdx = tState.players.findIndex(p => p.user_id === actualLoserId);
                 if (pIdx !== -1) {
                     tState.players[pIdx].status = 'eliminated';
-                    // Notify eliminated player immediately
-                    const sockets = userSockets.get(loserId);
+                    // Notify eliminated player
+                    const sockets = userSockets.get(actualLoserId);
                     if (sockets) {
                         sockets.forEach(sid => {
                             this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });

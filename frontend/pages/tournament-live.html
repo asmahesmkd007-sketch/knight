@@ -417,23 +417,36 @@
         document.getElementById('my-score').textContent = `Rank: ${myP.rank || '--'}`;
       }
 
+      const isCompleted = state.status === 'completed';
       const sorted = [...players]
         .sort((a, b) => {
-            if (a.status === 'eliminated' && b.status !== 'eliminated') return 1;
-            if (a.status !== 'eliminated' && b.status === 'eliminated') return -1;
-            return (a.rank || 999) - (b.rank || 999);
+            if (a.status === 'eliminated' && b.status !== 'eliminated' && !isCompleted) return 1;
+            if (a.status !== 'eliminated' && b.status === 'eliminated' && !isCompleted) return -1;
+            return (b.score || 0) - (a.score || 0);
         });
+
       const html = sorted.map((p, i) => {
         const name = p.username || p.profiles?.username || 'Player';
         const isMe = (p.user_id?.id || p.user_id) === user.id;
         const isEliminated = p.status === 'eliminated';
+        
+        let statusText = isEliminated ? 'ELIMINATED' : 'ACTIVE';
+        let statusColor = isEliminated ? '#ff4d4d' : '#5bc0eb';
+
+        if (isCompleted) {
+            if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
+            else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
+            else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
+            else { statusText = 'ELIMINATED'; statusColor = '#ff4d4d'; }
+        }
+
         return `
           <div class="leaderboard-row ${isMe ? 'me' : ''} ${isEliminated ? 'eliminated' : ''}">
-            <div class="rank-num">${p.rank || i + 1}</div>
-            <div class="avatar-initial" style="width:28px;height:28px;font-size:11px; ${isEliminated ? 'opacity:0.5' : ''}">${name.replace('@', '')[0].toUpperCase()}</div>
-            <div style="flex:1; ${isEliminated ? 'opacity:0.5' : ''}">
+            <div class="rank-num">${i + 1}</div>
+            <div class="avatar-initial" style="width:28px;height:28px;font-size:11px; ${(isEliminated && !isCompleted) ? 'opacity:0.5' : ''}">${name.replace('@', '')[0].toUpperCase()}</div>
+            <div style="flex:1; ${(isEliminated && !isCompleted) ? 'opacity:0.5' : ''}">
               <div style="font-size:13px;font-weight:500">${name}</div>
-              <div style="font-family:var(--font-display);font-size:11px;color:${isEliminated ? '#ff4d4d' : '#5bc0eb'}">${isEliminated ? 'ELIMINATED' : (p.status || 'ACTIVE')}</div>
+              <div style="font-family:var(--font-display);font-size:11px;color:${statusColor}">${statusText}</div>
             </div>
           </div>
         `;
