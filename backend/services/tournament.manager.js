@@ -54,7 +54,7 @@ class TournamentManager {
         if (activeTourneys.has(tournamentId)) return;
         
         const { data: t } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
-        if (!t || !['locked', 'starting', 'playing', 'full'].includes(t.status)) return;
+        if (!t || !['full', 'starting', 'live'].includes(t.status)) return;
 
         let { data: players } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
