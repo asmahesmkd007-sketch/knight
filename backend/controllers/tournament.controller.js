@@ -131,8 +131,8 @@ const joinTournament = async (req, res) => {
     // CHECK IF FULL (16/16) → Trigger LOCKED
     if (finalCount >= tournament.max_players) {
         updateData.status = 'full';
-        // Set start_time to now + 2 minutes (LOCKED duration)
-        updateData.start_time = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+        // Set start_time to now + 1 minute (LOCKED duration)
+        updateData.start_time = new Date(Date.now() + 1 * 60 * 1000).toISOString();
         console.log(`🔒 TR-${tournament.tr_id} is FULL (${finalCount}/${tournament.max_players}). Starting LOCKED countdown.`);
     }
 
