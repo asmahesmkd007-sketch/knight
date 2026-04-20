@@ -128,6 +128,7 @@ const SocketActions = {
   findMatch    : (timer, userId, username) => _socket?.emit('find_match',    { timer, userId, username }),
   cancelSearch : (timer, userId)           => _socket?.emit('cancel_search', { timer, userId }),
   makeMove     : (matchId, move, userId)   => _socket?.emit('make_move',     { matchId, move, userId }),
+  makeTrMove   : (matchId, move, userId)   => _socket?.emit('make_tr_move',  { matchId, moveSan: move, userId }),
   resign       : (matchId, userId)         => _socket?.emit('resign',        { matchId, userId }),
   offerDraw    : (matchId, userId)         => _socket?.emit('offer_draw',    { matchId, userId }),
   acceptDraw   : (matchId)                 => _socket?.emit('accept_draw',   { matchId }),
