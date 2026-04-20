@@ -276,7 +276,16 @@ class TournamentManager {
         activeTournamentMatches.set(dbMatch.id, match);
         tState.matches.push(match);
 
-        const eventData = { matchId: dbMatch.id, tournamentId: tState.id, timer: tState.timer, roomId: dbMatch.room_id };
+        // Ensure sockets join the match room
+        [s1, s2].forEach(s => s.forEach(sid => {
+            const sock = this.io.sockets.sockets.get(sid);
+            if (sock) {
+                sock.join(match.roomId);
+                sock.join(`tournament_${tState.id}`);
+            }
+        }));
+
+        const eventData = { matchId: dbMatch.id, tournamentId: tState.id, timer: tState.timer, roomId: match.roomId };
         s1.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'white', opponent: p2 }));
         s2.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'black', opponent: p1 }));
     }
