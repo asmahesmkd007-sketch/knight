@@ -623,19 +623,56 @@
     }
 
     function onSquareClick(square, piece) {
-      removeGreySquares();
-      if (!piece || !gameActive) return;
+      if (!gameActive) return;
 
-      const turn = chess.turn() === 'w' ? 'white' : 'black';
-      if (turn !== myColor) return;
-      if (piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return;
+      const isTarget = $('#board .square-' + square).hasClass('highlight-move') || $('#board .square-' + square).hasClass('highlight-capture');
 
-      const moves = chess.moves({ square: square, verbose: true });
-      if (moves.length === 0) return;
+      // 1. If we have a selection and click a target square -> MOVE
+      if (selectedSquare && isTarget) {
+          const move = chess.move({
+              from: selectedSquare,
+              to: square,
+              promotion: 'q'
+          });
 
-      for (let i = 0; i < moves.length; i++) {
-        greySquare(moves[i].to, moves[i].flags.includes('c'));
+          if (move) {
+              board.position(chess.fen());
+              removeGreySquares();
+              selectedSquare = null;
+              SocketActions.makeTrMove(matchId, move, user.id);
+              updatePlayerBars();
+              return;
+          }
       }
+
+      // 2. Clear selection if clicking same square or invalid square
+      if (selectedSquare === square || (!piece && !isTarget)) {
+          removeGreySquares();
+          selectedSquare = null;
+          return;
+      }
+
+      // 3. Select our piece
+      if (piece) {
+          const turn = chess.turn() === 'w' ? 'white' : 'black';
+          const isMyPiece = piece.charAt(0) === (myColor === 'white' ? 'w' : 'b');
+
+          if (turn === myColor && isMyPiece) {
+              removeGreySquares();
+              selectedSquare = square;
+              const moves = chess.moves({ square: square, verbose: true });
+              if (moves.length === 0) return;
+
+              for (let i = 0; i < moves.length; i++) {
+                greySquare(moves[i].to, moves[i].flags.includes('c'));
+              }
+              return;
+          }
+      }
+
+      // 4. Default: Clear
+      removeGreySquares();
+      selectedSquare = null;
     }
 
     function onMouseoverSquare(square, piece) {
