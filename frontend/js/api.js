@@ -120,6 +120,16 @@ const UserAPI = {
   getNotifications: () => api('/user/notifications'),
   markNotificationsRead: () => api('/user/notifications/read', { method: 'PUT' }),
   getStats       : ()  => api('/user/stats'),
+  uploadAvatar   : (file) => {
+    const fd = new FormData();
+    fd.append('avatar', file);
+    const token = getToken();
+    return fetch(`${API_BASE}/user/avatar`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: fd
+    }).then(res => res.json());
+  },
   submitReport   : (d) => api('/user/report', { method: 'POST', body: d }),
   submitFeedback : (d) => api('/user/feedback', { method: 'POST', body: d }),
   savePayoutDetails: (d) => api('/user/payout-details', { method: 'PUT', body: d }),

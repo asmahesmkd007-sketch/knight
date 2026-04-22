@@ -17,7 +17,14 @@ const isValidUsername = (username) => {
 const getProfile = async (req, res) => {
   try {
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', req.user.id).single();
-    res.json({ success: true, user: profile });
+    
+    // Get provider info from auth
+    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(req.user.id);
+    const provider = authUser?.app_metadata?.provider || 'email';
+    // Check identities OR our custom app_metadata flag
+    const hasPassword = !!(authUser?.app_metadata?.has_password || authUser?.identities?.find(id => id.provider === 'email'));
+
+    res.json({ success: true, user: { ...profile, provider, hasPassword } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -48,6 +55,38 @@ const updateProfile = async (req, res) => {
     res.json({ success: true, message: 'Profile updated.', user: data });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
+
+    const file = req.file;
+    const userId = req.user.id;
+    const fileName = `${userId}/${Date.now()}_avatar.png`;
+
+    let { data, error } = await supabase.storage.from('avatars').upload(fileName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: true
+    });
+
+    if (error && error.message.includes('not found')) {
+      await supabase.storage.createBucket('avatars', { public: true });
+      const retry = await supabase.storage.from('avatars').upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      });
+      if (retry.error) throw retry.error;
+    } else if (error) {
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    res.json({ success: true, url: publicUrl });
+  } catch (err) {
+    console.error('Avatar Upload Error:', err);
+    res.status(500).json({ success: false, message: 'Upload failed.' });
   }
 };
 
@@ -84,21 +123,31 @@ const submitKYC = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { old_password, new_password } = req.body;
-    if (!old_password || !new_password || new_password.length < 6) return res.status(400).json({ success: false, message: 'Current password and new password (min 6 chars) required.' });
+    if (!new_password || new_password.length < 6 || new_password.length > 12) {
+        return res.status(400).json({ success: false, message: 'Password must be between 6 and 12 characters.' });
+    }
     
     // Fetch email to use in signInWithPassword via Admin API since user might not be in req session exactly
     const { data: { user: adminUser }, error: userErr } = await supabase.auth.admin.getUserById(req.user.id);
     if (userErr || !adminUser) return res.status(400).json({ success: false, message: 'Auth session invalid.' });
 
-    // Verify old password by attempting signin
-    const { createClient } = require('@supabase/supabase-js');
-    const tempClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
-    const { error: signInError } = await tempClient.auth.signInWithPassword({ email: adminUser.email, password: old_password });
-    if (signInError) return res.status(401).json({ success: false, message: 'Incorrect current password.' });
+    // Only verify old password if the user has an email identity (meaning they have a password)
+    const hasPassword = !!(adminUser.identities?.find(id => id.provider === 'email'));
+    
+    if (hasPassword) {
+      if (!old_password) return res.status(400).json({ success: false, message: 'Current password is required.' });
+      const { createClient } = require('@supabase/supabase-js');
+      const tempClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+      const { error: signInError } = await tempClient.auth.signInWithPassword({ email: adminUser.email, password: old_password });
+      if (signInError) return res.status(401).json({ success: false, message: 'Incorrect current password.' });
+    }
 
-    const { error } = await supabase.auth.admin.updateUserById(req.user.id, { password: new_password });
+    const { error } = await supabase.auth.admin.updateUserById(req.user.id, { 
+      password: new_password,
+      app_metadata: { ...adminUser.app_metadata, has_password: true }
+    });
     if (error) return res.status(400).json({ success: false, message: error.message });
-    res.json({ success: true, message: 'Password changed successfully.' });
+    res.json({ success: true, message: hasPassword ? 'Password changed successfully.' : 'Password set successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -194,4 +243,4 @@ const updatePayoutDetails = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, submitKYC, changePassword, updateSettings, getNotifications, markNotificationsRead, getStats, updatePayoutDetails };
+module.exports = { getProfile, updateProfile, uploadAvatar, submitKYC, changePassword, updateSettings, getNotifications, markNotificationsRead, getStats, updatePayoutDetails };

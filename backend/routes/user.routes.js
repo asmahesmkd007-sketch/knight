@@ -4,11 +4,15 @@ const auth = require('../middleware/auth.middleware');
 const uc = require('../controllers/user.controller');
 const rc = require('../controllers/report.controller');
 const fc = require('../controllers/feedback.controller');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+
 const r1 = express.Router();
 r1.post('/feedback', auth, fc.submitFeedback);
 r1.post('/report', auth, rc.submitReport);
 r1.get('/profile', auth, uc.getProfile);
 r1.put('/profile', auth, uc.updateProfile);
+r1.post('/avatar', auth, upload.single('avatar'), uc.uploadAvatar);
 r1.post('/kyc', auth, uc.submitKYC);
 r1.post('/change-password', auth, uc.changePassword);
 r1.put('/settings', auth, uc.updateSettings);

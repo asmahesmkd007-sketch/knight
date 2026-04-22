@@ -15,11 +15,32 @@ const submitKYC = async (req, res) => {
     }
 
     const uploadToStorage = async (file, prefix) => {
+        const bucketName = 'kyc-documents';
         const fileName = `${userId}/${prefix}_${Date.now()}${path.extname(file.originalname)}`;
-        const { data, error } = await supabase.storage.from('kyc-documents').upload(fileName, file.buffer, {
+        
+        const { data, error } = await supabase.storage.from(bucketName).upload(fileName, file.buffer, {
             contentType: file.mimetype,
             upsert: true
         });
+
+        if (error && error.message === 'Bucket not found') {
+            // Attempt to create the bucket as public if missing
+            const { error: createError } = await supabase.storage.createBucket(bucketName, { public: true });
+            if (createError) throw new Error('Bucket missing and auto-creation failed: ' + createError.message);
+            
+            // Retry upload
+            const { data: retryData, error: retryError } = await supabase.storage.from(bucketName).upload(fileName, file.buffer, {
+                contentType: file.mimetype,
+                upsert: true
+            });
+            if (retryError) throw retryError;
+            return retryData.path;
+        }
+
+        // If bucket exists but might be private, ensure it's public for admin preview
+        // Note: This is a safe operation that ensures the bucket is public
+        await supabase.storage.updateBucket(bucketName, { public: true });
+
         if (error) throw error;
         return data.path;
     };
@@ -30,13 +51,12 @@ const submitKYC = async (req, res) => {
         name,
         dob,
         status: 'pending',
-        created_at: new Date()
+        created_at: new Date().toISOString()
     };
 
     if (document_type === 'aadhaar') {
         const { aadhaar_number, address_line1, address_line2, address_line3, pincode } = req.body;
         
-        // Validation: 12 digits numbers only
         const cleanAadhaar = (aadhaar_number || '').replace(/\s/g, '');
         if (!/^\d{12}$/.test(cleanAadhaar)) {
             return res.status(400).json({ success: false, message: 'Aadhaar must be 12 digits.' });
@@ -46,12 +66,10 @@ const submitKYC = async (req, res) => {
         const back = files['back'] ? files['back'][0] : null;
         const full = files['full'] ? files['full'][0] : null;
 
-        // Validation: Either (Front + Back) OR (Full only)
         if (!full && (!front || !back)) {
             return res.status(400).json({ success: false, message: 'Please upload Front + Back or Full Aadhaar.' });
         }
 
-        // Masking: XXXX XXXX 1234
         kycData.aadhaar_number = `XXXX XXXX ${cleanAadhaar.slice(-4)}`;
         kycData.address_line1 = address_line1;
         kycData.address_line2 = address_line2;
@@ -64,6 +82,8 @@ const submitKYC = async (req, res) => {
 
     } else if (document_type === 'pan') {
         const { pan_number } = req.body;
+        if (!pan_number) return res.status(400).json({ success: false, message: 'PAN number missing.' });
+        
         const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
         if (!panRegex.test((pan_number || '').toUpperCase())) {
             return res.status(400).json({ success: false, message: 'Invalid PAN format.' });
@@ -72,8 +92,6 @@ const submitKYC = async (req, res) => {
         const panImage = files['full'] ? files['full'][0] : (files['front'] ? files['front'][0] : null);
         if (!panImage) return res.status(400).json({ success: false, message: 'PAN image missing.' });
 
-        // Masking: XXXX1234X (Mask first 4, show next 4, mask last 2 or similar)
-        // Rule: First 4 masked, next 4 visible, last 2 masked
         const maskedPan = `XXXX${pan_number.substring(4, 8)}${pan_number.substring(8).replace(/./g, 'X')}`;
         kycData.pan_number = maskedPan;
         kycData.pan_image_url = await uploadToStorage(panImage, 'pan');
@@ -81,7 +99,7 @@ const submitKYC = async (req, res) => {
     } else if (document_type === 'passport') {
         const { passport_number, nationality } = req.body;
         const passRegex = /^[A-Z]{1,2}[0-9]{6,7}$/i;
-        if (!passRegex.test(passport_number)) {
+        if (!passport_number || !passRegex.test(passport_number)) {
             return res.status(400).json({ success: false, message: 'Invalid Passport format.' });
         }
 
@@ -89,7 +107,6 @@ const submitKYC = async (req, res) => {
         const full = files['full'] ? files['full'][0] : null;
         if (!front && !full) return res.status(400).json({ success: false, message: 'Passport front image mandatory.' });
 
-        // Masking: XXXX1234 (Mask all but last 4)
         kycData.passport_number = `XXXX${passport_number.slice(-4)}`;
         kycData.nationality = nationality || '';
         
@@ -99,14 +116,14 @@ const submitKYC = async (req, res) => {
         if (full) kycData.full_image_url = await uploadToStorage(full, 'pass_full');
     }
 
-    // Upsert into kyc_requests table
     const { error: dbError } = await supabase.from('kyc_requests').upsert(kycData, { onConflict: 'user_id' });
-    if (dbError) return res.status(400).json({ success: false, message: dbError.message });
+    if (dbError) {
+        console.error('KYC DB Error:', dbError);
+        return res.status(400).json({ success: false, message: 'Database error: ' + dbError.message });
+    }
 
-    // Update profile status to pending
     await supabase.from('profiles').update({ kyc_status: 'pending' }).eq('id', userId);
 
-    // Initial Notification
     await supabase.from('notifications').insert({
         user_id: userId,
         type: 'kyc',
@@ -118,7 +135,7 @@ const submitKYC = async (req, res) => {
 
   } catch (err) {
     console.error('KYC Controller Error:', err);
-    res.status(500).json({ success: false, message: 'Internal server error.' });
+    res.status(500).json({ success: false, message: err.message || 'Internal server error.' });
   }
 };
 

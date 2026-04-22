@@ -30,6 +30,13 @@
           class="fa-solid fa-chess-pawn"></i></span> Play Chess</a>
     <a href="/pages/friends.html" class="nav-item" data-page="friends"> <span class="icon"><i
           class="fa-solid fa-user-group"></i></span> Friends</a>
+    <a href="/pages/clan-war.html" class="nav-item" data-page="clan-war"> 
+      <span class="icon sword-clash-icon">
+        <i class="fa-solid fa-khanda s-1"></i>
+        <i class="fa-solid fa-khanda s-2"></i>
+      </span> 
+      Clan War
+    </a>
     <div class="nav-section-title">TOURNAMENT</div>
     <a href="/pages/free-tournament.html" class="nav-item" data-page="free-tournament"><span class="icon"><i
           class="fa-solid fa-gamepad"></i></span> Free Tournament</a>
@@ -51,6 +58,8 @@
           class="fa-solid fa-comment-dots"></i></span> Feedback</a>
     <a href="/pages/report.html" class="nav-item" data-page="report"> <span class="icon"><i
           class="fa-solid fa-triangle-exclamation"></i></span> Report a Problem</a>
+    <a href="/pages/about.html" class="nav-item" data-page="about"> <span class="icon"><i
+          class="fa-solid fa-circle-info"></i></span> About Us</a>
     <a href="/pages/admin.html" id="sb-admin" class="nav-item" style="color:var(--orange);display:none">
       <span class="icon"><i class="fa-solid fa-shield-halved"></i></span> Admin Panel
     </a>
@@ -111,10 +120,11 @@
     // 2. Active Sync Function
     const syncData = async () => {
       try {
-        const [pRes, bRes] = await Promise.all([
-          fetch(`${base}/user/profile`, { headers: { Authorization: `Bearer ${tk}` } }).then(r => r.json()),
-          fetch(`${base}/wallet/balance`, { headers: { Authorization: `Bearer ${tk}` } }).then(r => r.json())
-        ]);
+        // Use the centralized api helper if available, otherwise fallback to fetch
+        const fetchProfile = typeof api === 'function' ? api('/user/profile') : fetch(`${base}/user/profile`, { headers: { Authorization: `Bearer ${localStorage.getItem('px_token')}` } }).then(r => r.json());
+        const fetchBalance = typeof api === 'function' ? api('/wallet/balance') : fetch(`${base}/wallet/balance`, { headers: { Authorization: `Bearer ${localStorage.getItem('px_token')}` } }).then(r => r.json());
+
+        const [pRes, bRes] = await Promise.all([fetchProfile, fetchBalance]);
 
         if (pRes.success && bRes.success) {
           const combined = { ...pRes.user, coins: bRes.wallet.balance };

@@ -142,6 +142,35 @@ body {
 .nav-item.active .icon { color: var(--teal); text-shadow: 0 0 10px rgba(15,82,186,0.8); }
 .nav-item .icon { font-size: 17px; width: 22px; text-align: center; transition: all 0.3s ease; }
 
+/* ANIMATED CLAN WAR ICON */
+.sword-clash-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sword-clash-icon i {
+  position: absolute;
+  font-size: 14px !important;
+  color: var(--gold);
+}
+.sword-clash-icon .s-1 {
+  transform: rotate(45deg);
+  animation: sidebar-clash-1 2s infinite ease-in-out;
+}
+.sword-clash-icon .s-2 {
+  transform: rotate(-45deg) scaleX(-1);
+  animation: sidebar-clash-2 2s infinite ease-in-out;
+}
+@keyframes sidebar-clash-1 {
+  0%, 100% { transform: translate(-2px, -2px) rotate(45deg); }
+  50% { transform: translate(1px, 1px) rotate(60deg); }
+}
+@keyframes sidebar-clash-2 {
+  0%, 100% { transform: translate(2px, -2px) rotate(-45deg) scaleX(-1); }
+  50% { transform: translate(-1px, 1px) rotate(-60deg) scaleX(-1); }
+}
+
 .nav-section-title {
   display: flex; align-items: center; gap: 10px;
   font-size: 10px; color: var(--text-muted); padding: 16px 20px 8px;

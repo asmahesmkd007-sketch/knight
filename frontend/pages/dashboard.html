@@ -228,12 +228,19 @@
         await loadSidebar();
         if (typeof updateSidebarUI === 'function') updateSidebarUI(user);
 
-        // 3. Sync profile if ID is missing
-        if (!user.player_id) {
-          const res = await UserAPI.getProfile();
-          if (res?.success && res.user.player_id) {
-            setSession(getToken(), getRefreshToken(), res.user);
-            updateUI(res.user);
+        // 3. Sync profile and Check for Mandatory Password Setup
+        const res = await UserAPI.getProfile();
+        if (res?.success) {
+          setSession(getToken(), getRefreshToken(), res.user);
+          updateUI(res.user);
+          
+          // FORCED PASSWORD SETUP FOR GOOGLE USERS
+          if (!res.user.hasPassword) {
+            Toast.info('Please set a password to secure your account.');
+            setTimeout(() => {
+              window.location.href = '/pages/account.html?tab=security&action=setPassword';
+            }, 1500);
+            return;
           }
         }
 
@@ -248,7 +255,6 @@
 
       } catch (err) {
         console.error('Initialization Error:', err);
-        // Even if script fails, show the page
         document.getElementById('sync-overlay').classList.add('hidden');
       }
     });

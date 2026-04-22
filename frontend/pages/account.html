@@ -8,59 +8,88 @@
   <link rel="stylesheet" href="/css/global.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    :root {
+      --gold: #d4af37;
+      --gold-glow: rgba(212, 175, 55, 0.3);
+      --bg-dark: #0a0a0a;
+      --bg-card: rgba(20, 20, 20, 0.7);
+      --border-color: rgba(212, 175, 55, 0.15);
+      --text-muted: #888;
+    }
+
     .page-wrapper {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 20px 40px;
+      padding: 30px 40px;
+    }
+
+    .page-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
     }
 
     .page-title {
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 24px;
+      font-weight: 900;
       color: #fff;
-      margin-bottom: 20px;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      font-family: var(--font-display);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-title::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: var(--gold);
+      border-radius: 2px;
     }
 
     /* PREMIUM BANNER */
     .premium-banner {
-      background: rgba(15, 15, 15, 0.6);
-      border: 1px solid rgba(212, 175, 55, 0.2);
-      border-radius: 12px;
-      padding: 15px 25px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px 30px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 25px;
-      backdrop-filter: blur(10px);
+      margin-bottom: 30px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
     .pb-left {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 25px;
     }
 
     .avatar-wrapper {
       position: relative;
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
     }
 
     .pb-avatar {
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 2px solid #3498db;
-      padding: 2px;
+      border: 2px solid var(--gold);
+      padding: 3px;
       background: #000;
-      object-fit: cover;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      font-size: 36px;
       font-weight: 900;
       color: var(--gold);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
     }
 
     .pb-avatar img {
@@ -70,524 +99,443 @@
       object-fit: cover;
     }
 
-    .edit-icon {
-      position: absolute;
-      bottom: 2px;
-      right: -2px;
-      background: #3498db;
-      color: #fff;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      border: 2px solid #111;
-    }
-
     .pb-info h2 {
-      font-size: 22px;
-      margin-bottom: 6px;
+      font-size: 26px;
+      margin-bottom: 8px;
       color: #fff;
-      font-weight: 700;
+      font-weight: 900;
+      letter-spacing: 0.5px;
     }
 
     .pb-meta {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .m-badge {
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .m-rank {
-      background: rgba(212, 175, 55, 0.15);
+      background: rgba(212, 175, 55, 0.1);
       color: var(--gold);
-      border: 1px solid rgba(212, 175, 55, 0.2);
+      border: 1px solid rgba(212, 175, 55, 0.3);
     }
 
     .m-iq {
       color: #3498db;
-      font-weight: 600;
-      font-size: 12px;
+      font-weight: 800;
+      font-size: 13px;
+      background: rgba(52, 152, 219, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(52, 152, 219, 0.3);
     }
 
     .m-kyc {
-      background: rgba(46, 204, 113, 0.15);
+      background: rgba(46, 204, 113, 0.1);
       color: #2ecc71;
-      border: 1px solid rgba(46, 204, 113, 0.3);
+      border: 1px solid rgba(46, 204, 113, 0.4);
     }
 
     .pb-right {
       text-align: right;
+      padding-left: 20px;
+      border-left: 1px solid rgba(255,255,255,0.05);
     }
 
     .pb-label {
-      font-size: 8px;
-      color: #666;
-      letter-spacing: 1px;
-      margin-bottom: 2px;
-      font-weight: 700;
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+      font-weight: 800;
+      text-transform: uppercase;
     }
 
     .pb-pid {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 900;
       color: var(--gold);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      font-family: var(--font-display);
     }
 
     .copy-btn {
-      background: #111;
+      background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: #fff;
-      padding: 5px 12px;
-      border-radius: 5px;
-      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      transition: 0.2s;
-      margin-left: auto;
+      gap: 8px;
+      transition: 0.3s;
     }
 
     .copy-btn:hover {
-      background: #3498db;
-      border-color: #3498db;
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
+      transform: translateY(-2px);
     }
 
     /* TWO COLUMN LAYOUT */
     .account-layout {
-      display: flex;
-      gap: 30px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 40px;
       align-items: flex-start;
     }
 
     .account-sidebar {
-      width: 220px;
-      flex-shrink: 0;
-    }
-
-    .account-main {
-      flex: 1;
+      position: sticky;
+      top: 30px;
     }
 
     /* TABS */
     .tab-bar {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-bottom: 25px;
+      gap: 12px;
     }
 
     .tab-btn {
-      background: #111;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      color: #888;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
-      width: 100%;
-      text-align: left;
-      gap: 12px;
-      transition: 0.2s;
+      gap: 15px;
+      transition: 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .tab-btn i {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
     }
 
     .tab-btn:hover {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(212, 175, 55, 0.05);
       color: #fff;
+      transform: translateX(5px);
     }
 
     .tab-btn.active {
-      background: rgba(212, 175, 55, 0.1);
-      border-color: rgba(212, 175, 55, 0.3);
+      background: linear-gradient(90deg, rgba(212, 175, 55, 0.15), transparent);
+      border-color: var(--gold);
       color: var(--gold);
+      box-shadow: -5px 0 0 var(--gold);
     }
 
     /* SECTION CARDS */
     .section-card {
-      background: rgba(15, 15, 15, 0.5);
-      border: 1px solid rgba(212, 175, 55, 0.15);
-      border-radius: 12px;
-      padding: 20px 25px;
-      margin-bottom: 25px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
     }
 
     .section-header {
-      font-size: 10px;
-      color: var(--gold);
-      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 900;
       letter-spacing: 1.5px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
+      text-transform: uppercase;
     }
 
-    .section-header::before {
+    .section-header::after {
       content: '';
-      width: 3px;
-      height: 12px;
-      background: var(--gold);
-      display: inline-block;
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border-color), transparent);
     }
 
     /* FORMS */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
     .form-item {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+    }
+
+    .form-item.full {
+      grid-column: span 2;
     }
 
     .form-label {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--gold);
-      font-weight: 700;
-      margin-bottom: 8px;
+      font-weight: 800;
+      margin-bottom: 10px;
       display: block;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .form-input {
       width: 100%;
-      padding: 12px;
-      background: #080808;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
       color: #fff;
-      font-size: 13px;
+      font-size: 14px;
+      transition: 0.3s;
+      font-weight: 600;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.05);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
     }
 
     .form-input:disabled {
       color: #555;
+      cursor: not-allowed;
     }
 
     .file-upload-box {
       display: flex;
       align-items: center;
-      gap: 12px;
-      background: #080808;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      gap: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .preview-circle {
-      width: 35px;
-      height: 35px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      border: 1px solid var(--gold);
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 10px var(--gold-glow);
     }
 
     .file-info-text {
-      font-size: 12px;
+      font-size: 13px;
       color: #fff;
       cursor: pointer;
-    }
-
-    .btn-action {
-      background: transparent;
-      border: 1px solid var(--gold);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-weight: 800;
-      font-size: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: 0.2s;
-      margin-top: 10px;
-    }
-
-    .btn-action:hover {
-      background: var(--gold);
-      color: #000;
-    }
-
-    /* STATS GRID */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-    }
-
-    .stat-item {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      padding: 15px;
-    }
-
-    .stat-label {
-      font-size: 9px;
-      color: #666;
-      text-transform: uppercase;
-      margin-bottom: 5px;
       font-weight: 700;
+      transition: 0.3s;
     }
 
-    .stat-value {
-      font-size: 24px;
-      font-weight: 800;
+    .file-info-text:hover {
       color: var(--gold);
     }
 
-    .stat-value.blue {
-      color: #3498db;
+    .btn-action {
+      background: linear-gradient(135deg, var(--gold), #b8860b);
+      border: none;
+      color: #000;
+      padding: 14px 30px;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      transition: 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
     }
 
-    /* WIN RATE PROGRESS */
-    .progress-box {
-      margin-top: 20px;
+    .btn-action:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
     }
 
-    .progress-info {
-      display: flex;
-      justify-content: space-between;
-      font-size: 9px;
-      margin-bottom: 8px;
-      color: #888;
-      font-weight: 700;
+    .btn-action i {
+      font-size: 16px;
     }
 
-    .progress-track {
-      background: #000;
-      height: 3px;
-      border-radius: 2px;
-    }
-
-    .progress-fill {
-      background: var(--gold);
-      height: 100%;
-      border-radius: 2px;
-      box-shadow: 0 0 8px var(--gold);
-    }
-  </style>
-  <!-- Tesseract OCR for Validation -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <style>
-    .kyc-form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-
-    .kyc-full-width {
-      grid-column: span 2;
-    }
-
-    /* Document Selector */
-    .doc-desc {
-      font-size: 11px;
-      color: #888;
-      margin-bottom: 15px;
-    }
-
+    /* KYC DOC SELECTOR */
     .doc-selector {
-      display: flex;
-      background: #111;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      width: fit-content;
-      margin-bottom: 25px;
-      padding: 5px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 30px;
+      background: rgba(0,0,0,0.3);
+      padding: 6px;
+      border-radius: 12px;
     }
 
     .doc-btn {
       background: transparent;
       border: none;
-      color: #888;
-      padding: 8px 20px;
-      font-size: 11px;
-      font-weight: 700;
+      color: var(--text-muted);
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 800;
       cursor: pointer;
-      border-radius: 6px;
-      transition: 0.2s;
+      border-radius: 8px;
+      transition: 0.3s;
+      text-transform: uppercase;
     }
 
     .doc-btn.active {
-      background: rgba(212, 175, 55, 0.1);
-      color: var(--gold);
+      background: var(--gold);
+      color: #000;
     }
 
     .upload-options {
       display: flex;
       gap: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
 
     .upload-option-btn {
       flex: 1;
-      background: #111;
+      background: rgba(0,0,0,0.3);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #888;
-      padding: 10px;
-      border-radius: 6px;
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: 10px;
       cursor: pointer;
       text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      transition: 0.2s;
+      font-size: 12px;
+      font-weight: 800;
+      transition: 0.3s;
     }
 
     .upload-option-btn.active {
-      background: rgba(212, 175, 55, 0.1);
       border-color: var(--gold);
       color: var(--gold);
+      background: rgba(212, 175, 55, 0.05);
     }
 
     .upload-area {
+      background: rgba(0,0,0,0.3);
+      border: 2px dashed rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.3s;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border: 2px dashed rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      background: #080808;
-      transition: 0.2s;
-      width: 100%;
-      box-sizing: border-box;
+      gap: 10px;
+      min-height: 120px;
     }
 
     .upload-area:hover {
       border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.05);
     }
 
     .upload-area i {
-      font-size: 24px;
-      color: #555;
-      margin-bottom: 10px;
+      font-size: 32px;
+      color: #444;
     }
 
     .upload-area span {
       display: block;
-      font-size: 11px;
-      color: #888;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 700;
     }
 
     .upload-area.has-file {
       border-color: #2ecc71;
+      border-style: solid;
       background: rgba(46, 204, 113, 0.05);
     }
 
-    .upload-area.has-file i {
-      color: #2ecc71;
+    .upload-area.has-file i { color: #2ecc71; }
+    .upload-area.has-file span { color: #2ecc71; }
+
+    /* PASSWORD TOGGLE */
+    .password-wrapper {
+      position: relative;
     }
 
-    .upload-area.has-file span {
-      color: #2ecc71;
+    .toggle-pwd {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      cursor: pointer;
+      transition: 0.2s;
     }
 
+    .toggle-pwd:hover { color: var(--gold); }
+
+    /* KYC FORMS TABS */
     .kyc-form-section {
       display: none;
     }
-
     .kyc-form-section.active {
       display: block;
-      animation: fadeIn 0.3s ease;
     }
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* MOBILE RESPONSIVENESS */
-    @media (max-width: 768px) {
+    @media (max-width: 992px) {
       .account-layout {
-        flex-direction: column;
-        gap: 20px;
+        grid-template-columns: 1fr;
       }
-
       .account-sidebar {
-        width: 100%;
+        position: static;
       }
-
       .tab-bar {
         flex-direction: row;
         overflow-x: auto;
-        padding-bottom: 5px;
+        padding-bottom: 10px;
       }
-
       .tab-btn {
-        flex: 1;
-        justify-content: center;
-        white-space: nowrap;
-        padding: 10px;
-        font-size: 11px;
+        flex-shrink: 0;
+        padding: 12px 20px;
+        font-size: 12px;
       }
+    }
 
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
       .premium-banner {
         flex-direction: column;
         text-align: center;
-        gap: 15px;
-        padding: 15px;
       }
-
-      .pb-left {
-        flex-direction: column;
-        text-align: center;
-        gap: 10px;
-      }
-
-      .pb-right {
-        text-align: center;
-        width: 100%;
-      }
-
-      .copy-btn {
-        margin: 10px auto 0;
-      }
-
-      .kyc-form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .kyc-full-width {
-        grid-column: span 1;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .page-title {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
-
-      .mobile-menu-btn {
-        position: absolute;
-        left: 0;
-      }
+      .pb-left { flex-direction: column; gap: 15px; }
+      .pb-right { border: none; padding-left: 0; margin-top: 20px; text-align: center; }
+      .pb-meta { justify-content: center; }
     }
   </style>
 </head>
@@ -600,8 +548,10 @@
       <div id="toast-container" class="toast-container"></div>
 
       <div class="page-wrapper">
-        <div class="page-title">
-          ACCOUNT & KYC
+        <div class="page-header-row">
+          <div class="page-title">
+            ACCOUNT & SETTINGS
+          </div>
         </div>
 
         <!-- 1. PROFILE BANNER -->
@@ -609,23 +559,21 @@
           <div class="pb-left">
             <div class="avatar-wrapper">
               <div class="pb-avatar" id="pb-avatar">P</div>
-              <div class="edit-icon"><i class="fa-solid fa-pencil"></i></div>
             </div>
             <div class="pb-info">
-              <h2 id="pb-username">@m_radha</h2>
+              <h2 id="pb-username">Loading...</h2>
               <div class="pb-meta">
-                <span class="m-badge m-rank" id="pb-rank">Bronze</span>
-                <span class="m-iq">IQ: <span id="pb-iq">145</span></span>
-                <span class="m-badge m-kyc" id="pb-kyc-badge" style="display:none"><i class="fa-solid fa-check"></i> KYC
-                  Verified</span>
+                <span class="m-badge m-rank" id="pb-rank">...</span>
+                <span class="m-iq">IQ: <span id="pb-iq">...</span></span>
+                <span class="m-badge m-kyc" id="pb-kyc-badge" style="display:none"><i class="fa-solid fa-check"></i> KYC Verified</span>
               </div>
             </div>
           </div>
           <div class="pb-right">
-            <div class="pb-label">PLAYER ID</div>
-            <div class="pb-pid" id="pb-pid">PX-000019</div>
+            <div class="pb-label">PLAYER IDENTITY</div>
+            <div class="pb-pid" id="pb-pid">PX-000000</div>
             <button class="copy-btn" onclick="copyPID()">
-              <i class="fa-solid fa-briefcase"></i> Copy
+              <i class="fa-solid fa-copy"></i> Copy ID
             </button>
           </div>
         </div>
@@ -636,13 +584,13 @@
           <div class="account-sidebar">
             <div class="tab-bar">
               <button class="tab-btn active" onclick="switchMainTab('profile', this)">
-                <i class="fa-solid fa-user"></i> Profile
+                <i class="fa-solid fa-user-gear"></i> Profile
               </button>
               <button class="tab-btn" onclick="switchMainTab('kyc', this)">
-                <i class="fa-solid fa-id-card"></i> KYC
+                <i class="fa-solid fa-id-card"></i> Verification
               </button>
               <button class="tab-btn" onclick="switchMainTab('security', this)">
-                <i class="fa-solid fa-shield"></i> Security
+                <i class="fa-solid fa-shield-halved"></i> Security
               </button>
             </div>
           </div>
@@ -652,48 +600,49 @@
 
             <!-- 3. EDIT PROFILE SECTION -->
             <div class="section-card" id="pane-profile">
-              <div class="section-header">EDIT PROFILE</div>
+              <div class="section-header">Personal Information</div>
 
-              <div class="form-item">
-                <label class="form-label">USERNAME</label>
-                <input type="text" id="edit-username" class="form-input" value="@m_radha">
-              </div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label class="form-label">Username</label>
+                  <input type="text" id="edit-username" class="form-input" value="">
+                </div>
 
-              <div class="form-item">
-                <label class="form-label">FULL NAME</label>
-                <input type="text" id="edit-fullname" class="form-input" value="M RADHA">
-              </div>
+                <div class="form-item">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" id="edit-fullname" class="form-input" value="">
+                </div>
 
-              <div class="form-item">
-                <label class="form-label">PROFILE PICTURE</label>
-                <div class="file-upload-box">
-                  <img src="/assets/default-avatar.png" class="preview-circle" id="edit-preview">
-                  <input type="file" id="file-upload" style="display:none" onchange="handlePreview(this)">
-                  <label for="file-upload" class="file-info-text">Choose file | No file chosen</label>
+                <div class="form-item full">
+                  <label class="form-label">Profile Avatar</label>
+                  <div class="file-upload-box">
+                    <img src="/assets/default-avatar.png" class="preview-circle" id="edit-preview">
+                    <input type="file" id="file-upload" style="display:none" onchange="handlePreview(this)">
+                    <label for="file-upload" class="file-info-text">Upload new photo <i class="fa-solid fa-cloud-arrow-up" style="margin-left:5px"></i></label>
+                  </div>
+                </div>
+
+                <div class="form-item full">
+                  <label class="form-label">Email Address (Secured)</label>
+                  <input type="text" id="edit-email" class="form-input" disabled value="undefined">
+                  <span style="font-size:10px; color:#2ecc71; margin-top:8px; display:block"><i class="fa-solid fa-lock"></i> Primary email cannot be modified for security.</span>
+                </div>
+
+                <div class="form-item full">
+                  <label class="form-label">Mobile Number</label>
+                  <input type="text" id="edit-phone" class="form-input" value="+91 0000000000">
                 </div>
               </div>
 
-              <div class="form-item">
-                <label class="form-label">EMAIL ADDRESS</label>
-                <input type="text" id="edit-email" class="form-input" disabled value="undefined">
-                <span style="font-size:10px; color:#2ecc71; margin-top:5px; display:block">Email cannot be changed for
-                  security reasons</span>
-              </div>
-
-              <div class="form-item">
-                <label class="form-label">PHONE NUMBER</label>
-                <input type="text" id="edit-phone" class="form-input" value="+91 9876543210">
-              </div>
-
               <button class="btn-action" onclick="saveProfile()">
-                <i class="fa-solid fa-save"></i> SAVE CHANGES
+                <i class="fa-solid fa-check-double"></i> Save Profile Details
               </button>
             </div>
 
             <!-- 4. KYC SECTION -->
             <div class="section-card" id="pane-kyc" style="display:none">
-              <div class="section-header">KYC VERIFICATION</div>
-              <div class="doc-desc">Choose a document type and provide details for manual verification.</div>
+              <div class="section-header">Identity Verification</div>
+              <p style="font-size:13px; color:#888; margin-bottom:25px; line-height:1.6">Verify your identity to unlock tournament withdrawals and premium features.</p>
 
               <div class="doc-selector">
                 <button class="doc-btn active" onclick="switchDocTab('aadhaar', this)">Aadhaar</button>
@@ -701,248 +650,194 @@
                 <button class="doc-btn" onclick="switchDocTab('passport', this)">Passport</button>
               </div>
 
-              <div id="kyc-status-msg" style="margin-bottom:15px; font-size:12px; color:var(--gold);"></div>
+              <div id="kyc-status-msg" style="margin-bottom:20px; font-size:13px; color:var(--gold); font-weight:700"></div>
 
               <!-- AADHAAR FORM -->
               <div id="form-aadhaar" class="kyc-form-section active">
-                <div class="kyc-form-grid">
+                <div class="form-grid">
                   <div class="form-item">
-                    <label class="form-label">AADHAAR NUMBER (12 DIGITS)</label>
-                    <input type="text" id="kyc-aadhaar" class="form-input" placeholder="XXXX XXXX XXXX" maxlength="14"
-                      oninput="formatAadhaar(this)">
+                    <label class="form-label">Aadhaar Number (12 Digits)</label>
+                    <input type="text" id="kyc-aadhaar" class="form-input" placeholder="XXXX XXXX XXXX" maxlength="14" oninput="formatAadhaar(this)">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">FULL NAME (AS PER AADHAAR)</label>
-                    <input type="text" id="kyc-name-aadhaar" class="form-input" placeholder="Enter Full Name"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="kyc-name-aadhaar" class="form-input" placeholder="Full Name" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">DATE OF BIRTH</label>
+                    <label class="form-label">Date of Birth</label>
                     <input type="date" id="kyc-dob-aadhaar" class="form-input">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">PINCODE</label>
-                    <input type="text" id="kyc-pincode" class="form-input" placeholder="6-digit Pincode" maxlength="6"
-                      oninput="fetchPincodeData(this.value)">
+                    <label class="form-label">Pincode</label>
+                    <input type="text" id="kyc-pincode" class="form-input" placeholder="6-digit Pincode" maxlength="6" oninput="fetchPincodeData(this.value)">
                   </div>
-                  <div class="form-item kyc-full-width">
-                    <label class="form-label">ADDRESS LINE 1 (HOUSE NO, STREET)</label>
-                    <input type="text" id="kyc-address1" class="form-input" placeholder="House No, Street Name">
-                  </div>
-                  <div class="form-item">
-                    <label class="form-label">ADDRESS LINE 2 (CITY/VILLAGE)</label>
-                    <input type="text" id="kyc-address2" class="form-input" placeholder="City or Village">
+                  <div class="form-item full">
+                    <label class="form-label">House / Street Address</label>
+                    <input type="text" id="kyc-address1" class="form-input" placeholder="Address line 1">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">ADDRESS LINE 3 (DISTRICT & STATE)</label>
+                    <label class="form-label">City / Village</label>
+                    <input type="text" id="kyc-address2" class="form-input" placeholder="City">
+                  </div>
+                  <div class="form-item">
+                    <label class="form-label">District & State</label>
                     <input type="text" id="kyc-address3" class="form-input" placeholder="District, State">
                   </div>
                 </div>
 
-                <div style="margin-top:20px; margin-bottom:15px;">
-                  <label class="form-label">UPLOAD AADHAAR COPY</label>
+                <div style="margin-top:30px;">
+                  <label class="form-label">Upload Documents</label>
                   <div class="upload-options">
-                    <div class="upload-option-btn active" id="btn-opt-a" onclick="setUploadOption('A')">Front & Back (2
-                      Files)</div>
-                    <div class="upload-option-btn" id="btn-opt-b" onclick="setUploadOption('B')">Full Aadhaar (1 File)
-                    </div>
+                    <div class="upload-option-btn active" id="btn-opt-a" onclick="setUploadOption('A')">Front & Back</div>
+                    <div class="upload-option-btn" id="btn-opt-b" onclick="setUploadOption('B')">Full Scan</div>
                   </div>
 
-                  <div id="upload-opt-a" class="kyc-form-grid">
+                  <div id="upload-opt-a" style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
                     <label class="upload-area" id="area-front">
-                      <i class="fa-solid fa-id-card"></i>
-                      <span id="lbl-front">Click to upload Front</span>
-                      <input type="file" id="file-front" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-front', 'lbl-front')">
+                      <i class="fa-solid fa-camera"></i>
+                      <span id="lbl-front">Front Side</span>
+                      <input type="file" id="file-front" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-front', 'lbl-front')">
                     </label>
                     <label class="upload-area" id="area-back">
-                      <i class="fa-solid fa-id-card-clip"></i>
-                      <span id="lbl-back">Click to upload Back</span>
-                      <input type="file" id="file-back" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-back', 'lbl-back')">
+                      <i class="fa-solid fa-camera-rotate"></i>
+                      <span id="lbl-back">Back Side</span>
+                      <input type="file" id="file-back" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-back', 'lbl-back')">
                     </label>
                   </div>
                   <div id="upload-opt-b" style="display:none;">
                     <label class="upload-area" id="area-full">
-                      <i class="fa-solid fa-file-contract"></i>
-                      <span id="lbl-full">Click to upload Full Aadhaar</span>
-                      <input type="file" id="file-full" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-full', 'lbl-full')">
+                      <i class="fa-solid fa-file-invoice"></i>
+                      <span id="lbl-full">Full Aadhaar Document</span>
+                      <input type="file" id="file-full" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-full', 'lbl-full')">
                     </label>
                   </div>
-                  <div style="font-size:10px; color:#888; margin-top:8px;">Max 5MB per file. Allowed: JPG, PNG, PDF.
-                  </div>
+                  <div style="font-size:11px; color:#555; margin-top:12px; text-align:center">JPG, PNG, or PDF (Max 5MB)</div>
                 </div>
 
-                <button class="btn-action" onclick="submitKYC('aadhaar')" id="btn-submit-aadhaar">
-                  <i class="fa-solid fa-paper-plane"></i> SUBMIT AADHAAR KYC
+                <button class="btn-action" id="btn-submit-aadhaar" style="margin-top:30px; width:100%" onclick="submitKYC('aadhaar')">
+                  <i class="fa-solid fa-shield-check"></i> Submit Aadhaar Verification
                 </button>
               </div>
 
               <!-- PAN FORM -->
               <div id="form-pan" class="kyc-form-section">
-                <div class="kyc-form-grid">
-                  <div class="form-item kyc-full-width">
-                    <label class="form-label">PAN NUMBER (10 CHARACTERS)</label>
-                    <input type="text" id="kyc-pan" class="form-input" placeholder="ABCDE1234F" maxlength="10"
-                      oninput="this.value = this.value.toUpperCase()">
+                <div class="form-grid">
+                  <div class="form-item">
+                    <label class="form-label">PAN Number</label>
+                    <input type="text" id="kyc-pan" class="form-input" placeholder="ABCDE1234F" maxlength="10" oninput="this.value = this.value.toUpperCase()">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">FULL NAME (AS PER PAN)</label>
-                    <input type="text" id="kyc-name-pan" class="form-input" placeholder="Enter Full Name"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="kyc-name-pan" class="form-input" placeholder="As on PAN card">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">DATE OF BIRTH</label>
+                    <label class="form-label">Date of Birth</label>
                     <input type="date" id="kyc-dob-pan" class="form-input">
                   </div>
                 </div>
-
-                <div style="margin-top:20px; margin-bottom:15px;">
-                  <label class="form-label">UPLOAD PAN CARD (FRONT IMAGE ONLY)</label>
-                  <label class="upload-area" id="area-pan" style="max-width:300px">
+                <div style="margin-top:20px;">
+                  <label class="form-label">Upload PAN Card</label>
+                  <label class="upload-area" id="area-pan-full">
                     <i class="fa-solid fa-id-card"></i>
-                    <span id="lbl-pan">Click to upload PAN</span>
-                    <input type="file" id="file-pan" style="display:none" accept=".jpg,.png,.pdf"
-                      onchange="handleFileSelect(this, 'area-pan', 'lbl-pan')">
+                    <span id="lbl-pan-full">Click to upload PAN Card Scan</span>
+                    <input type="file" id="file-pan-full" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pan-full', 'lbl-pan-full')">
                   </label>
-                  <div style="font-size:10px; color:#888; margin-top:8px;">Max 5MB. Allowed: JPG, PNG, PDF.</div>
                 </div>
-
-                <button class="btn-action" onclick="submitKYC('pan')" id="btn-submit-pan">
-                  <i class="fa-solid fa-paper-plane"></i> SUBMIT PAN KYC
+                <button class="btn-action" id="btn-submit-pan" style="margin-top:30px; width:100%" onclick="submitKYC('pan')">
+                  <i class="fa-solid fa-shield-check"></i> Submit PAN Verification
                 </button>
               </div>
 
               <!-- PASSPORT FORM -->
               <div id="form-passport" class="kyc-form-section">
-                <div class="kyc-form-grid">
+                <div class="form-grid">
                   <div class="form-item">
-                    <label class="form-label">PASSPORT NUMBER (ALPHANUMERIC)</label>
-                    <input type="text" id="kyc-passport" class="form-input" placeholder="A1234567" maxlength="9"
-                      oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                    <label class="form-label">Passport Number</label>
+                    <input type="text" id="kyc-passport" class="form-input" placeholder="A1234567" maxlength="9">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">FULL NAME (AS PER PASSPORT)</label>
-                    <input type="text" id="kyc-name-passport" class="form-input" placeholder="Enter Full Name"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                    <label class="form-label">Nationality</label>
+                    <input type="text" id="kyc-nationality" class="form-input" placeholder="Country">
                   </div>
                   <div class="form-item">
-                    <label class="form-label">DATE OF BIRTH</label>
-                    <input type="date" id="kyc-dob-passport" class="form-input">
-                  </div>
-                  <div class="form-item">
-                    <label class="form-label">NATIONALITY (OPTIONAL)</label>
-                    <input type="text" id="kyc-nationality" class="form-input" placeholder="e.g. Indian"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" id="kyc-dob-pass" class="form-input">
                   </div>
                 </div>
-
-                <div style="margin-top:20px; margin-bottom:15px;">
-                  <label class="form-label">UPLOAD PASSPORT COPY</label>
+                <div style="margin-top:30px;">
+                  <label class="form-label">Upload Documents</label>
                   <div class="upload-options">
-                    <div class="upload-option-btn active" id="btn-opt-pass-a" onclick="setUploadOptionPass('A')">Front &
-                      Back Images</div>
-                    <div class="upload-option-btn" id="btn-opt-pass-b" onclick="setUploadOptionPass('B')">Full Passport
-                      Scan
-                    </div>
+                    <div class="upload-option-btn active" id="btn-opt-pass-a" onclick="setUploadOptionPass('A')">Front & Back</div>
+                    <div class="upload-option-btn" id="btn-opt-pass-b" onclick="setUploadOptionPass('B')">Full Scan</div>
                   </div>
 
-                  <div id="upload-opt-pass-a" class="kyc-form-grid">
+                  <div id="upload-opt-pass-a" style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
                     <label class="upload-area" id="area-pass-front">
-                      <i class="fa-solid fa-id-card"></i>
-                      <span id="lbl-pass-front">Upload Front Page (Mandatory)</span>
-                      <input type="file" id="file-pass-front" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-pass-front', 'lbl-pass-front')">
+                      <i class="fa-solid fa-passport"></i>
+                      <span id="lbl-pass-front">Passport Front</span>
+                      <input type="file" id="file-pass-front" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pass-front', 'lbl-pass-front')">
                     </label>
                     <label class="upload-area" id="area-pass-back">
-                      <i class="fa-solid fa-id-card-clip"></i>
-                      <span id="lbl-pass-back">Upload Back Page (Optional)</span>
-                      <input type="file" id="file-pass-back" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-pass-back', 'lbl-pass-back')">
+                      <i class="fa-solid fa-file-invoice"></i>
+                      <span id="lbl-pass-back">Passport Back</span>
+                      <input type="file" id="file-pass-back" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pass-back', 'lbl-pass-back')">
                     </label>
                   </div>
                   <div id="upload-opt-pass-b" style="display:none;">
                     <label class="upload-area" id="area-pass-full">
-                      <i class="fa-solid fa-file-contract"></i>
-                      <span id="lbl-pass-full">Upload Full Scan (Mandatory)</span>
-                      <input type="file" id="file-pass-full" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-pass-full', 'lbl-pass-full')">
+                      <i class="fa-solid fa-file-pdf"></i>
+                      <span id="lbl-pass-full">Full Passport Scan</span>
+                      <input type="file" id="file-pass-full" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pass-full', 'lbl-pass-full')">
                     </label>
                   </div>
-                  <div style="font-size:10px; color:#888; margin-top:8px;">Max 5MB per file. Allowed: JPG, PNG, PDF.
-                  </div>
                 </div>
-
-                <button class="btn-action" onclick="submitKYC('passport')" id="btn-submit-passport">
-                  <i class="fa-solid fa-paper-plane"></i> SUBMIT PASSPORT KYC
+                <button class="btn-action" id="btn-submit-passport" style="margin-top:30px; width:100%" onclick="submitKYC('passport')">
+                  <i class="fa-solid fa-shield-check"></i> Submit Passport Verification
                 </button>
               </div>
             </div>
 
-            <!-- 5. STATISTICS SECTION -->
-            <div class="section-card" id="pane-stats">
-              <div class="section-header">GAMING STATISTICS</div>
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <div class="stat-label">IQ LEVEL</div>
-                  <div class="stat-value" id="stat-iq">145</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">TOTAL MATCHES</div>
-                  <div class="stat-value" id="stat-matches">11</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">WIN RATE</div>
-                  <div class="stat-value" id="stat-winrate">45%</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">BEST STREAK</div>
-                  <div class="stat-value blue" id="stat-streak">2</div>
-                </div>
-              </div>
-
-              <div class="progress-box">
-                <div class="progress-info">
-                  <span>Win Rate Progress</span>
-                  <span id="prog-val">45%</span>
-                </div>
-                <div class="progress-track">
-                  <div class="progress-fill" id="prog-fill" style="width: 45%"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 6. SECURITY SECTION -->
+            <!-- 5. SECURITY SECTION -->
             <div class="section-card" id="pane-security" style="display:none">
-              <div class="section-header">CHANGE PASSWORD</div>
+              <div class="section-header" id="sec-header-pwd">Security & Authentication</div>
+              
+              <div class="form-grid">
+                <div class="form-item full" id="sec-item-current">
+                  <label class="form-label">Current Password</label>
+                  <div class="password-wrapper">
+                    <input type="password" id="sec-current-pwd" class="form-input" placeholder="Verify your current password">
+                    <i class="fa-solid fa-eye toggle-pwd" onclick="togglePassword('sec-current-pwd', this)"></i>
+                  </div>
+                </div>
+                <div class="form-item">
+                  <label class="form-label">New Password</label>
+                  <div class="password-wrapper">
+                    <input type="password" id="sec-new-pwd" class="form-input" placeholder="6-12 characters">
+                    <i class="fa-solid fa-eye toggle-pwd" onclick="togglePassword('sec-new-pwd', this)"></i>
+                  </div>
+                </div>
+                <div class="form-item">
+                  <label class="form-label">Confirm New Password</label>
+                  <div class="password-wrapper">
+                    <input type="password" id="sec-confirm-pwd" class="form-input" placeholder="Repeat new password">
+                    <i class="fa-solid fa-eye toggle-pwd" onclick="togglePassword('sec-confirm-pwd', this)"></i>
+                  </div>
+                </div>
+              </div>
 
-              <div class="form-item">
-                <label class="form-label">CURRENT PASSWORD</label>
-                <input type="password" id="sec-current-pwd" class="form-input" placeholder="Current password">
-              </div>
-              <div class="form-item">
-                <label class="form-label">NEW PASSWORD</label>
-                <input type="password" id="sec-new-pwd" class="form-input" placeholder="Min 6 characters">
-              </div>
-              <div class="form-item">
-                <label class="form-label">CONFIRM NEW PASSWORD</label>
-                <input type="password" id="sec-confirm-pwd" class="form-input" placeholder="Repeat new password">
-              </div>
-              <button class="btn-action" onclick="changePassword()"
-                style="width: auto; padding: 12px 24px; margin-top: 20px; display: inline-flex;">
-                <i class="fa-solid fa-lock"></i> UPDATE PASSWORD
+              <button class="btn-action" onclick="changePassword()">
+                <i class="fa-solid fa-key"></i> Update Account Password
               </button>
 
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); margin: 30px 0;"></div>
-
-              <div class="section-header">SESSION MANAGEMENT</div>
-              <p style="font-size:12px; color:#aaa; margin-bottom:15px;">Log out from all devices for security.</p>
-              <button class="btn-action" onclick="logoutAllDevices()"
-                style="width: auto; background: rgba(231, 76, 60, 0.05); border-color: rgba(231, 76, 60, 0.3); color: #e74c3c; display: inline-flex; padding: 10px 20px;">
-                <i class="fa-solid fa-door-open"></i> Logout from All Devices
-              </button>
+              <div style="margin-top:50px; border-top:1px solid rgba(255,255,255,0.05); padding-top:30px">
+                <div class="section-header">Session Management</div>
+                <p style="font-size:13px; color:#888; margin-bottom:20px">Logged in on multiple devices? You can force a logout from all other sessions for better security.</p>
+                <button class="btn-action" style="background:rgba(231, 76, 60, 0.1); border-color:#e74c3c; color:#e74c3c; box-shadow:none" onclick="logoutAllDevices()">
+                  <i class="fa-solid fa-right-from-bracket"></i> Logout From All Devices
+                </button>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -972,7 +867,7 @@
         document.getElementById('pb-username').textContent = u.username;
         document.getElementById('pb-pid').textContent = u.player_id;
         document.getElementById('pb-rank').textContent = u.rank || 'Bronze';
-        document.getElementById('pb-iq').textContent = u.iq_level || 145;
+        document.getElementById('pb-iq').textContent = u.iq_level || '...';
 
         const badge = document.getElementById('pb-kyc-badge');
         if (u.kyc_status === 'verified') {
@@ -1009,16 +904,18 @@
         document.getElementById('edit-fullname').value = u.full_name || '';
         document.getElementById('edit-email').value = u.email || 'undefined';
 
+        // Password Section Logic for OAuth Users
+        const secHeader = document.getElementById('sec-header-pwd');
+        const secCurrent = document.getElementById('sec-item-current');
+        if (!u.hasPassword) {
+          if (secHeader) secHeader.textContent = 'SET A PASSWORD';
+          if (secCurrent) secCurrent.style.display = 'none';
+        } else {
+          if (secHeader) secHeader.textContent = 'SECURITY & AUTHENTICATION';
+          if (secCurrent) secCurrent.style.display = 'block';
+        }
+
         if (typeof updateSidebarUI === 'function') updateSidebarUI(u);
-      }
-      if (s.success) {
-        const st = s.stats;
-        document.getElementById('stat-iq').textContent = st.iq_level || 145;
-        document.getElementById('stat-matches').textContent = st.total_matches || 11;
-        document.getElementById('stat-winrate').textContent = (st.win_rate || 45) + '%';
-        document.getElementById('stat-streak').textContent = st.best_streak || 2;
-        document.getElementById('prog-val').textContent = (st.win_rate || 45) + '%';
-        document.getElementById('prog-fill').style.width = (st.win_rate || 45) + '%';
       }
     }
 
@@ -1028,12 +925,10 @@
 
       document.getElementById('pane-profile').style.display = 'none';
       document.getElementById('pane-kyc').style.display = 'none';
-      document.getElementById('pane-stats').style.display = 'none';
       if (document.getElementById('pane-security')) document.getElementById('pane-security').style.display = 'none';
 
       if (tabName === 'profile') {
         document.getElementById('pane-profile').style.display = 'block';
-        document.getElementById('pane-stats').style.display = 'block';
       } else if (tabName === 'kyc') {
         document.getElementById('pane-kyc').style.display = 'block';
       } else if (tabName === 'security') {
@@ -1042,17 +937,66 @@
     }
 
     function switchDocTab(docType, el) {
+      currentDocType = docType;
       document.querySelectorAll('.doc-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
-
       document.querySelectorAll('.kyc-form-section').forEach(s => s.classList.remove('active'));
-      document.getElementById('form-' + docType).classList.add('active');
-      currentDocType = docType;
+      document.getElementById(`form-${docType}`).classList.add('active');
     }
 
-    function copyPID() {
-      navigator.clipboard.writeText(document.getElementById('pb-pid').textContent);
-      Toast.success('Player ID Copied!');
+    function setUploadOption(opt) {
+      currentUploadOption = opt;
+      document.querySelectorAll('#form-aadhaar .upload-option-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-opt-${opt.toLowerCase()}`).classList.add('active');
+      document.getElementById('upload-opt-a').style.display = opt === 'A' ? 'grid' : 'none';
+      document.getElementById('upload-opt-b').style.display = opt === 'B' ? 'block' : 'none';
+    }
+
+    function setUploadOptionPass(opt) {
+      currentUploadOptionPass = opt;
+      document.querySelectorAll('#form-passport .upload-option-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-opt-pass-${opt.toLowerCase()}`).classList.add('active');
+      document.getElementById('upload-opt-pass-a').style.display = opt === 'A' ? 'grid' : 'none';
+      document.getElementById('upload-opt-pass-b').style.display = opt === 'B' ? 'block' : 'none';
+    }
+
+    function formatAadhaar(el) {
+      let val = el.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+      let matches = val.match(/\d{4,12}/g);
+      let match = matches && matches[0] || '';
+      let parts = [];
+      for (let i = 0, len = match.length; i < len; i += 4) {
+        parts.push(match.substring(i, i + 4));
+      }
+      if (parts.length) {
+        el.value = parts.join(' ');
+      } else {
+        el.value = val;
+      }
+    }
+
+    async function fetchPincodeData(pincode) {
+      if (pincode.length !== 6) return;
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+        const data = await res.json();
+        if (data[0].Status === "Success") {
+          const postOffice = data[0].PostOffice[0];
+          document.getElementById('kyc-address2').value = postOffice.Name;
+          document.getElementById('kyc-address3').value = `${postOffice.District}, ${postOffice.State}`;
+        }
+      } catch (e) {
+        console.error("Pincode fetch failed", e);
+      }
+    }
+
+    function handleFileSelect(input, areaId, labelId) {
+      const area = document.getElementById(areaId);
+      const label = document.getElementById(labelId);
+      if (input.files && input.files[0]) {
+        area.classList.add('has-file');
+        label.textContent = input.files[0].name;
+      }
     }
 
     function handlePreview(input) {
@@ -1064,200 +1008,96 @@
     }
 
     async function saveProfile() {
-      const username = document.getElementById('edit-username').value.replace('@', '');
-      const full_name = document.getElementById('edit-fullname').value;
-      const res = await api('/user/update-profile', { method: 'POST', body: JSON.stringify({ username, full_name }) });
-      if (res.success) { Toast.success('Profile updated!'); loadProfileData(); }
-    }
-
-    /* KYC LOGIC */
-    function formatAadhaar(input) {
-      let val = input.value.replace(/\D/g, '');
-      val = val.match(/.{1,4}/g)?.join(' ') || val;
-      input.value = val.substring(0, 14);
-    }
-
-    async function fetchPincodeData(pincode) {
-      pincode = pincode.replace(/\D/g, '');
-      if (pincode.length === 6) {
-        try {
-          const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-          const data = await res.json();
-          if (data && data[0].Status === 'Success') {
-            const postOffice = data[0].PostOffice[0];
-            document.getElementById('kyc-address2').value = postOffice.Name;
-            document.getElementById('kyc-address3').value = `${postOffice.District}, ${postOffice.State}`;
-            Toast.success('Address auto-filled via Pincode');
-          } else {
-            Toast.error('Invalid Pincode. Enter manually.');
-          }
-        } catch (e) { console.error('Pincode fetch failed'); }
-      }
-    }
-
-    function setUploadOption(opt) {
-      currentUploadOption = opt;
-      document.getElementById('btn-opt-a').classList.remove('active');
-      document.getElementById('btn-opt-b').classList.remove('active');
-      document.getElementById('btn-opt-' + opt.toLowerCase()).classList.add('active');
-
-      document.getElementById('upload-opt-a').style.display = opt === 'A' ? 'grid' : 'none';
-      document.getElementById('upload-opt-b').style.display = opt === 'B' ? 'block' : 'none';
-    }
-
-    function setUploadOptionPass(opt) {
-      currentUploadOptionPass = opt;
-      document.getElementById('btn-opt-pass-a').classList.remove('active');
-      document.getElementById('btn-opt-pass-b').classList.remove('active');
-      document.getElementById('btn-opt-pass-' + opt.toLowerCase()).classList.add('active');
-
-      document.getElementById('upload-opt-pass-a').style.display = opt === 'A' ? 'grid' : 'none';
-      document.getElementById('upload-opt-pass-b').style.display = opt === 'B' ? 'block' : 'none';
-    }
-
-    function handleFileSelect(input, areaId, labelId) {
-      const file = input.files[0];
-      const area = document.getElementById(areaId);
-      const label = document.getElementById(labelId);
-      if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-          Toast.error('File size must be less than 5MB');
-          input.value = ''; return;
-        }
-        const allowed = ['image/jpeg', 'image/png', 'application/pdf'];
-        if (!allowed.includes(file.type)) {
-          Toast.error('Only JPG, PNG, PDF allowed');
-          input.value = ''; return;
-        }
-        area.classList.add('has-file');
-        label.textContent = file.name;
-      }
-    }
-
-    async function validateOCR(file, type, expectedValue) {
-      // For testing and stability purposes, we are bypassing strict client-side OCR validation.
-      // This allows dummy images or slightly blurry real images to be submitted for admin review without blocking the user.
-      return true;
-    }
-
-    async function submitKYC(docType) {
-      if (isOcrProcessing) return;
-      const fd = new FormData();
-      let filesToValidate = [];
-      let ocrExpectedValue = '';
-
-      if (docType === 'aadhaar') {
-        const aadhaar = document.getElementById('kyc-aadhaar').value.replace(/\s/g, '');
-        const name = document.getElementById('kyc-name-aadhaar').value;
-        const dob = document.getElementById('kyc-dob-aadhaar').value;
-        const pincode = document.getElementById('kyc-pincode').value;
-        const add1 = document.getElementById('kyc-address1').value;
-        const add2 = document.getElementById('kyc-address2').value;
-        const add3 = document.getElementById('kyc-address3').value;
-
-        if (aadhaar.length !== 12 || !/^\d+$/.test(aadhaar)) return Toast.error('Enter valid 12-digit Aadhaar');
-        if (!name || !dob || !pincode || !add1 || !add2 || !add3) return Toast.error('All fields are mandatory');
-
-        fd.append('document_type', 'aadhaar');
-        fd.append('aadhaar_number', aadhaar);
-        fd.append('name', name);
-        fd.append('dob', dob);
-        fd.append('pincode', pincode);
-        fd.append('address_line1', add1);
-        fd.append('address_line2', add2);
-        fd.append('address_line3', add3);
-
-        if (currentUploadOption === 'A') {
-          const front = document.getElementById('file-front').files[0];
-          const back = document.getElementById('file-back').files[0];
-          if (!front || !back) return Toast.error('Upload both Front and Back images');
-          fd.append('front', front);
-          fd.append('back', back);
-          filesToValidate.push(front);
-        } else {
-          const full = document.getElementById('file-full').files[0];
-          if (!full) return Toast.error('Upload Full Aadhaar image');
-          fd.append('full', full);
-          filesToValidate.push(full);
-        }
-      } else if (docType === 'pan') {
-        const pan = document.getElementById('kyc-pan').value;
-        const name = document.getElementById('kyc-name-pan').value;
-        const dob = document.getElementById('kyc-dob-pan').value;
-
-        if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) return Toast.error('Invalid PAN Number Format');
-        if (!name || !dob) return Toast.error('All fields are mandatory');
-
-        const panFile = document.getElementById('file-pan').files[0];
-        if (!panFile) return Toast.error('Upload PAN Card Front Image');
-
-        fd.append('document_type', 'pan');
-        fd.append('pan_number', pan);
-        fd.append('name', name);
-        fd.append('dob', dob);
-        fd.append('front', panFile);
-        filesToValidate.push(panFile);
-        ocrExpectedValue = pan;
-      } else if (docType === 'passport') {
-        const pass = document.getElementById('kyc-passport').value;
-        const name = document.getElementById('kyc-name-passport').value;
-        const dob = document.getElementById('kyc-dob-passport').value;
-        const nationality = document.getElementById('kyc-nationality').value;
-
-        if (!/^[A-Z]{1,2}[0-9]{6,7}$/i.test(pass)) return Toast.error('Invalid Passport Number Format');
-        if (!name || !dob) return Toast.error('Name and DOB are mandatory');
-
-        fd.append('document_type', 'passport');
-        fd.append('passport_number', pass);
-        fd.append('name', name);
-        fd.append('dob', dob);
-        if (nationality) fd.append('nationality', nationality);
-
-        if (currentUploadOptionPass === 'A') {
-          const front = document.getElementById('file-pass-front').files[0];
-          const back = document.getElementById('file-pass-back').files[0];
-          if (!front) return Toast.error('Passport Front Page is mandatory');
-          fd.append('front', front);
-          if (back) fd.append('back', back); // Optional
-          filesToValidate.push(front);
-        } else {
-          const full = document.getElementById('file-pass-full').files[0];
-          if (!full) return Toast.error('Upload Full Passport Scan');
-          fd.append('full', full);
-          filesToValidate.push(full);
-        }
-      }
-
-      // OCR Validation
-      isOcrProcessing = true;
-      const btn = document.getElementById('btn-submit-' + docType);
+      const btn = document.querySelector('#pane-profile .btn-action');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFYING...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
       btn.disabled = true;
 
-      const isValid = await validateOCR(filesToValidate[0], docType, ocrExpectedValue);
-      if (!isValid) {
-        Toast.error(`Upload valid ${docType.toUpperCase()} copy. Keywords not detected.`);
-        isOcrProcessing = false;
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        return;
-      }
-
-      // Submit to API
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SUBMITTING...';
       try {
-        const res = await KYCAPI.submit(fd);
+        const username = document.getElementById('edit-username').value;
+        const full_name = document.getElementById('edit-fullname').value;
+        const phone = document.getElementById('edit-phone').value;
+        const avatarFile = document.getElementById('file-upload').files[0];
+
+        let avatarUrl = null;
+        if (avatarFile) {
+          const uploadRes = await UserAPI.uploadAvatar(avatarFile);
+          if (uploadRes.success) avatarUrl = uploadRes.avatarUrl;
+        }
+
+        const res = await api('/user/profile', {
+          method: 'PUT',
+          body: { username, full_name, phone, ...(avatarUrl && { profile_image: avatarUrl }) }
+        });
+
         if (res.success) {
-          Toast.success('KYC Submitted Successfully!');
+          Toast.success('Profile updated');
+          await loadProfileData();
+        } else {
+          Toast.error(res.message || 'Update failed');
+        }
+      } catch (err) {
+        Toast.error('Network error');
+      }
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+
+    async function submitKYC(type) {
+      const btnId = `btn-submit-${type}`;
+      const btn = document.getElementById(btnId);
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SUBMITTING...';
+      btn.disabled = true;
+
+      try {
+        const data = new FormData();
+        data.append('document_type', type);
+
+        if (type === 'aadhaar') {
+          data.append('aadhaar_number', document.getElementById('kyc-aadhaar').value.replace(/\s/g, ''));
+          data.append('name', document.getElementById('kyc-name-aadhaar').value);
+          data.append('dob', document.getElementById('kyc-dob-aadhaar').value);
+          data.append('pincode', document.getElementById('kyc-pincode').value);
+          data.append('address_line1', document.getElementById('kyc-address1').value);
+          data.append('address_line2', document.getElementById('kyc-address2').value);
+          data.append('address_line3', document.getElementById('kyc-address3').value);
+          
+          if (currentUploadOption === 'A') {
+            data.append('front', document.getElementById('file-front').files[0]);
+            data.append('back', document.getElementById('file-back').files[0]);
+          } else {
+            data.append('full', document.getElementById('file-full').files[0]);
+          }
+        } else if (type === 'pan') {
+          data.append('pan_number', document.getElementById('kyc-pan').value);
+          data.append('name', document.getElementById('kyc-name-pan').value);
+          data.append('dob', document.getElementById('kyc-dob-pan').value);
+          data.append('full', document.getElementById('file-pan-full').files[0]);
+        } else if (type === 'passport') {
+          data.append('passport_number', document.getElementById('kyc-passport').value);
+          data.append('nationality', document.getElementById('kyc-nationality').value);
+          data.append('name', document.getElementById('edit-fullname').value);
+          data.append('dob', document.getElementById('kyc-dob-pass').value);
+          
+          if (currentUploadOptionPass === 'A') {
+            data.append('front', document.getElementById('file-pass-front').files[0]);
+            data.append('back', document.getElementById('file-pass-back').files[0]);
+          } else {
+            data.append('full', document.getElementById('file-pass-full').files[0]);
+          }
+        }
+
+        const res = await KYCAPI.submit(data);
+        if (res.success) {
+          Toast.success('KYC submitted for review');
           loadProfileData();
         } else {
           Toast.error(res.message || 'Submission failed');
         }
-      } catch (e) {
-        Toast.error('Network Error');
+      } catch (err) {
+        Toast.error('Submission error');
       }
-      isOcrProcessing = false;
       btn.innerHTML = originalText;
       btn.disabled = false;
     }
@@ -1266,9 +1106,10 @@
       const current = document.getElementById('sec-current-pwd').value;
       const newPwd = document.getElementById('sec-new-pwd').value;
       const confirmPwd = document.getElementById('sec-confirm-pwd').value;
+      const isCurrentRequired = document.getElementById('sec-item-current').style.display !== 'none';
 
-      if (!current || !newPwd || !confirmPwd) return Toast.error('All password fields are required');
-      if (newPwd.length < 6) return Toast.error('New password must be at least 6 characters');
+      if ((isCurrentRequired && !current) || !newPwd || !confirmPwd) return Toast.error('All password fields are required');
+      if (newPwd.length < 6 || newPwd.length > 12) return Toast.error('Password must be between 6 and 12 characters');
       if (newPwd !== confirmPwd) return Toast.error('New passwords do not match');
 
       const btn = document.querySelector('#pane-security .btn-action');
@@ -1287,30 +1128,63 @@
           document.getElementById('sec-current-pwd').value = '';
           document.getElementById('sec-new-pwd').value = '';
           document.getElementById('sec-confirm-pwd').value = '';
+          
+          const u = getUser();
+          if (u) {
+            u.hasPassword = true;
+            localStorage.setItem('px_user', JSON.stringify(u));
+          }
+          await loadProfileData();
         } else {
           Toast.error(res.message || 'Failed to update password');
         }
       } catch (e) {
         Toast.error('Network Error');
       }
-
       btn.innerHTML = originalText;
       btn.disabled = false;
     }
 
+    function togglePassword(inputId, iconEl) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        iconEl.classList.remove('fa-eye');
+        iconEl.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        iconEl.classList.remove('fa-eye-slash');
+        iconEl.classList.add('fa-eye');
+      }
+    }
+
     async function logoutAllDevices() {
-      if (confirm('Are you sure you want to log out from all devices? You will be signed out immediately.')) {
-        try {
-          await api('/auth/logout', { method: 'POST' });
-        } catch (e) { }
+      if (confirm('Are you sure you want to log out from all devices?')) {
+        try { await api('/auth/logout', { method: 'POST' }); } catch (e) { }
         localStorage.clear();
         window.location.href = '/pages/login.html';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadSidebar();
-      loadProfileData();
+    function copyPID() {
+      const pid = document.getElementById('pb-pid').textContent;
+      navigator.clipboard.writeText(pid);
+      Toast.success('Player ID copied!');
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadSidebar();
+      await loadProfileData();
+
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'security') {
+        const btn = document.querySelector('.tab-btn[onclick*="security"]');
+        if (btn) switchMainTab('security', btn);
+        if (params.get('action') === 'setPassword') {
+          Toast.warning('Please create a password to continue.');
+        }
+      }
     });
   </script>
 </body>
