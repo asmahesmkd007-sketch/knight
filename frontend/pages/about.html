@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Chess | Phoenix-X Guide</title>
+    <title>The Ultimate Chess Guide | Phoenix-X</title>
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/about.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html { scroll-behavior: smooth; }
+        .main-content { padding-top: 20px; }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -15,158 +19,318 @@
 
         <main class="main-content">
             <div class="about-container">
-                <div class="about-main-content">
-                    
-                    <!-- 1. INTRODUCTION -->
-                    <section class="about-hero">
-                        <img src="https://fbadrybijiwkgdfomjhp.supabase.co/storage/v1/object/public/kyc-documents/chess_hero_premium.png" alt="Chess Guide">
-                        <div class="about-hero-content">
-                            <h1>THE ESSENCE OF CHESS</h1>
-                            <p>An abstract strategy mind sport for two players, played on a 64-square grid. The ultimate goal: <strong>Checkmate</strong> the enemy King.</p>
-                        </div>
-                    </section>
+                <div class="about-page-wrapper">
+                    <!-- NAVIGATION SIDEBAR -->
+                    <nav class="about-nav">
+                        <div class="about-nav-title">Quick Access</div>
+                        <a href="#intro" class="about-nav-item">The Royal Game</a>
+                        <a href="#history" class="about-nav-item">History & Origins</a>
+                        <a href="#equipment" class="about-nav-item">Board & Standards</a>
+                        <a href="#pieces" class="about-nav-item">Pieces & Values</a>
+                        <a href="#howtoplay" class="about-nav-item">How to Play</a>
+                        <a href="#special" class="about-nav-item">Special Moves</a>
+                        <a href="#openings" class="about-nav-item">Famous Openings</a>
+                        <a href="#tactics" class="about-nav-item">Strategy & Tactics</a>
+                        <a href="#outcomes" class="about-nav-item">Wins & Draws</a>
+                        <a href="#etiquette" class="about-nav-item">Chess Etiquette</a>
+                        <a href="#champions" class="about-nav-item">World Champions</a>
+                        <a href="#immortal" class="about-nav-item">The Immortal Game</a>
+                        <a href="#modern" class="about-nav-item">Modern Era & AI</a>
+                        <a href="#benefits" class="about-nav-item">Benefits of Chess</a>
+                        <a href="#phoenix" class="about-nav-item">Play on Phoenix-X</a>
+                    </nav>
 
-                    <!-- 2. HISTORY & CHAMPIONS -->
-                    <section class="about-section">
-                        <h2 class="section-title">HISTORY & WORLD CHAMPIONS</h2>
-                        <p>Chess originated from <strong>Chaturanga</strong> in 7th-century India, spreading through Persia and the Arab world before reaching Europe.</p>
-                        <ul class="highlights-list">
-                            <li><strong>Evolution:</strong> Modern rules were standardized in Europe by the late 15th century.</li>
-                            <li><strong>Governance:</strong> The International Chess Federation (<strong>FIDE</strong>) governs global competitions.</li>
-                            <li><strong>First Champion:</strong> Wilhelm Steinitz (1886).</li>
-                            <li><strong>Current Champion:</strong> <strong>Gukesh Dommaraju</strong> (won in 2024).</li>
-                        </ul>
-                    </section>
-
-                    <!-- 3. SETUP & PIECES -->
-                    <section class="about-section">
-                        <h2 class="section-title">THE BOARD & PIECES</h2>
-                        <div class="grid-2">
-                            <div class="card">
-                                <h3>Setup Orientation</h3>
-                                <p>Place the board so a light square is at the bottom-right ("White on right"). The Queen starts on her own color square.</p>
+                    <!-- CONTENT AREA -->
+                    <div class="about-main-content">
+                        
+                        <!-- 1. HERO -->
+                        <section id="intro" class="about-hero">
+                            <img src="https://fbadrybijiwkgdfomjhp.supabase.co/storage/v1/object/public/kyc-documents/chess_hero_premium.png" alt="Royal Chess">
+                            <div class="about-hero-content">
+                                <h1>THE ROYAL GAME</h1>
+                                <p>Welcome to the fascinating world of chess—a game of strategy, intellect, and infinite possibilities. Whether you are a curious beginner or an aspiring master, there is always something new to discover.</p>
                             </div>
-                            <div class="card">
-                                <h3>Pieces (16 each)</h3>
-                                <p>1 King, 1 Queen, 2 Rooks, 2 Bishops, 2 Knights, and 8 Pawns. The <strong>Staunton pattern</strong> is the standard for competitions.</p>
+                        </section>
+
+                        <!-- 2. HISTORY -->
+                        <section id="history" class="about-section">
+                            <h2 class="section-title">CHESS HISTORY</h2>
+                            <p>Chess originated in India during the 6th century as <strong>Chaturanga</strong>, representing military divisions. It traveled through Persia (where the term "Checkmate" was coined) before evolving in Europe into the game we know today.</p>
+                            <ul class="highlights-list">
+                                <li><strong>Global Journey:</strong> After India, it spread to the Arab world and then to Latin Europe.</li>
+                                <li><strong>Standardization:</strong> Modern rules emerged in the late 15th century and gained universal acceptance by the late 19th century.</li>
+                                <li><strong>Governance:</strong> <strong>FIDE</strong> (founded in 1924) governs all international competition.</li>
+                            </ul>
+                        </section>
+
+                        <!-- 3. EQUIPMENT & STANDARDS -->
+                        <section id="equipment" class="about-section">
+                            <h2 class="section-title">BOARD & STANDARDS</h2>
+                            <div class="feature-box">
+                                <h4>The Staunton Standard</h4>
+                                <p>The <strong>Staunton pattern</strong>, registered in 1849 by Nathaniel Cooke and endorsed by Howard Staunton, is the global standard for all professional tournaments due to its clarity and functionality.</p>
                             </div>
-                        </div>
-                    </section>
+                            <h3 class="section-subtitle">The Grid</h3>
+                            <p>Played on an 8x8 board of 64 squares alternating in light and dark colors. <strong>Orientation:</strong> Always ensure the light square is at the bottom-right corner ("White on the right").</p>
+                        </section>
 
-                    <!-- 4. MOVEMENT RULES -->
-                    <section class="about-section">
-                        <h2 class="section-title">HOW PIECES MOVE</h2>
-                        <table class="chess-table">
-                            <thead>
-                                <tr>
-                                    <th>Piece</th>
-                                    <th>Movement Pattern</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>King</strong></td>
-                                    <td>One square in any direction. Most valuable piece.</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Queen</strong></td>
-                                    <td>Any number of squares vertically, horizontally, or diagonally.</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Rook</strong></td>
-                                    <td>Any number of squares horizontally or vertically.</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Bishop</strong></td>
-                                    <td>Any number of squares diagonally.</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Knight</strong></td>
-                                    <td>"L-shape" (2x1). The only piece that can <strong>leap</strong> over others.</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Pawn</strong></td>
-                                    <td>Forward one square (two on first move). Captures diagonally.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </section>
+                        <!-- 4. PIECES & VALUES -->
+                        <section id="pieces" class="about-section">
+                            <h2 class="section-title">PIECES & RELATIVE VALUES</h2>
+                            <p>While every game's goal is to protect the King, knowing the relative point values of your pieces helps you make better trades.</p>
+                            <table class="chess-table">
+                                <thead>
+                                    <tr>
+                                        <th>Piece</th>
+                                        <th>Symbol</th>
+                                        <th>Point Value</th>
+                                        <th>Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Pawn</td>
+                                        <td><i class="fa-solid fa-chess-pawn"></i></td>
+                                        <td>1 pt</td>
+                                        <td>The "soul of chess." Used for structure and promotion.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Knight</td>
+                                        <td><i class="fa-solid fa-chess-knight"></i></td>
+                                        <td>3 pts</td>
+                                        <td>The trickster. Jumps over pieces. Deadly in forks.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bishop</td>
+                                        <td><i class="fa-solid fa-chess-bishop"></i></td>
+                                        <td>3 pts</td>
+                                        <td>Long-range diagonal power. Strong in open positions.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Rook</td>
+                                        <td><i class="fa-solid fa-chess-rook"></i></td>
+                                        <td>5 pts</td>
+                                        <td>Heavy artillery. Dominates horizontal/vertical lines.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Queen</td>
+                                        <td><i class="fa-solid fa-chess-queen"></i></td>
+                                        <td>9 pts</td>
+                                        <td>Most powerful piece. Combines Rook and Bishop.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>King</td>
+                                        <td><i class="fa-solid fa-chess-king"></i></td>
+                                        <td>∞</td>
+                                        <td>The objective. Must be kept safe at all costs.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </section>
 
-                    <!-- 5. SPECIAL MOVES -->
-                    <section class="about-section">
-                        <h2 class="section-title">SPECIAL MOVES</h2>
-                        <div class="feature-box">
-                            <strong>Castling:</strong> King moves two squares toward a Rook, and the Rook hops over him. Only possible if neither has moved and no pieces are between them.
-                        </div>
-                        <div class="feature-box">
-                            <strong>En Passant:</strong> A special pawn capture immediately after an opponent's pawn makes a two-square advance.
-                        </div>
-                        <div class="feature-box">
-                            <strong>Promotion:</strong> A pawn reaching the 8th rank is replaced by a Queen, Rook, Bishop, or Knight.
-                        </div>
-                    </section>
-
-                    <!-- 6. CHECK & CHECKMATE -->
-                    <section class="about-section">
-                        <h2 class="section-title">CHECK & CHECKMATE</h2>
-                        <p><strong>Check:</strong> When a King is under immediate attack. You must capture the attacker, block the attack, or move the King.</p>
-                        <p><strong>Checkmate:</strong> The King is in check and there is no legal way to escape. This ends the game with a win for the attacker.</p>
-                    </section>
-
-                    <!-- 7. GAME OUTCOMES -->
-                    <section class="about-section">
-                        <h2 class="section-title">HOW GAMES END</h2>
-                        <div class="grid-2">
-                            <div class="card">
-                                <h3>Winning</h3>
-                                <ul style="padding-left: 20px;">
-                                    <li>Checkmate</li>
-                                    <li>Resignation</li>
-                                    <li>Win on Time (Clock runs out)</li>
-                                    <li>Forfeit (Rules violations)</li>
-                                </ul>
+                        <!-- 5. HOW TO PLAY -->
+                        <section id="howtoplay" class="about-section">
+                            <h2 class="section-title">HOW TO PLAY CHESS</h2>
+                            <p>White moves first, after which players alternate turns. One piece is moved per turn.</p>
+                            <ul class="highlights-list">
+                                <li><strong>Capture:</strong> Pieces are removed by moving your piece to their square (except En Passant).</li>
+                                <li><strong>Leaping:</strong> The Knight is the <strong>only</strong> piece that can jump over other pieces.</li>
+                                <li><strong>Pawn Capture:</strong> Pawns move forward but capture diagonally.</li>
+                            </ul>
+                            <div class="grid-2">
+                                <div class="card">
+                                    <h3>Game Phases</h3>
+                                    <p><strong>Opening:</strong> Developing pieces and controlling the center.<br><strong>Middlegame:</strong> Strategy and planning.<br><strong>Endgame:</strong> Pawn promotion and King activity.</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Game Types</h3>
+                                    <p><strong>Classical:</strong> Slow/Strategic.<br><strong>Rapid:</strong> 10-60 mins.<br><strong>Blitz:</strong> 3-5 mins.<br><strong>Bullet:</strong> Under 3 mins.<br><strong>Chess960:</strong> Random starting positions.</p>
+                                </div>
                             </div>
-                            <div class="card">
-                                <h3>Drawing</h3>
-                                <ul style="padding-left: 20px;">
-                                    <li>Stalemate (No legal moves, not in check)</li>
-                                    <li>Dead Position (Impossible to mate)</li>
-                                    <li>Mutual Agreement</li>
-                                    <li>Threefold Repetition</li>
-                                    <li>Fifty-Move Rule</li>
-                                </ul>
+                        </section>
+
+                        <!-- 6. SPECIAL MOVES -->
+                        <section id="special" class="about-section">
+                            <h2 class="section-title">SPECIAL RULES</h2>
+                            <div class="grid-3" style="gap:16px;">
+                                <div class="card">
+                                    <h4>Castling</h4>
+                                    <p>Moves King 2 squares toward a Rook to secure safety. Both pieces must be unmoved.</p>
+                                </div>
+                                <div class="card">
+                                    <h4>En Passant</h4>
+                                    <p>Capturing a pawn "in passing" right after it makes a 2-square initial move.</p>
+                                </div>
+                                <div class="card">
+                                    <h4>Promotion</h4>
+                                    <p>Pawn reaching the 8th rank transforms into any major piece (usually a Queen).</p>
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <!-- 8. TIME CONTROLS & NOTATION -->
-                    <section class="about-section">
-                        <h2 class="section-title">TIME & NOTATION</h2>
-                        <p>Competitions use <strong>Chess Clocks</strong>. Categories include <strong>Classical</strong> (long), <strong>Rapid</strong>, <strong>Blitz</strong>, and <strong>Bullet</strong> (under 3 mins).</p>
-                        <p><strong>Algebraic Notation:</strong> The standard for recording moves (e.g., <em>e4, Nf3, Bxf3+</em>). White moves are recorded first, followed by Black.</p>
-                    </section>
+                        <!-- 7. OPENINGS -->
+                        <section id="openings" class="about-section">
+                            <h2 class="section-title">FAMOUS OPENINGS</h2>
+                            <div class="champions-grid">
+                                <div class="champion-card">
+                                    <div class="champion-name">Sicilian Defense</div>
+                                    <div class="champion-bio">1. e4 c5. The most high-scoring and complex response for Black against White's King Pawn Opening.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Ruy Lopez</div>
+                                    <div class="champion-bio">1. e4 e5 2. Nf3 Nc6 3. Bb5. Named after a Spanish priest, it is one of the oldest and most studied.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Queen's Gambit</div>
+                                    <div class="champion-bio">1. d4 d5 2. c4. White offers a pawn to control the center. Popularized globally by recent media.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">King's Indian</div>
+                                    <div class="champion-bio">A "hypermodern" defense where Black lets White take the center to launch a later counterattack.</div>
+                                </div>
+                            </div>
+                        </section>
 
-                    <!-- 9. PHASES OF THE GAME -->
-                    <section class="about-section">
-                        <h2 class="section-title">THEORY & PHASES</h2>
-                        <ul class="highlights-list">
-                            <li><strong>Opening:</strong> Focus on development, center control, and king safety.</li>
-                            <li><strong>Middlegame:</strong> Strategic planning and tactical combinations (Forks, Pins, Skewers).</li>
-                            <li><strong>Endgame:</strong> Few pieces remain; Pawns and Kings become much more powerful.</li>
-                        </ul>
-                    </section>
+                        <!-- 8. TACTICS -->
+                        <section id="tactics" class="about-section">
+                            <h2 class="section-title">TACTICAL GLOSSARY</h2>
+                            <p>Tactics are short-term maneuvers to gain material or checkmate.</p>
+                            <ul class="highlights-list">
+                                <li><strong>The Fork:</strong> Attacking two or more enemy pieces simultaneously with one piece.</li>
+                                <li><strong>The Pin:</strong> Restricting a piece from moving because it would expose a more valuable piece behind it.</li>
+                                <li><strong>The Skewer:</strong> Attacking a valuable piece, forcing it to move and expose a piece behind it.</li>
+                                <li><strong>Discovered Attack:</strong> Moving a piece to reveal an attack from a different piece behind it.</li>
+                            </ul>
+                        </section>
 
-                    <!-- 10. COMPUTERS & TECHNOLOGY -->
-                    <section class="about-section">
-                        <h2 class="section-title">CHESS & TECHNOLOGY</h2>
-                        <p>In 1997, <strong>Deep Blue</strong> became the first computer to beat a World Champion (Garry Kasparov). Today, engines like <strong>Stockfish</strong> and <strong>AlphaZero</strong> are significantly stronger than any human and have revolutionized chess theory.</p>
-                    </section>
+                        <!-- 9. OUTCOMES -->
+                        <section id="outcomes" class="about-section">
+                            <h2 class="section-title">WINS & DRAWS</h2>
+                            <div class="grid-2">
+                                <div class="card">
+                                    <h3 style="color:var(--primary)">Winning</h3>
+                                    <p><strong>Checkmate:</strong> King trapped in check.<br><strong>Resignation:</strong> Opponent concedes.<br><strong>Time Win:</strong> Opponent's clock runs out.<br><strong>Forfeit:</strong> Violation of rules.</p>
+                                </div>
+                                <div class="card">
+                                    <h3 style="color:var(--primary)">Drawing</h3>
+                                    <p><strong>Stalemate:</strong> No legal moves, not in check.<br><strong>Threefold Repetition:</strong> Same position occurs 3 times.<br><strong>50-Move Rule:</strong> No capture/pawn move in 50 turns.<br><strong>Dead Position:</strong> Impossible to deliver mate.</p>
+                                </div>
+                            </div>
+                        </section>
 
-                    <!-- FOOTER -->
-                    <footer style="text-align: center; color: var(--text-muted); margin-top: 60px; padding-bottom: 40px;">
-                        <p>© 2026 PHOENIX-X | Information sourced from International Chess Standards.</p>
-                    </footer>
+                        <!-- 10. ETIQUETTE -->
+                        <section id="etiquette" class="about-section">
+                            <h2 class="section-title">CHESS ETIQUETTE</h2>
+                            <p>Good sportsmanship is essential in the Royal Game.</p>
+                            <ul class="highlights-list">
+                                <li><strong>Handshake:</strong> Standard practice to shake hands before and after a match.</li>
+                                <li><strong>Touch-Move:</strong> If you touch a piece, you must move it (if legal).</li>
+                                <li><strong>"J'adoube" (I Adjust):</strong> Say this *before* touching a piece to adjust its position on the square.</li>
+                                <li><strong>Silence:</strong> Maintain absolute quiet to respect the opponent's concentration.</li>
+                            </ul>
+                        </section>
 
+                        <!-- 11. CHAMPIONS -->
+                        <section id="champions" class="about-section">
+                            <h2 class="section-title">WORLD CHESS CHAMPIONS</h2>
+                            <div class="champions-grid">
+                                <div class="champion-card">
+                                    <div class="champion-name">Wilhelm Steinitz</div>
+                                    <div class="champion-bio">The first official champion (1886). Pioneer of scientific positional play.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Bobby Fischer</div>
+                                    <div class="champion-bio">American genius who broke decades of Soviet dominance in 1972.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Garry Kasparov</div>
+                                    <div class="champion-bio">Held the #1 spot for 255 months. Defeated by IBM's Deep Blue in 1997.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Viswanathan Anand</div>
+                                    <div class="champion-bio">The "Tiger of Madras." Transformed India into a global chess powerhouse.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Magnus Carlsen</div>
+                                    <div class="champion-bio">Current world #1 known for unmatched endgame precision and technical skill.</div>
+                                </div>
+                                <div class="champion-card">
+                                    <div class="champion-name">Gukesh Dommaraju</div>
+                                    <div class="champion-bio">The current World Champion (2024), representing the next generation of masters.</div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 12. IMMORTAL GAME -->
+                        <section id="immortal" class="about-section">
+                            <h2 class="section-title">THE IMMORTAL GAME (1851)</h2>
+                            <p>Played between Adolf Anderssen and Lionel Kieseritzky, this game is the summit of "Romantic Era" chess.</p>
+                            <div class="feature-box" style="border-color:var(--primary)">
+                                <p>Anderssen sacrificed his <strong>Queen, both Rooks, and a Bishop</strong> to force a stunning checkmate with just three minor pieces. It remains the ultimate example of tactical beauty over material count.</p>
+                            </div>
+                        </section>
+
+                        <!-- 13. MODERN ERA -->
+                        <section id="modern" class="about-section">
+                            <h2 class="section-title">MODERN CHESS & AI</h2>
+                            <img src="https://fbadrybijiwkgdfomjhp.supabase.co/storage/v1/object/public/kyc-documents/modern_chess_tech.png" alt="Tech Chess" style="border-radius:16px; margin:20px 0; width:100%;">
+                            <p>Chess has moved from quiet libraries to the digital age. In 1997, <strong>Deep Blue</strong> became the first computer to beat a reigning World Champion. Today, advanced AI like <strong>Stockfish</strong> and <strong>AlphaZero</strong> have revolutionized training, while streaming on platforms like Twitch has turned chess into a massive global spectator sport.</p>
+                        </section>
+
+                        <!-- 14. BENEFITS -->
+                        <section id="benefits" class="about-section">
+                            <h2 class="section-title">BENEFITS OF CHESS</h2>
+                            <div class="grid-3">
+                                <div class="card" style="text-align:center">
+                                    <i class="fa-solid fa-brain" style="font-size:32px; color:var(--primary); margin-bottom:10px;"></i>
+                                    <h4>Brain Power</h4>
+                                    <p>Improves memory, focus, and critical thinking skills.</p>
+                                </div>
+                                <div class="card" style="text-align:center">
+                                    <i class="fa-solid fa-chess" style="font-size:32px; color:var(--primary); margin-bottom:10px;"></i>
+                                    <h4>Strategy</h4>
+                                    <p>Teaches long-term planning and foresight.</p>
+                                </div>
+                                <div class="card" style="text-align:center">
+                                    <i class="fa-solid fa-shield" style="font-size:32px; color:var(--primary); margin-bottom:10px;"></i>
+                                    <h4>Discipline</h4>
+                                    <p>Builds patience and handles pressure effectively.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 15. PHOENIX-X -->
+                        <section id="phoenix" class="about-section" style="background: rgba(255,179,71,0.05); padding: 40px; border-radius: 24px; border: 1px solid var(--primary);">
+                            <h2 class="section-title" style="text-align:center">WHY PLAY ON PHOENIX-X?</h2>
+                            <p style="text-align:center; margin-bottom: 40px;">Phoenix-X is a premium ecosystem for the modern player. We combine deep strategy with fast-paced competition.</p>
+                            
+                            <div class="grid-3" style="gap: 24px;">
+                                <div class="card" style="text-align:center">
+                                    <i class="fa-solid fa-bolt" style="font-size: 32px; color: var(--primary); margin-bottom: 15px;"></i>
+                                    <h4>Fast Play</h4>
+                                    <p>Instant matchmaking for Blitz and Bullet enthusiasts.</p>
+                                </div>
+                                <div class="card" style="text-align:center">
+                                    <i class="fa-solid fa-trophy" style="font-size: 32px; color: var(--primary); margin-bottom: 15px;"></i>
+                                    <h4>Pro Tournaments</h4>
+                                    <p>Enter paid knockout arenas and win massive prizes.</p>
+                                </div>
+                                <div class="card" style="text-align:center">
+                                    <i class="fa-solid fa-user-shield" style="font-size: 32px; color: var(--primary); margin-bottom: 15px;"></i>
+                                    <h4>Fair Play</h4>
+                                    <p>Advanced anti-cheat systems for a secure gaming experience.</p>
+                                </div>
+                            </div>
+
+                            <div style="text-align:center; margin-top: 40px;">
+                                <a href="/pages/play.html" class="btn btn-primary btn-lg">START PLAYING NOW</a>
+                            </div>
+                        </section>
+
+                        <footer style="text-align: center; color: var(--text-muted); margin-top: 80px; padding-bottom: 40px; font-size: 0.9rem;">
+                            <p>© 2026 PHOENIX-X. The evolution of strategy.</p>
+                        </footer>
+                    </div>
                 </div>
             </div>
         </main>
@@ -183,6 +347,28 @@
                 s.textContent = d.split('<script>')[1].split('<\/script>')[0];
                 document.body.appendChild(s);
             });
+
+        // Navigation Highlight Logic
+        const sections = document.querySelectorAll('section[id]');
+        const navItems = document.querySelectorAll('.about-nav-item');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(s => {
+                const top = s.offsetTop;
+                const height = s.clientHeight;
+                if (pageYOffset >= top - 100) {
+                    current = s.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href').includes(current)) {
+                    item.classList.add('active');
+                }
+            });
+        });
     </script>
 </body>
 </html>
