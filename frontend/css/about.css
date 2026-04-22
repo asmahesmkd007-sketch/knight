@@ -6,6 +6,59 @@
     --glass-border: rgba(255, 255, 255, 0.08);
     --text-main: #e0e0e0;
     --text-muted: #a0a0a0;
+    --border-glow: rgba(255, 179, 71, 0.2);
+}
+
+.about-page-wrapper {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+.about-nav {
+    position: sticky;
+    top: 20px;
+    width: 250px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: none; /* Hidden on small screens */
+}
+
+@media (min-width: 1200px) {
+    .about-nav { display: block; }
+}
+
+.about-nav-item {
+    display: block;
+    padding: 10px 15px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.about-nav-item:hover {
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.about-nav-item.active {
+    color: #fff;
+    background: var(--primary);
+}
+
+.about-nav-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    padding-left: 15px;
 }
 
 .about-container {
@@ -164,6 +217,46 @@
 .champion-bio {
     font-size: 0.95rem;
     color: var(--text-muted);
+}
+
+/* Tables */
+.chess-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.chess-table th, .chess-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.chess-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.chess-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Feature Cards */
+.feature-box {
+    background: linear-gradient(135deg, rgba(255, 179, 71, 0.1), transparent);
+    border-left: 4px solid var(--primary);
+    padding: 24px;
+    border-radius: 0 16px 16px 0;
+    margin: 32px 0;
+}
+
+.feature-box h4 {
+    margin-bottom: 10px;
+    color: #fff;
 }
 
 /* Responsive */
