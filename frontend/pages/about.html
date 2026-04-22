@@ -19,24 +19,7 @@
 
         <main class="main-content">
             <div class="about-container">
-                <div class="about-page-wrapper">
-                    <!-- STICKY NAV -->
-                    <nav class="about-nav">
-                        <div class="about-nav-title">Quick Access</div>
-                        <a href="#intro" class="about-nav-item">Welcome</a>
-                        <a href="#history" class="about-nav-item">History</a>
-                        <a href="#equipment" class="about-nav-item">The Board</a>
-                        <a href="#pieces" class="about-nav-item">Pieces</a>
-                        <a href="#special" class="about-nav-item">Special Moves</a>
-                        <a href="#openings" class="about-nav-item">Common Openings</a>
-                        <a href="#strategy" class="about-nav-item">Strategy & Tactics</a>
-                        <a href="#etiquette" class="about-nav-item">Etiquette</a>
-                        <a href="#titles" class="about-nav-item">Titles & Elo</a>
-                        <a href="#immortal" class="about-nav-item">Famous Games</a>
-                        <a href="#phoenix" class="about-nav-item">Play on Phoenix-X</a>
-                    </nav>
-
-                    <div class="about-main-content">
+                <div class="about-main-content">
                         <!-- HERO -->
                         <section id="intro" class="about-hero">
                             <img src="https://fbadrybijiwkgdfomjhp.supabase.co/storage/v1/object/public/kyc-documents/chess_hero_premium.png" alt="Chess Premium Hero">
@@ -215,7 +198,6 @@
                         <footer style="text-align: center; color: var(--text-muted); margin-top: 80px; padding-bottom: 40px; font-size: 0.9rem;">
                             <p>© 2026 PHOENIX-X. The evolution of strategy.</p>
                         </footer>
-                    </div>
                 </div>
             </div>
         </main>
@@ -233,26 +215,6 @@
                 document.body.appendChild(s);
             });
 
-        // Navigation Highlight Logic
-        const sections = document.querySelectorAll('section[id]');
-        const navItems = document.querySelectorAll('.about-nav-item');
-
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(s => {
-                const top = s.offsetTop;
-                if (pageYOffset >= top - 100) {
-                    current = s.getAttribute('id');
-                }
-            });
-
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('href').includes(current)) {
-                    item.classList.add('active');
-                }
-            });
-        });
     </script>
 </body>
 </html>
