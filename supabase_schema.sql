@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   tr_id             TEXT UNIQUE, -- Custom ID (TR-1, TR-2...)
   name              TEXT NOT NULL,
   type              TEXT NOT NULL CHECK (type IN ('free','paid')),
-  format            TEXT DEFAULT 'standard' CHECK (format IN ('quick','battle','standard')),
+  format            TEXT DEFAULT 'standard' CHECK (format IN ('quick','battle','standard','knockout')),
   entry_fee         NUMERIC DEFAULT 0,
   timer_type        INTEGER NOT NULL CHECK (timer_type IN (1,3,5,10)),
   max_players       INTEGER DEFAULT 16,
@@ -119,6 +119,7 @@ CREATE TABLE IF NOT EXISTS matches (
   bot_difficulty  INTEGER,
   flagged_cheating BOOLEAN DEFAULT FALSE,
   cheat_reason    TEXT DEFAULT '',
+  bracket_index   INTEGER, -- Position in the knockout bracket (0-15)
   start_time      TIMESTAMPTZ,
   end_time        TIMESTAMPTZ,
   created_at      TIMESTAMPTZ DEFAULT NOW()
@@ -239,6 +240,19 @@ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER kyc_requests_updated_at BEFORE UPDATE ON kyc_requests FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Auto-create Wallet for New Profiles
+CREATE OR REPLACE FUNCTION handle_new_user_wallet()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO wallets (user_id, balance)
+  VALUES (NEW.id, 0);
+  RETURN NEW;
+END; $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_profile_created
+  AFTER INSERT ON profiles
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user_wallet();
 
 -- TR-ID Generator (TR-1, TR-2...)
 CREATE SEQUENCE IF NOT EXISTS tournament_tr_id_seq START 1;
