@@ -19,27 +19,6 @@
 
         <main class="main-content">
             <div class="about-container">
-                <div class="about-page-wrapper">
-                    <!-- NAVIGATION SIDEBAR -->
-                    <nav class="about-nav">
-                        <div class="about-nav-title">Quick Access</div>
-                        <a href="#intro" class="about-nav-item">The Royal Game</a>
-                        <a href="#history" class="about-nav-item">History & Origins</a>
-                        <a href="#equipment" class="about-nav-item">Board & Standards</a>
-                        <a href="#pieces" class="about-nav-item">Pieces & Values</a>
-                        <a href="#howtoplay" class="about-nav-item">How to Play</a>
-                        <a href="#special" class="about-nav-item">Special Moves</a>
-                        <a href="#openings" class="about-nav-item">Famous Openings</a>
-                        <a href="#tactics" class="about-nav-item">Strategy & Tactics</a>
-                        <a href="#outcomes" class="about-nav-item">Wins & Draws</a>
-                        <a href="#etiquette" class="about-nav-item">Chess Etiquette</a>
-                        <a href="#champions" class="about-nav-item">World Champions</a>
-                        <a href="#immortal" class="about-nav-item">The Immortal Game</a>
-                        <a href="#modern" class="about-nav-item">Modern Era & AI</a>
-                        <a href="#benefits" class="about-nav-item">Benefits of Chess</a>
-                        <a href="#phoenix" class="about-nav-item">Play on Phoenix-X</a>
-                    </nav>
-
                     <!-- CONTENT AREA -->
                     <div class="about-main-content">
                         
@@ -330,7 +309,6 @@
                         <footer style="text-align: center; color: var(--text-muted); margin-top: 80px; padding-bottom: 40px; font-size: 0.9rem;">
                             <p>© 2026 PHOENIX-X. The evolution of strategy.</p>
                         </footer>
-                    </div>
                 </div>
             </div>
         </main>
@@ -348,27 +326,6 @@
                 document.body.appendChild(s);
             });
 
-        // Navigation Highlight Logic
-        const sections = document.querySelectorAll('section[id]');
-        const navItems = document.querySelectorAll('.about-nav-item');
-
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(s => {
-                const top = s.offsetTop;
-                const height = s.clientHeight;
-                if (pageYOffset >= top - 100) {
-                    current = s.getAttribute('id');
-                }
-            });
-
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('href').includes(current)) {
-                    item.classList.add('active');
-                }
-            });
-        });
     </script>
 </body>
 </html>
