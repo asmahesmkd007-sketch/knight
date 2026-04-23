@@ -458,8 +458,15 @@
                   showLobby('Generating Brackets', 'Round 1 starting...', true, false);
                   document.getElementById('status-title').innerHTML = `STARTING: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
              } else if (state.status === 'live') {
-                  const roundLabel = `ROUND ${state.round}`;
-                  if (!gameActive) showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
+                  const myP = state.players.find(p => (p.user_id?.id || p.user_id) === user.id);
+                  const isEliminated = myP && myP.status === 'eliminated';
+
+                  if (isEliminated) {
+                      showLobby('Eliminated 😔', 'You were knocked out of this tournament.', false, false);
+                  } else {
+                      const roundLabel = `ROUND ${state.round}`;
+                      if (!gameActive) showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
+                  }
 
                   // Match Detection
                   if (state.matches && state.matches.length > 0) {
@@ -521,10 +528,7 @@
 
         sock.on('tournament_eliminated', () => {
              localStorage.removeItem(`px_active_match_${tournamentId}`);
-             showLobby('Eliminated 😔', 'You were knocked out. Redirecting to dashboard...', false, false);
-             setTimeout(() => {
-                  window.location.href = '/pages/dashboard.html';
-             }, 3000);
+             showLobby('Eliminated 😔', 'You were knocked out of this tournament.', false, false);
         });
     }
 
