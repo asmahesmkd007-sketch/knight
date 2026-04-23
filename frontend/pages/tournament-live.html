@@ -380,6 +380,33 @@
     let oppTime = 5 * 60;
     let timerInterval = null;
     let selectedSquare = null;
+    let state = { countdown: 0, status: 'upcoming', phase: 'upcoming', players: [] };
+
+    let localCountdownInterval = null;
+    function startLocalCountdown(seconds) {
+        if (localCountdownInterval) clearInterval(localCountdownInterval);
+        state.countdown = seconds;
+        updateTimerUI();
+        
+        localCountdownInterval = setInterval(() => {
+            if (state.countdown > 0) {
+                state.countdown--;
+                updateTimerUI();
+            } else {
+                clearInterval(localCountdownInterval);
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI() {
+        const el = document.getElementById('global-timer');
+        if (el) el.textContent = fmt.countdown(state.countdown);
+        const sEl = document.getElementById('status-title');
+        if (sEl && (state.status === 'full' || state.status === 'starting')) {
+            const prefix = state.status === 'full' ? 'STARTING IN: ' : 'STARTING: ';
+            sEl.innerHTML = `${prefix}<span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
+        }
+    }
 
     const sock = initSocket();
 
@@ -443,13 +470,24 @@
         }
 
         sock.on(`tournament_sync_${tournamentId}`, (data) => {
+             const oldStatus = state.status;
+             const oldPhase = state.phase;
              state = data; // Update global state
              
-             // Update Global Panel Timer
-             document.getElementById('global-timer').textContent = fmt.countdown(state.countdown);
-             
+             // Synchronize local countdown if drift is large (>2s)
+             if (!localCountdownInterval || Math.abs(state.countdown - data.countdown) > 2) {
+                startLocalCountdown(data.countdown);
+             }
+
              // Update Leaderboard
              renderLeaderboard(state.players);
+
+             sock.off('tr_timer').on('tr_timer', (timerData) => {
+                 if (Math.abs(state.countdown - timerData.countdown) > 1) {
+                     state.countdown = timerData.countdown;
+                     updateTimerUI();
+                 }
+             });
 
              if (state.status === 'full') {
                   showLobby('Tournament Locked', 'All players joined. Starting soon!', true, false);
