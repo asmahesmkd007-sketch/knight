@@ -142,9 +142,12 @@
 }
 
 .champion-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
     background: var(--card-bg);
     border: 1px solid var(--glass-border);
-    padding: 24px;
+    padding: 20px;
     border-radius: 16px;
     transition: all 0.3s ease;
 }
@@ -155,16 +158,46 @@
     background: rgba(255, 179, 71, 0.05);
 }
 
+.champion-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.champion-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.champion-avatar i {
+    font-size: 30px;
+    color: var(--primary);
+    opacity: 0.5;
+}
+
+.champion-info {
+    flex: 1;
+}
+
 .champion-name {
     font-weight: 700;
     font-size: 1.2rem;
     color: #fff;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .champion-bio {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--text-muted);
+    line-height: 1.4;
 }
 
 /* Tables */
@@ -215,5 +248,42 @@
     }
     .about-hero h1 {
         font-size: 2.5rem;
+    }
+}
+
+/* Featured Champion Highlight */
+.champion-featured {
+    margin-top: 32px;
+    padding: 32px;
+    background: rgba(255, 179, 71, 0.03);
+    border: 1px solid rgba(255, 179, 71, 0.2);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.champion-featured:hover {
+    background: rgba(255, 179, 71, 0.06);
+    border-color: var(--primary);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.featured-content {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.featured-avatar {
+    width: 120px;
+    height: 120px;
+    border: 3px solid var(--primary);
+}
+
+@media (max-width: 768px) {
+    .featured-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
     }
 }
