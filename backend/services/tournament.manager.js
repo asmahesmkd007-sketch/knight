@@ -184,7 +184,7 @@ class TournamentManager {
 
         // Global Match Timer Tick
         activeTournamentMatches.forEach((match, matchId) => {
-            if (match.status !== 'live') return; // Note: 'live' matches are playing
+            if (match.status !== 'live' && match.status !== 'waiting_connect') return;
             if (match.turn === 'w') match.player1.time--;
             else match.player2.time--;
             this.io.to(match.roomId).emit('timer_update', { white_time: match.player1.time, black_time: match.player2.time });
