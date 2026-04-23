@@ -220,13 +220,13 @@
     }
 
     function createCardHTML(t) {
-      const isFull = t.status === 'full';
+      const isLocked = t.status === 'locked' || t.status === 'full';
       const isPlaying = t.status === 'live' || t.status === 'starting';
       const isJoined = t.is_joined;
       const pct = Math.round((t.current_players / t.max_players) * 100);
 
       let statusBadge = '';
-      if (t.status === 'full') statusBadge = '<span class="badge badge-pending"><i class="fa-solid fa-lock"></i> LOCKED</span>';
+      if (t.status === 'locked' || t.status === 'full') statusBadge = '<span class="badge badge-pending"><i class="fa-solid fa-lock"></i> LOCKED</span>';
       else if (t.status === 'starting' || t.status === 'live') statusBadge = '<span class="badge badge-live"><i class="fa-solid fa-play"></i> PLAYING</span>';
       else statusBadge = '<span class="badge badge-upcoming">UPCOMING</span>';
 
@@ -235,7 +235,7 @@
             <span class="timer-badge">${t.timer_type}min</span>
             ${statusBadge}
         </div>
-        <div style="font-weight:700;font-size:15px;margin-bottom:2px">${t.tr_id ? 'TR-' + t.tr_id : ''} ${t.name}</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:2px">${t.tr_id || ''} ${t.name}</div>
         <div style="font-family:var(--font-display);font-size:24px;font-weight:900;color:var(--gold);margin-bottom:4px">${t.prize_pool?.toLocaleString() || 0} <span style="font-size:12px;color:var(--text-secondary)">Coins</span></div>
         <div class="flex-between" style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">
             <span>${t.current_players}/${t.max_players} players</span>
@@ -291,9 +291,38 @@
       document.getElementById('entry-t-name').textContent = t.name;
       document.getElementById('entry-t-meta').textContent = `${t.timer_type}min · ${t.current_players}/${t.max_players} players`;
       document.getElementById('entry-pool').textContent = (t.prize_pool || 0).toLocaleString() + ' Coins';
-      document.getElementById('prize-1st').textContent = t.prize_first || 0;
-      document.getElementById('prize-2nd').textContent = t.prize_second || 0;
-      document.getElementById('prize-3rd').textContent = t.prize_third || 0;
+      
+      const p1 = document.getElementById('prize-1st');
+      const p2 = document.getElementById('prize-2nd');
+      const p3 = document.getElementById('prize-3rd');
+      
+      p1.textContent = t.prize_first || 0;
+      p2.textContent = t.prize_second || 0;
+      p3.textContent = t.prize_third || 0;
+
+      // Handle extra prizes for 3min TR
+      let extraHTML = '';
+      if (t.timer_type === 3 && t.prize_metadata) {
+          const m = t.prize_metadata;
+          extraHTML = `
+            <div id="extra-prizes-list" style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+              <div class="prize-badge"><div class="pos">4TH</div><div class="amt">${Math.floor(m.prize_4th || 0)}</div></div>
+              <div class="prize-badge"><div class="pos">5TH</div><div class="amt">${Math.floor(m.prize_5th || 0)}</div></div>
+              <div class="prize-badge"><div class="pos">6TH</div><div class="amt">${Math.floor(m.prize_6th || 0)}</div></div>
+            </div>`;
+      }
+      
+      // Clean previous extras
+      const oldExtra = document.getElementById('extra-prizes-list');
+      if (oldExtra) oldExtra.remove();
+      
+      if (extraHTML) {
+          const container = document.getElementById('prize-1st').closest('div').parentElement;
+          const temp = document.createElement('div');
+          temp.innerHTML = extraHTML;
+          container.appendChild(temp.firstElementChild);
+      }
+
       document.getElementById('entry-fee-label').textContent = t.entry_fee + ' Coins';
       document.getElementById('entry-balance-label').textContent = userBalance + ' Coins';
       const after = userBalance - t.entry_fee;

@@ -128,17 +128,17 @@ const joinTournament = async (req, res) => {
     const finalCount = (actualCount !== null && actualCount !== undefined) ? actualCount : (tournament.current_players + 1);
     let updateData = { current_players: finalCount };
     
-    // CHECK IF FULL (16/16) → Trigger LOCKED
+    // CHECK IF FULL (32/32 for 3min, 16/16 for 1min) → Trigger LOCKED
     if (finalCount >= tournament.max_players) {
-        updateData.status = 'full';
-        // Set start_time to now + 1 minute (LOCKED duration)
-        updateData.start_time = new Date(Date.now() + 1 * 60 * 1000).toISOString();
-        console.log(`🔒 TR-${tournament.tr_id} is FULL (${finalCount}/${tournament.max_players}). Starting LOCKED countdown.`);
+        updateData.status = 'locked';
+        const lockDuration = tournament.timer_type === 3 ? 120 : 60; // 2 min for 3min, 1 min for 1min
+        updateData.start_time = new Date(Date.now() + lockDuration * 1000).toISOString();
+        console.log(`🔒 TR-${tournament.tr_id} is FULL (${finalCount}/${tournament.max_players}). Status: LOCKED for ${lockDuration}s.`);
     }
 
     await supabase.from('tournaments').update(updateData).eq('id', req.params.id);
 
-    // Wake up TournamentManager to pickup the FULL tournament
+    // Wake up TournamentManager to pickup the LOCKED tournament
     if (finalCount >= tournament.max_players) {
       const TournamentManager = require('../services/tournament.manager');
       TournamentManager.pickupTournament(req.params.id).catch(()=>{});
@@ -151,28 +151,34 @@ const joinTournament = async (req, res) => {
   }
 };
 
-// ─── AUTO CREATE 1MIN PAID TOURNAMENTS ──────────────────────
+// ─── AUTO CREATE PAID TOURNAMENTS ──────────────────────────
 const autoCreatePaidTournaments = async () => {
   try {
     const entries = [5, 10, 15, 20, 30, 50, 80, 100, 200, 500];
-    const MAX_PLAYERS = 16;
-    const TIMER = 1; // 1 min per player
+    const types = [
+      { timer: 1, max: 16, suffix: '1 Min Knockout TR' },
+      { timer: 3, max: 32, suffix: '3 Min Paid TR' }
+    ];
     
     for (const entry of entries) {
-      // Check if an UPCOMING tournament already exists for this entry
-      const { data: existing } = await supabase.from('tournaments')
-        .select('id')
-        .eq('type', 'paid')
-        .eq('timer_type', TIMER)
-        .eq('entry_fee', entry)
-        .eq('status', 'upcoming')
-        .limit(1);
-      
-      if (existing && existing.length > 0) continue; // Skip if any upcoming one exists
-        // Generate TR ID (global counter)
+      for (const tType of types) {
+        // Check if an UPCOMING tournament already exists for this entry/timer
+        const { data: existing } = await supabase.from('tournaments')
+          .select('id')
+          .eq('type', 'paid')
+          .eq('timer_type', tType.timer)
+          .eq('entry_fee', entry)
+          .eq('status', 'upcoming')
+          .limit(1);
+        
+        if (existing && existing.length > 0) continue;
+
+        // Generate TR ID
+        // Format: TR-1-X for 1min, TR-3-X for 3min
         const { data: lastTR } = await supabase.from('tournaments')
           .select('tr_id')
           .eq('type', 'paid')
+          .eq('timer_type', tType.timer)
           .not('tr_id', 'is', null)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -180,33 +186,49 @@ const autoCreatePaidTournaments = async () => {
         
         let nextNum = 1;
         if (lastTR && lastTR.tr_id) {
-          const match = lastTR.tr_id.match(/TR-(\d+)/);
+          const match = lastTR.tr_id.match(/TR-\d+-(\d+)/) || lastTR.tr_id.match(/TR-(\d+)/);
           if (match) nextNum = parseInt(match[1]) + 1;
         }
-        const trId = `TR-${nextNum}`;
+        const trId = `TR-${tType.timer}-${nextNum}`;
 
-        const pool = entry * MAX_PLAYERS;
-        const prize_first = Math.floor(pool * 0.35);
-        const prize_second = Math.floor(pool * 0.30);
-        const prize_third = Math.floor(pool * 0.20);
+        const pool = entry * tType.max;
+        let prizes = {};
+        
+        if (tType.timer === 1) {
+          prizes.first = Math.floor(pool * 0.35);
+          prizes.second = Math.floor(pool * 0.30);
+          prizes.third = Math.floor(pool * 0.20);
+        } else {
+          // 3min Tournament: Top 6 Winners (Hidden 15.1% fee)
+          prizes.first = Math.floor(pool * 0.35);
+          prizes.second = Math.floor(pool * 0.25);
+          prizes.third = Math.floor(pool * 0.15);
+          prizes.fourth = Math.floor(pool * 0.033);
+          prizes.fifth = Math.floor(pool * 0.033);
+          prizes.sixth = Math.floor(pool * 0.033);
+        }
 
         await supabase.from('tournaments').insert({
-          name: `${entry} Coin - 1 Min Knockout TR`,
+          name: `${entry} Coin - ${tType.suffix}`,
           type: 'paid',
-          timer_type: TIMER,
+          timer_type: tType.timer,
           format: 'standard',
           entry_fee: entry,
-          max_players: MAX_PLAYERS,
+          max_players: tType.max,
           status: 'upcoming',
           prize_pool: pool,
-          prize_first,
-          prize_second,
-          prize_third,
+          prize_first: prizes.first,
+          prize_second: prizes.second,
+          prize_third: prizes.third,
+          // Store extra prizes in a metadata or separate ranks if needed, 
+          // for now we use columns if they exist or prizes json
+          prize_metadata: tType.timer === 3 ? { prize_4th: prizes.fourth, prize_5th: prizes.fifth, prize_6th: prizes.sixth } : null,
           tr_id: trId,
-          start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // Far future, updated when FULL
+          start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           phase: 'upcoming'
         });
-        console.log(`🏆 Created ${trId}: ${entry} Coin - 1 Min Knockout TR`);
+        console.log(`🏆 Created ${trId}: ${entry} Coin - ${tType.suffix}`);
+      }
     }
   } catch(e) { console.error('Auto-create paid error:', e); }
 };
@@ -214,7 +236,6 @@ const autoCreatePaidTournaments = async () => {
 // ─── DISTRIBUTE TOURNAMENT PRIZES ───────────────────────────
 const distributeTournamentPrizes = async (tournament) => {
   try {
-    // 1. Fetch all finished matches for this tournament to determine bracket results
     const { data: matches } = await supabase.from('matches')
       .select('player1_id, player2_id, winner_id, round')
       .eq('tournament_id', tournament.id)
@@ -225,71 +246,75 @@ const distributeTournamentPrizes = async (tournament) => {
 
     const maxRound = matches[0].round;
     const finalMatch = matches.find(m => m.round === maxRound);
-    
     if (!finalMatch || !finalMatch.winner_id) return;
 
-    // TOP 1 & 2 (Finalists)
+    // Ranks 1 & 2
     const top1 = finalMatch.winner_id;
     const top2 = (finalMatch.winner_id === finalMatch.player1_id) ? finalMatch.player2_id : finalMatch.player1_id;
 
-    // TOP 3 (Highest score among Semifinal losers)
-    // Semifinals are maxRound - 1
-    const semiFinalRound = maxRound - 1;
-    const semiMatches = matches.filter(m => m.round === semiFinalRound);
-    
-    let candidates = [];
+    // Rank 3 (Highest score among Semifinal losers)
+    const semiMatches = matches.filter(m => m.round === maxRound - 1);
+    let losers = [];
     semiMatches.forEach(m => {
-        const loserId = (m.winner_id === m.player1_id) ? m.player2_id : m.player1_id;
-        if (loserId && loserId !== top1 && loserId !== top2) {
-            candidates.push(loserId);
-        }
+        losers.push(m.winner_id === m.player1_id ? m.player2_id : m.player1_id);
     });
 
-    let top3 = null;
-    if (candidates.length > 0) {
-        const { data: candidateData } = await supabase.from('tournament_players')
-            .select('user_id, score')
-            .eq('tournament_id', tournament.id)
-            .in('user_id', candidates)
-            .order('score', { ascending: false })
-            .limit(1);
-        
-        if (candidateData && candidateData.length > 0) {
-            top3 = candidateData[0].user_id;
-        }
+    const { data: loserProfiles } = await supabase.from('tournament_players')
+        .select('user_id, score')
+        .eq('tournament_id', tournament.id)
+        .in('user_id', losers)
+        .order('score', { ascending: false });
+    
+    const top3 = loserProfiles?.[0]?.user_id || null;
+    const top4 = loserProfiles?.[1]?.user_id || null;
+
+    // Ranks 5 & 6 (For 3min TR)
+    let top5 = null, top6 = null;
+    if (tournament.timer_type === 3) {
+      const qfMatches = matches.filter(m => m.round === maxRound - 2);
+      let qfLosers = [];
+      qfMatches.forEach(m => {
+        qfLosers.push(m.winner_id === m.player1_id ? m.player2_id : m.player1_id);
+      });
+      const { data: qfLoserProfiles } = await supabase.from('tournament_players')
+        .select('user_id, score')
+        .eq('tournament_id', tournament.id)
+        .in('user_id', qfLosers)
+        .order('score', { ascending: false });
+      
+      top5 = qfLoserProfiles?.[0]?.user_id || null;
+      top6 = qfLoserProfiles?.[1]?.user_id || null;
     }
 
-    const winners = [top1, top2, top3].filter(id => id !== null);
-    const prizes = [tournament.prize_first, tournament.prize_second, tournament.prize_third];
+    const winners = [top1, top2, top3, top4, top5, top6].filter(id => id !== null);
+    const meta = tournament.prize_metadata || {};
+    const prizes = [
+      tournament.prize_first, 
+      tournament.prize_second, 
+      tournament.prize_third,
+      meta.prize_4th || 0,
+      meta.prize_5th || 0,
+      meta.prize_6th || 0
+    ];
 
     for (let i = 0; i < winners.length; i++) {
         const userId = winners[i];
-        const amount = prizes[i];
+        const amount = Math.floor(prizes[i]);
+        if (amount <= 0) continue;
 
-        if (amount > 0) {
-            // Insert into leaderboard
-            await supabase.from('leaderboard').insert({
-                tournament_id: tournament.id,
-                user_id: userId,
-                rank: i + 1,
-                prize: amount
-            });
+        await supabase.from('leaderboard').insert({
+            tournament_id: tournament.id, user_id: userId, rank: i + 1, prize: amount
+        });
 
-            // Update wallet
-            const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
-            if (!wallet) continue;
-            
+        const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
+        if (wallet) {
             const newBalance = Number(wallet.balance) + amount;
             await supabase.from('wallets').update({ balance: newBalance }).eq('user_id', userId);
-            
-            // Record transaction
             await supabase.from('transactions').insert({ 
               user_id: userId, type: 'tournament_prize', amount, 
               status: 'success', reference_id: tournament.id, balance_after: newBalance,
               description: `Prize: Rank ${i+1} in TR-${tournament.tr_id}`
             });
-            
-            console.log(`💰 Prize Distribution: Rank ${i+1} (${amount} coins) → ${userId}`);
         }
     }
   } catch (err) { console.error('Prize distribution error:', err); }

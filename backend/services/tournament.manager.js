@@ -47,7 +47,7 @@ class TournamentManager {
 
             const { data: tourneys } = await supabase.from('tournaments')
                 .select('*').eq('type', 'paid')
-                .in('status', ['full', 'starting', 'live']);
+                .in('status', ['full', 'locked', 'starting', 'live']);
             if (!tourneys) return;
 
             for (const t of tourneys) {
@@ -63,12 +63,13 @@ class TournamentManager {
         const { data: t, error } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
         if (error || !t) return;
 
-        if (!['full', 'starting', 'live'].includes(t.status)) return;
+        if (!['full', 'locked', 'starting', 'live'].includes(t.status)) return;
 
+        const maxPlayers = t.timer_type === 3 ? 32 : 16;
         let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
             .order('joined_at', { ascending: true })
-            .limit(16);
+            .limit(maxPlayers);
         
         if (pError || !players || players.length === 0) return;
 
@@ -113,8 +114,8 @@ class TournamentManager {
 
     static tick() {
         activeTourneys.forEach((tState, tId) => {
-            // FULL → Transitions to LIVE
-            if (tState.status === 'full') {
+            // FULL/LOCKED → Countdown to LIVE
+            if (tState.status === 'full' || tState.status === 'locked') {
                 tState.countdown--;
                 this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
 
@@ -134,7 +135,7 @@ class TournamentManager {
                         tState.nextRoundPending = true;
                         tState.phase = 'round_1';
                         tState.round = 1;
-                        tState.countdown = 600; // 10 minute overall tournament timer
+                        tState.countdown = tState.timer === 3 ? 1800 : 600; // 30 min vs 10 min
                         this.nextRound(tState).finally(() => tState.nextRoundPending = false);
                     }
                     if (tState.countdown % 10 === 0) this.broadcastState(tId);
@@ -245,9 +246,12 @@ class TournamentManager {
     }
 
     static async setupMatch(p1, p2, tState) {
+        const timerType = tState.timer || 1;
+        const timePerPlayer = timerType * 60;
+
         const { data: dbMatch, error } = await supabase.from('matches').insert({
             player1_id: p1.user_id, player2_id: p2.user_id,
-            match_type: 'tournament', timer_type: tState.timer,
+            match_type: 'tournament', timer_type: timerType,
             tournament_id: tState.id, status: 'active',
             round: tState.round
         }).select().single();
@@ -266,18 +270,21 @@ class TournamentManager {
             tournamentId: tState.id,
             roomId: dbMatch.room_id || `tr_${dbMatch.id}`,
             status: 'waiting_connect',
-            connectTimeout: 60,
+            connectTimeout: 30, // 30s connect window
             chess: new Chess(),
             turn: 'w',
-            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: [...s1][0], score: 0, connected: p1Online },
-            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: [...s2][0], score: 0, connected: p2Online },
+            player1: { userId: p1.user_id, time: timePerPlayer, socketId: [...s1][0], score: 0, connected: p1Online },
+            player2: { userId: p2.user_id, time: timePerPlayer, socketId: [...s2][0], score: 0, connected: p2Online },
             winnerId: null,
-            fen: 'start',
+            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             disconnectGrace: null,
             disconnectedPlayer: null
         };
 
-        if (p1Online && p2Online) match.status = 'live';
+        if (p1Online && p2Online) {
+            match.status = 'live';
+            console.log(`🚀 Match ${dbMatch.id} starting immediately (both online)`);
+        }
 
         activeTournamentMatches.set(dbMatch.id, match);
         tState.matches.push(match);
@@ -339,8 +346,48 @@ class TournamentManager {
         match.fen = match.chess.fen();
 
         const tState = activeTourneys.get(match.tournamentId);
-        const isPaid = tState?.type === 'paid';
 
+        // 🛡️ TIE-BREAK FOR KNOCKOUT DRAWS
+        if (result === 'draw' && tState) {
+            const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5, k: 0 };
+            const calculatePoints = (fen, color) => {
+                const board = fen.split(' ')[0];
+                let pts = 0;
+                const target = color === 'w' ? 'PRNBQ' : 'prnbq';
+                for (const char of board) {
+                    if (target.includes(char)) pts += pieceValues[char.toLowerCase()];
+                }
+                return pts;
+            };
+
+            const p1Pieces = calculatePoints(match.fen, 'w');
+            const p2Pieces = calculatePoints(match.fen, 'b');
+            
+            const p1Total = p1Pieces + 5; // 5 result points for draw
+            const p2Total = p2Pieces + 5;
+
+            if (p1Total > p2Total) {
+                winnerId = match.player1.userId;
+            } else if (p2Total > p1Total) {
+                winnerId = match.player2.userId;
+            } else {
+                // If equal points, less time used wins
+                const p1TimeUsed = (match.timer_type === 3 ? 180 : 60) - match.player1.time;
+                const p2TimeUsed = (match.timer_type === 3 ? 180 : 60) - match.player2.time;
+                if (p1TimeUsed < p2TimeUsed) winnerId = match.player1.userId;
+                else if (p2TimeUsed < p1TimeUsed) winnerId = match.player2.userId;
+                else winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
+            }
+            
+            result = (winnerId === match.player1.userId) ? 'player1_win' : 'player2_win';
+            match.winnerId = winnerId;
+            match.result = result;
+            reason = 'tie_break';
+            match.player1.piecesValue = p1Pieces;
+            match.player2.piecesValue = p2Pieces;
+        }
+
+        const isPaid = tState?.type === 'paid';
         if (isPaid) {
             // 🏆 HYBRID SCORING CALCULATION (PAID ONLY)
             const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
@@ -502,8 +549,16 @@ class TournamentManager {
 
     static handleDisconnect(userId) {
         activeTournamentMatches.forEach((match) => {
-            if (match.player1.userId === userId) { match.player1.connected = false; match.disconnectGrace = 120; }
-            else if (match.player2.userId === userId) { match.player2.connected = false; match.disconnectGrace = 120; }
+            if (match.player1.userId === userId) { 
+                match.player1.connected = false; 
+                match.disconnectGrace = match.timer_type === 3 ? 3 : 120; // 3s for 3min TR
+                match.disconnectedPlayer = 'p1';
+            }
+            else if (match.player2.userId === userId) { 
+                match.player2.connected = false; 
+                match.disconnectGrace = match.timer_type === 3 ? 3 : 120; // 3s for 3min TR
+                match.disconnectedPlayer = 'p2';
+            }
         });
     }
 
