@@ -845,8 +845,11 @@
   </div>
 
   <script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
   <script>
-        if (!requireAuth()) return;
+    if (typeof requireAuth === 'function') {
+      if (!requireAuth()) { /* redirecting */ }
+    }
     function toggleSidebar() {
       const sb = document.getElementById('sidebar');
       const overlay = document.getElementById('mobile-overlay');
