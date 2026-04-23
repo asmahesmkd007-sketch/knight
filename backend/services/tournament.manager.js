@@ -37,7 +37,7 @@ class TournamentManager {
                         console.log(`🔧 Self-healing TR-${ut.tr_id}: Forcing LOCKED (Actual count: ${count})`);
                         await supabase.from('tournaments').update({ 
                             status: 'full', 
-                            current_players: 16,
+                            current_players: ut.max_players || 16,
                             start_time: new Date(Date.now() + 120000).toISOString() 
                         }).eq('id', ut.id);
                         this.pickupTournament(ut.id).catch(()=>{});
@@ -214,8 +214,8 @@ class TournamentManager {
 
         tState.matches = []; // Clear previous round matches
 
-        // Advance round only if we are coming from REST or Lobby
-        if (tState.status === 'rest') {
+        // Advance round if coming from REST or if it's the very first round (0)
+        if (tState.status === 'rest' || tState.round === 0) {
             tState.round++;
         }
         
