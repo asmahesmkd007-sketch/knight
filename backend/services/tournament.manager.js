@@ -176,7 +176,11 @@ class TournamentManager {
                         const p2Online = m.player2.connected;
                         if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
                         else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
-                        else this.resolveMatch(m.id, 'draw', null, 'both_no_show');
+                        else {
+                            // Both no-show: Randomly pick one to "win" so brackets don't break
+                            const luckyWinnerId = Math.random() > 0.5 ? m.player1.userId : m.player2.userId;
+                            this.resolveMatch(m.id, 'draw', luckyWinnerId, 'both_no_show');
+                        }
                     }
                 }
             });
@@ -300,7 +304,7 @@ class TournamentManager {
             if (m.winnerId) {
                 roundWinners.add(m.winnerId);
             } else {
-                // If draw or other, decide a winner for progression
+                // Fail-safe: Should not happen with new resolveMatch logic
                 const winnerId = (m.player1.score > m.player2.score) ? m.player1.userId : 
                                (m.player2.score > m.player1.score) ? m.player2.userId : 
                                (Math.random() > 0.5 ? m.player1.userId : m.player2.userId);
@@ -377,12 +381,8 @@ class TournamentManager {
             } else if (result === 'player2_win') {
                 actualLoserId = match.player1.userId;
             } else if (result === 'draw') {
-                // Randomly advance one in knockout draw
-                if (Math.random() > 0.5) {
-                    actualLoserId = match.player2.userId;
-                } else {
-                    actualLoserId = match.player1.userId;
-                }
+                // In knockout draws, winnerId must be set to the advancing player
+                actualLoserId = (winnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
             }
 
             if (actualLoserId) {
