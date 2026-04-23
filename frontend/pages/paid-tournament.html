@@ -300,19 +300,33 @@
       p2.textContent = t.prize_second || 0;
       p3.textContent = t.prize_third || 0;
 
-      // Handle extra prizes for 3min TR
+      // Handle extra prizes for 3min (Top 6) and 5min (Top 16) TRs
       let extraHTML = '';
+      const pool = t.prize_pool || 0;
+      
       if (t.timer_type === 3) {
-          const pool = t.prize_pool || 0;
           const p4 = Math.floor(pool * 0.033);
           const p5 = Math.floor(pool * 0.033);
           const p6 = Math.floor(pool * 0.033);
-          
           extraHTML = `
             <div id="extra-prizes-list" style="display:flex;gap:10px;justify-content:center;margin-top:10px">
               <div class="prize-badge"><div class="pos">4TH</div><div class="amt">${p4}</div></div>
               <div class="prize-badge"><div class="pos">5TH</div><div class="amt">${p5}</div></div>
               <div class="prize-badge"><div class="pos">6TH</div><div class="amt">${p6}</div></div>
+            </div>`;
+      } else if (t.timer_type === 5) {
+          const pOthers = Math.floor(pool * 0.01);
+          extraHTML = `
+            <div id="extra-prizes-list" style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
+              <div style="font-size:11px; color:var(--text-muted); text-align:center; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">Qualifiers (Top 16)</div>
+              <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+                ${[4,5,6,7,8,9,10,11,12,13,14,15,16].map(pos => `
+                  <div class="prize-badge" style="padding:4px 2px; min-width:unset;">
+                    <div class="pos" style="font-size:9px">${pos}TH</div>
+                    <div class="amt" style="font-size:11px">${pOthers}</div>
+                  </div>
+                `).join('')}
+              </div>
             </div>`;
       }
       
