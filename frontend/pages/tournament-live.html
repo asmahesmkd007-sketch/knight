@@ -374,11 +374,9 @@
         }
 
         board = Chessboard('board', {
-          draggable: true,
+          draggable: false,
           position: 'start',
           pieceTheme: function(piece) { return 'https://www.chess.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png'; },
-          onDragStart: onDragStart,
-          onDrop: onDrop,
           onSnapEnd: () => {
             board.position(chess.fen());
             removeGreySquares();
@@ -611,14 +609,10 @@
 
       if (!board) {
         board = Chessboard('board', {
-          draggable: true,
+          draggable: false,
           position: fen,
           orientation: myColor,
           pieceTheme: function(piece) { return 'https://www.chess.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png'; },
-          onDragStart: onDragStart,
-          onDrop: onDrop,
-          onDragStart: onDragStart,
-          onDrop: onDrop,
           onSnapEnd: () => {
             board.position(chess.fen());
             removeGreySquares();
