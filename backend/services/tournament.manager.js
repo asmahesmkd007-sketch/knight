@@ -502,8 +502,8 @@ class TournamentManager {
 
     static handleDisconnect(userId) {
         activeTournamentMatches.forEach((match) => {
-            if (match.player1.userId === userId) { match.player1.connected = false; match.disconnectGrace = 10; }
-            else if (match.player2.userId === userId) { match.player2.connected = false; match.disconnectGrace = 10; }
+            if (match.player1.userId === userId) { match.player1.connected = false; match.disconnectGrace = 120; }
+            else if (match.player2.userId === userId) { match.player2.connected = false; match.disconnectGrace = 120; }
         });
     }
 

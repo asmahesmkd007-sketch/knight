@@ -392,12 +392,11 @@ module.exports = (io) => {
             if (game.disconnectTimeout) clearTimeout(game.disconnectTimeout);
             
             game.disconnectTimeout = setTimeout(async () => {
-              // Check if game is still active before ending
               if (!activeGames.has(matchId)) return;
               const result = disconnectedIsP1 ? 'player2_win' : 'player1_win';
               const winnerId = disconnectedIsP1 ? game.player2.userId : game.player1.userId;
               await endGame(io, matchId, game, result, winnerId, 'disconnect');
-            }, 30000);
+            }, 120000); // Increased to 2 minutes
 
             break;
           }
@@ -469,11 +468,7 @@ module.exports = (io) => {
       io.to(p1.socketId).emit('match_found', { matchId: match.id, color: 'white', opponent: { username: p2.username, userId: p2.userId }, timer: t });
       io.to(p2.socketId || socket.id).emit('match_found', { matchId: match.id, color: 'black', opponent: { username: p1.username, userId: p1.userId }, timer: t });
 
-      // Start 30s abort timer for White's first move
-      gameState.abortTimeout = setTimeout(async () => {
-         if (!activeGames.has(match.id)) return;
-         await endGame(io, match.id, gameState, 'draw', null, 'abandoned');
-      }, 30000);
+      // First-move abort timer removed per user request for tournament flexibility
 
       broadcastLiveInfo(io);
     } catch (err) {
