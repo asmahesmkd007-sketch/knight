@@ -160,75 +160,79 @@ const autoCreatePaidTournaments = async () => {
       { timer: 3, max: 32, suffix: '3 Min Paid TR' }
     ];
     
-    for (const entry of entries) {
-      for (const tType of types) {
-        // Check if an UPCOMING tournament already exists for this entry/timer
-        const { data: existing } = await supabase.from('tournaments')
-          .select('id')
-          .eq('type', 'paid')
-          .eq('timer_type', tType.timer)
-          .eq('entry_fee', entry)
-          .eq('status', 'upcoming')
-          .limit(1);
-        
-        if (existing && existing.length > 0) continue;
-
-        // Generate TR ID
-        // Format: TR-1-X for 1min, TR-3-X for 3min
-        const { data: lastTR } = await supabase.from('tournaments')
+    for (const tType of types) {
+        // Fetch current max TR ID for this type once
+        const { data: allTRs } = await supabase.from('tournaments')
           .select('tr_id')
           .eq('type', 'paid')
           .eq('timer_type', tType.timer)
-          .not('tr_id', 'is', null)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .not('tr_id', 'is', null);
         
         let nextNum = 1;
-        if (lastTR && lastTR.tr_id) {
-          const match = lastTR.tr_id.match(/TR-\d+-(\d+)/) || lastTR.tr_id.match(/TR-(\d+)/);
-          if (match) nextNum = parseInt(match[1]) + 1;
-        }
-        const trId = `TR-${tType.timer}-${nextNum}`;
-
-        const pool = entry * tType.max;
-        let prizes = {};
-        
-        if (tType.timer === 1) {
-          prizes.first = Math.floor(pool * 0.35);
-          prizes.second = Math.floor(pool * 0.30);
-          prizes.third = Math.floor(pool * 0.20);
-        } else {
-          // 3min Tournament: Top 6 Winners (Hidden 15.1% fee)
-          prizes.first = Math.floor(pool * 0.35);
-          prizes.second = Math.floor(pool * 0.25);
-          prizes.third = Math.floor(pool * 0.15);
-          prizes.fourth = Math.floor(pool * 0.033);
-          prizes.fifth = Math.floor(pool * 0.033);
-          prizes.sixth = Math.floor(pool * 0.033);
+        if (allTRs && allTRs.length > 0) {
+          const nums = allTRs.map(t => {
+            const m = t.tr_id.match(/TR-\d+-(\d+)/) || t.tr_id.match(/TR-(\d+)/);
+            return m ? parseInt(m[1]) : 0;
+          });
+          nextNum = Math.max(...nums) + 1;
         }
 
-        await supabase.from('tournaments').insert({
-          name: `${entry} Coin - ${tType.suffix}`,
-          type: 'paid',
-          timer_type: tType.timer,
-          format: 'standard',
-          entry_fee: entry,
-          max_players: tType.max,
-          status: 'upcoming',
-          prize_pool: pool,
-          prize_first: prizes.first,
-          prize_second: prizes.second,
-          prize_third: prizes.third,
-          // Store extra prizes in a metadata or separate ranks if needed, 
-          // for now we use columns if they exist or prizes json
-          prize_metadata: tType.timer === 3 ? { prize_4th: prizes.fourth, prize_5th: prizes.fifth, prize_6th: prizes.sixth } : null,
-          tr_id: trId,
-          start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-          phase: 'upcoming'
-        });
-        console.log(`🏆 Created ${trId}: ${entry} Coin - ${tType.suffix}`);
-      }
+        for (const entry of entries) {
+            console.log(`Checking ${tType.timer}min ${entry}c...`);
+            
+            const { data: existing } = await supabase.from('tournaments')
+              .select('id')
+              .eq('type', 'paid')
+              .eq('timer_type', tType.timer)
+              .eq('entry_fee', entry)
+              .eq('status', 'upcoming')
+              .limit(1);
+            
+            if (existing && existing.length > 0) {
+                console.log(`Skipping ${tType.timer}min ${entry}c (Already exists)`);
+                continue;
+            }
+
+            const trId = `TR-${tType.timer}-${nextNum}`;
+            const pool = entry * tType.max;
+            let prizes = {};
+            
+            if (tType.timer === 1) {
+              prizes.first = Math.floor(pool * 0.35);
+              prizes.second = Math.floor(pool * 0.30);
+              prizes.third = Math.floor(pool * 0.20);
+            } else {
+              prizes.first = Math.floor(pool * 0.35);
+              prizes.second = Math.floor(pool * 0.25);
+              prizes.third = Math.floor(pool * 0.15);
+              prizes.fourth = Math.floor(pool * 0.033);
+              prizes.fifth = Math.floor(pool * 0.033);
+              prizes.sixth = Math.floor(pool * 0.033);
+            }
+
+            const { error: insErr } = await supabase.from('tournaments').insert({
+              name: `${entry} Coin - ${tType.suffix}`,
+              type: 'paid',
+              timer_type: tType.timer,
+              format: 'standard',
+              entry_fee: entry,
+              max_players: tType.max,
+              status: 'upcoming',
+              prize_pool: pool,
+              prize_first: prizes.first,
+              prize_second: prizes.second,
+              prize_third: prizes.third,
+              tr_id: trId,
+              start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+              phase: 'upcoming'
+            });
+
+            if (insErr) console.error(`Failed to create ${trId}:`, insErr);
+            else {
+                console.log(`🏆 Created ${trId}: ${entry} Coin - ${tType.suffix}`);
+                nextNum++; // Increment local counter
+            }
+        }
     }
   } catch(e) { console.error('Auto-create paid error:', e); }
 };
@@ -287,14 +291,14 @@ const distributeTournamentPrizes = async (tournament) => {
     }
 
     const winners = [top1, top2, top3, top4, top5, top6].filter(id => id !== null);
-    const meta = tournament.prize_metadata || {};
+    const pool = tournament.prize_pool || 0;
     const prizes = [
       tournament.prize_first, 
       tournament.prize_second, 
       tournament.prize_third,
-      meta.prize_4th || 0,
-      meta.prize_5th || 0,
-      meta.prize_6th || 0
+      Math.floor(pool * 0.033), // 4th
+      Math.floor(pool * 0.033), // 5th
+      Math.floor(pool * 0.033)  // 6th
     ];
 
     for (let i = 0; i < winners.length; i++) {

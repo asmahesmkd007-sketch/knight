@@ -302,13 +302,17 @@
 
       // Handle extra prizes for 3min TR
       let extraHTML = '';
-      if (t.timer_type === 3 && t.prize_metadata) {
-          const m = t.prize_metadata;
+      if (t.timer_type === 3) {
+          const pool = t.prize_pool || 0;
+          const p4 = Math.floor(pool * 0.033);
+          const p5 = Math.floor(pool * 0.033);
+          const p6 = Math.floor(pool * 0.033);
+          
           extraHTML = `
             <div id="extra-prizes-list" style="display:flex;gap:10px;justify-content:center;margin-top:10px">
-              <div class="prize-badge"><div class="pos">4TH</div><div class="amt">${Math.floor(m.prize_4th || 0)}</div></div>
-              <div class="prize-badge"><div class="pos">5TH</div><div class="amt">${Math.floor(m.prize_5th || 0)}</div></div>
-              <div class="prize-badge"><div class="pos">6TH</div><div class="amt">${Math.floor(m.prize_6th || 0)}</div></div>
+              <div class="prize-badge"><div class="pos">4TH</div><div class="amt">${p4}</div></div>
+              <div class="prize-badge"><div class="pos">5TH</div><div class="amt">${p5}</div></div>
+              <div class="prize-badge"><div class="pos">6TH</div><div class="amt">${p6}</div></div>
             </div>`;
       }
       
