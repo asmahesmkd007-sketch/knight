@@ -150,10 +150,14 @@ class TournamentManager {
                     tState.countdown--;
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
                     
-                    // Auto-pairing logic during main round
-                    if (tState.countdown > 0) {
+                    // Auto-pairing logic during main round (Stop pairing in last 30s)
+                    if (tState.countdown > 30) {
                         this.pairMainRound(tState);
-                    } else {
+                    } else if (tState.countdown === 30) {
+                        this.io.to(`tournament_${tId}`).emit('tournament_msg', { message: 'Main Round ending soon. No more pairings!' });
+                    }
+                    
+                    if (tState.countdown <= 0) {
                         // Main Round Finished -> Qualification Leaderboard
                         tState.phase = 'qualification_leaderboard';
                         tState.countdown = 20; // 20s pause
