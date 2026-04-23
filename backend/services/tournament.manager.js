@@ -133,13 +133,45 @@ class TournamentManager {
                     
                     if (tState.countdown <= 0 && !tState.nextRoundPending) {
                         tState.nextRoundPending = true;
-                        tState.phase = 'round_1';
                         tState.round = 1;
-                        tState.countdown = tState.timer === 3 ? 1800 : 600; // 30 min vs 10 min
-                        this.nextRound(tState).finally(() => tState.nextRoundPending = false);
+                        if (tState.timer === 5) {
+                            tState.phase = 'main_round';
+                            tState.countdown = 600; // 10 min qualification
+                            this.startMainRound(tState).finally(() => tState.nextRoundPending = false);
+                        } else {
+                            tState.phase = 'round_1';
+                            tState.countdown = tState.timer === 3 ? 1800 : 600; 
+                            this.nextRound(tState).finally(() => tState.nextRoundPending = false);
+                        }
                     }
                     if (tState.countdown % 10 === 0) this.broadcastState(tId);
                 } 
+                else if (tState.phase === 'main_round') {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                    
+                    // Auto-pairing logic during main round
+                    if (tState.countdown > 0) {
+                        this.pairMainRound(tState);
+                    } else {
+                        // Main Round Finished -> Qualification Leaderboard
+                        tState.phase = 'qualification_leaderboard';
+                        tState.countdown = 20; // 20s pause
+                        this.broadcastState(tId);
+                    }
+                }
+                else if (tState.phase === 'qualification_leaderboard') {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                    if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                        tState.nextRoundPending = true;
+                        this.processQualification(tState).then(() => {
+                            tState.round = 2; // Knockout starts at Round 2
+                            tState.countdown = 600;
+                            return this.nextRound(tState);
+                        }).finally(() => tState.nextRoundPending = false);
+                    }
+                }
                 else {
                     tState.countdown--;
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
@@ -217,10 +249,63 @@ class TournamentManager {
         });
     }
 
-    static async nextRound(tState) {
-        if (tState.players.filter(p => p.status === 'alive').length <= 1) return this.finishTournament(tState.id, tState);
+    static async startMainRound(tState) {
+        tState.status = 'live';
+        tState.matches = [];
+        await supabase.from('tournaments').update({ phase: 'main_round', status: 'live', round: 1 }).eq('id', tState.id);
+        this.pairMainRound(tState);
+        this.broadcastState(tState.id);
+    }
 
-        tState.matches = []; // Clear previous round matches
+    static pairMainRound(tState) {
+        // Find all players not currently in an active match
+        const activeUserIds = new Set();
+        tState.matches.forEach(m => {
+            if (m.status !== 'finished') {
+                activeUserIds.add(m.player1.userId);
+                activeUserIds.add(m.player2.userId);
+            }
+        });
+
+        const available = tState.players.filter(p => p.status === 'alive' && !activeUserIds.has(p.user_id));
+        available.sort(() => Math.random() - 0.5);
+
+        while (available.length >= 2) {
+            const p1 = available.shift();
+            const p2 = available.shift();
+            this.setupMatch(p1, p2, tState).catch(err => console.error('Main Round Pairing Error:', err));
+        }
+    }
+
+    static async processQualification(tState) {
+        console.log(`📊 Processing Qualification for TR-${tState.tr_id}`);
+        // Sort players by score
+        tState.players.sort((a, b) => (b.score || 0) - (a.score || 0));
+        
+        // Mark Top 16 as alive, others as eliminated
+        tState.players.forEach((p, i) => {
+            if (i < 16) {
+                p.status = 'alive';
+                p.rank = i + 1;
+            } else {
+                p.status = 'eliminated';
+                p.rank = i + 1;
+            }
+        });
+
+        // Persist statuses to DB
+        for (const p of tState.players) {
+            await supabase.from('tournament_players').update({ status: p.status, rank: p.rank }).eq('tournament_id', tState.id).eq('user_id', p.user_id);
+        }
+        this.broadcastState(tState.id);
+    }
+
+    static async nextRound(tState) {
+        // 100-player 5min TR specialized check
+        const alivePlayers = tState.players.filter(p => p.status === 'alive');
+        if (alivePlayers.length <= 1) return this.finishTournament(tState.id, tState);
+
+        tState.matches = []; 
 
         // Advance round if coming from REST or if it's the very first round (0)
         if (tState.status === 'rest' || tState.round === 0) {
@@ -396,8 +481,10 @@ class TournamentManager {
         }
 
         const isPaid = tState?.type === 'paid';
+        const isHybrid = tState?.timer === 5;
+
         if (isPaid) {
-            // 🏆 HYBRID SCORING CALCULATION (PAID ONLY)
+            // 🏆 HYBRID SCORING CALCULATION
             const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
             const calculatePoints = (fen, color) => {
                 const board = fen.split(' ')[0];
@@ -416,10 +503,23 @@ class TournamentManager {
             let p1Result = 0, p2Result = 0;
             if (result === 'player1_win') { p1Result = 10; p2Result = 0; }
             else if (result === 'player2_win') { p1Result = 0; p2Result = 10; }
-            else { p1Result = 5; p2Result = 5; }
+            else if (result === 'draw') { p1Result = 5; p2Result = 5; }
 
-            match.player1.score = p1Pieces + p1Result;
-            match.player2.score = p2Pieces + p2Result;
+            const p1Delta = p1Pieces + p1Result;
+            const p2Delta = p2Pieces + p2Result;
+
+            match.player1.score = (match.player1.score || 0) + p1Delta;
+            match.player2.score = (match.player2.score || 0) + p2Delta;
+
+            // Update persistent scores in tState for Main Round accumulation
+            const p1Idx = tState.players.findIndex(p => p.user_id === match.player1.userId);
+            const p2Idx = tState.players.findIndex(p => p.user_id === match.player2.userId);
+            if (p1Idx !== -1) tState.players[p1Idx].score = (tState.players[p1Idx].score || 0) + p1Delta;
+            if (p2Idx !== -1) tState.players[p2Idx].score = (tState.players[p2Idx].score || 0) + p2Delta;
+
+            // Sync score to DB
+            supabase.from('tournament_players').update({ score: tState.players[p1Idx].score }).eq('tournament_id', tState.id).eq('user_id', match.player1.userId).then(()=>{});
+            supabase.from('tournament_players').update({ score: tState.players[p2Idx].score }).eq('tournament_id', tState.id).eq('user_id', match.player2.userId).then(()=>{});
         } else {
             // STANDARD SCORING (FREE ONLY)
             match.player1.score = result === 'player1_win' ? 1 : (result === 'draw' ? 0.5 : 0);

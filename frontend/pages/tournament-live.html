@@ -457,16 +457,24 @@
              } else if (state.status === 'starting') {
                   showLobby('Generating Brackets', 'Round 1 starting...', true, false);
                   document.getElementById('status-title').innerHTML = `STARTING: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
-             } else if (state.status === 'live') {
-                  const myP = state.players.find(p => (p.user_id?.id || p.user_id) === user.id);
-                  const isEliminated = myP && myP.status === 'eliminated';
+                  } else if (state.status === 'live') {
+                      const myP = state.players.find(p => (p.user_id?.id || p.user_id) === user.id);
+                      const isEliminated = myP && myP.status === 'eliminated';
 
-                  if (isEliminated) {
-                      showLobby('Eliminated 😔', 'You were knocked out of this tournament.', false, false);
-                  } else {
-                      const roundLabel = `ROUND ${state.round}`;
-                      if (!gameActive) showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
-                  }
+                      if (isEliminated) {
+                          showLobby('Eliminated 😔', 'You were knocked out of this tournament.', false, false);
+                      } else {
+                          let label = `ROUND ${state.round}`;
+                          let sub = 'Tournament is live!';
+                          if (state.phase === 'main_round') {
+                              label = 'MAIN ROUND (Qualification)';
+                              sub = 'Earn points by playing matches! Top 16 advance.';
+                          } else if (state.phase === 'qualification_leaderboard') {
+                              label = 'Finalizing Qualifiers';
+                              sub = 'Checking scores for Top 16 selection...';
+                          }
+                          if (!gameActive) showLobby(label, sub, true, false);
+                      }
 
                   // Match Detection
                   if (state.matches && state.matches.length > 0) {
@@ -574,6 +582,7 @@
             if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
             else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
             else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
+            else if (i < 16 && tournamentConfig.timer_type === 5) { statusText = `${i+1}th WINNER 💠`; statusColor = '#3498db'; }
             else if (i === 3 && tournamentConfig.timer_type === 3) { statusText = '4th WINNER 🎖️'; statusColor = '#5bc0eb'; }
             else if (i === 4 && tournamentConfig.timer_type === 3) { statusText = '5th WINNER 🎗️'; statusColor = '#9b59b6'; }
             else if (i === 5 && tournamentConfig.timer_type === 3) { statusText = '6th WINNER 💠'; statusColor = '#3498db'; }

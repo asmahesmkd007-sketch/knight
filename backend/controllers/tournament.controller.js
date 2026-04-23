@@ -157,7 +157,8 @@ const autoCreatePaidTournaments = async () => {
     const entries = [5, 10, 15, 20, 30, 50, 80, 100, 200, 500];
     const types = [
       { timer: 1, max: 16, suffix: '1 Min Knockout TR' },
-      { timer: 3, max: 32, suffix: '3 Min Paid TR' }
+      { timer: 3, max: 32, suffix: '3 Min Paid TR' },
+      { timer: 5, max: 100, suffix: '5 Min Hybrid TR' }
     ];
     
     for (const tType of types) {
@@ -201,13 +202,20 @@ const autoCreatePaidTournaments = async () => {
               prizes.first = Math.floor(pool * 0.35);
               prizes.second = Math.floor(pool * 0.30);
               prizes.third = Math.floor(pool * 0.20);
-            } else {
+            } else if (tType.timer === 3) {
               prizes.first = Math.floor(pool * 0.35);
               prizes.second = Math.floor(pool * 0.25);
               prizes.third = Math.floor(pool * 0.15);
               prizes.fourth = Math.floor(pool * 0.033);
               prizes.fifth = Math.floor(pool * 0.033);
               prizes.sixth = Math.floor(pool * 0.033);
+            } else {
+              // 5 Min Hybrid (Top 16)
+              prizes.first = Math.floor(pool * 0.30);
+              prizes.second = Math.floor(pool * 0.25);
+              prizes.third = Math.floor(pool * 0.15);
+              // 4th-16th get 1% each
+              prizes.top16_others = Math.floor(pool * 0.01);
             }
 
             const { error: insErr } = await supabase.from('tournaments').insert({
@@ -247,6 +255,34 @@ const distributeTournamentPrizes = async (tournament) => {
       .order('round', { ascending: false });
 
     if (!matches || matches.length === 0) return;
+
+    // Top 16 Prize logic for 5min TR
+    let prizes = [];
+    if (tournament.timer_type === 5) {
+      const pool = tournament.prize_pool || 0;
+      // Get all tournament players sorted by score
+      const { data: allPlayers } = await supabase.from('tournament_players')
+          .select('user_id, score, status')
+          .eq('tournament_id', tournament.id)
+          .order('score', { ascending: false });
+      
+      // Winner list: Top 16
+      const winnersList = allPlayers?.slice(0, 16) || [];
+      const winnerIds = winnersList.map(p => p.user_id);
+      
+      const prizeAmounts = [
+        Math.floor(pool * 0.30),
+        Math.floor(pool * 0.25),
+        Math.floor(pool * 0.15)
+      ];
+      // 4th-16th: 1% each
+      for (let i = 3; i < 16; i++) prizeAmounts.push(Math.floor(pool * 0.01));
+
+      for (let i = 0; i < winnersList.length; i++) {
+        await processPrize(winnersList[i].user_id, i + 1, prizeAmounts[i], tournament);
+      }
+      return;
+    }
 
     const maxRound = matches[0].round;
     const finalMatch = matches.find(m => m.round === maxRound);
@@ -292,7 +328,7 @@ const distributeTournamentPrizes = async (tournament) => {
 
     const winners = [top1, top2, top3, top4, top5, top6].filter(id => id !== null);
     const pool = tournament.prize_pool || 0;
-    const prizes = [
+    const prizesList = [
       tournament.prize_first, 
       tournament.prize_second, 
       tournament.prize_third,
@@ -302,25 +338,28 @@ const distributeTournamentPrizes = async (tournament) => {
     ];
 
     for (let i = 0; i < winners.length; i++) {
-        const userId = winners[i];
-        const amount = Math.floor(prizes[i]);
-        if (amount <= 0) continue;
-
-        await supabase.from('leaderboard').insert({
-            tournament_id: tournament.id, user_id: userId, rank: i + 1, prize: amount
-        });
-
-        const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
-        if (wallet) {
-            const newBalance = Number(wallet.balance) + amount;
-            await supabase.from('wallets').update({ balance: newBalance }).eq('user_id', userId);
-            await supabase.from('transactions').insert({ 
-              user_id: userId, type: 'tournament_prize', amount, 
-              status: 'success', reference_id: tournament.id, balance_after: newBalance,
-              description: `Prize: Rank ${i+1} in TR-${tournament.tr_id}`
-            });
-        }
+        await processPrize(winners[i], i + 1, prizesList[i], tournament);
     }
+  } catch (err) { console.error('Prize distribution error:', err); }
+};
+
+// ─── HELPER: Process Prize ──────────────────────────────────
+const processPrize = async (userId, rank, amount, tournament) => {
+    if (amount <= 0) return;
+    await supabase.from('leaderboard').insert({
+        tournament_id: tournament.id, user_id: userId, rank: rank, prize: amount
+    });
+    const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
+    if (wallet) {
+        const newBalance = Number(wallet.balance) + amount;
+        await supabase.from('wallets').update({ balance: newBalance }).eq('user_id', userId);
+        await supabase.from('transactions').insert({ 
+            user_id: userId, type: 'tournament_prize', amount, 
+            status: 'success', reference_id: tournament.id, balance_after: newBalance,
+            description: `Prize: Rank ${rank} in TR-${tournament.tr_id}`
+        });
+    }
+};
   } catch (err) { console.error('Prize distribution error:', err); }
 };
 
