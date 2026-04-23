@@ -213,19 +213,20 @@ class TournamentManager {
                     m.connectTimeout--;
                     if (m.connectTimeout <= 0) {
                         const isPaid = tState?.type === 'paid';
-                        if (isPaid) {
-                            // For Paid TRs, do NOT eliminate at 30s. 
-                            // Let the 3-minute match timer (ticking above) handle it.
+                        const isHybrid = tState?.timer === 5;
+                        if (isPaid && !isHybrid) {
+                            // Standard Paid TRs (1min/3min) can be more lenient if needed
+                            // But for Hybrid 5min, we MUST enforce the 30s First Move rule.
                             m.status = 'live'; 
                             return;
                         }
 
+                        // ENFORCE FIRST MOVE RULE (30s)
                         const p1Online = m.player1.connected;
                         const p2Online = m.player2.connected;
                         if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
                         else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
                         else {
-                            // Both no-show: Randomly pick one to "win" so brackets don't break
                             const luckyWinnerId = Math.random() > 0.5 ? m.player1.userId : m.player2.userId;
                             this.resolveMatch(m.id, 'draw', luckyWinnerId, 'both_no_show');
                         }
@@ -671,13 +672,15 @@ class TournamentManager {
         activeTournamentMatches.forEach((match) => {
             if (match.player1.userId === userId) { 
                 match.player1.connected = false; 
-                // Increased grace: 30s for 3min TR, 120s for others
-                match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
+                // Rule 7: 60 sec resign timer for 5min TR
+                if (match.timer_type === 5) match.disconnectGrace = 60;
+                else match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
                 match.disconnectedPlayer = 'p1';
             }
             else if (match.player2.userId === userId) { 
                 match.player2.connected = false; 
-                match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
+                if (match.timer_type === 5) match.disconnectGrace = 60;
+                else match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
                 match.disconnectedPlayer = 'p2';
             }
         });
