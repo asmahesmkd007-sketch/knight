@@ -360,8 +360,6 @@ const processPrize = async (userId, rank, amount, tournament) => {
         });
     }
 };
-  } catch (err) { console.error('Prize distribution error:', err); }
-};
 
 // ─── HELPER: Next half-hour ─────────────────────────────────
 const getNextHalfHour = (baseDate) => {
