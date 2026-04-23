@@ -75,7 +75,7 @@ class TournamentManager {
 
         const playersData = players.map((p, i) => ({
             user_id: p.user_id, username: p.profiles?.username || 'Unknown',
-            rank: p.profiles?.rank || 'Bronze', score: p.score || 0, status: p.status || 'active', slot: i + 1
+            rank: p.profiles?.rank || 'Bronze', score: 0, status: 'alive', slot: i + 1
         }));
 
         this.startTournament(tournamentId, playersData, t);
