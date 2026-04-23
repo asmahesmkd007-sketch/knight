@@ -647,21 +647,24 @@
       if (turn !== myColor) return false;
       if (piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return false;
       
-      // Highlight moves on drag start
-      onMouseoverSquare(source, piece);
+      // Select the square for click-to-move if dragging
+      onSquareClick(source, piece, true);
     }
 
     function onDrop(source, target) {
       removeGreySquares();
+      if (source === target) return;
 
       // Check for promotion
       if (isPromotionMove(source, target)) {
           handlePromotion(source, target);
-          return 'snapback'; // snapped back while waiting for selection
+          return 'snapback';
       }
 
       const move = chess.move({ from: source, to: target, promotion: 'q' });
       if (move === null) return 'snapback';
+      
+      selectedSquare = null;
       SocketActions.makeTrMove(matchId, move, user.id);
       updatePlayerBars();
     }
@@ -679,7 +682,7 @@
       }
     }
 
-    function onSquareClick(square, piece) {
+    function onSquareClick(square, piece, isInternal = false) {
       if (!gameActive) return;
 
       const isTarget = $('#board .square-' + square).hasClass('highlight-move') || $('#board .square-' + square).hasClass('highlight-capture');
@@ -707,8 +710,8 @@
           }
       }
 
-      // 2. Clear selection if clicking same square or invalid square
-      if (selectedSquare === square || (!piece && !isTarget)) {
+      // 2. Clear selection if clicking same square (unless it's an internal call from drag)
+      if (selectedSquare === square && !isInternal) {
           removeGreySquares();
           selectedSquare = null;
           return;
@@ -716,10 +719,11 @@
 
       // 3. Select our piece
       if (piece) {
-          const turn = chess.turn() === 'w' ? 'white' : 'black';
-          const isMyPiece = piece.charAt(0) === (myColor === 'white' ? 'w' : 'b');
+          const myColorChar = myColor === 'white' ? 'w' : 'b';
+          const isMyPiece = piece.charAt(0) === myColorChar;
+          const turn = chess.turn();
 
-          if (turn === myColor && isMyPiece) {
+          if (turn === myColorChar && isMyPiece) {
               removeGreySquares();
               selectedSquare = square;
               $('#board .square-' + square).addClass('highlight-selected');
@@ -734,9 +738,11 @@
           }
       }
 
-      // 4. Default: Clear
-      removeGreySquares();
-      selectedSquare = null;
+      // 4. Default: Clear if clicking elsewhere (only if not an internal drag call)
+      if (!isInternal) {
+        removeGreySquares();
+        selectedSquare = null;
+      }
     }
 
     let pendingPromotion = null;
