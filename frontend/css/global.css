@@ -602,23 +602,36 @@ tbody tr.highlight { background: rgba(212,175,55,0.06); }
 
   /* Topbar Mobile Cleanup */
   .topbar { 
-    padding: 0 12px 0 68px; 
-    height: 56px; 
+    padding: 0 12px 0 64px; 
+    height: 60px; 
     gap: 8px;
     position: sticky;
-    width: 100%;
+    width: 100vw;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
   }
   .page-title { 
-    font-size: 14px; 
-    max-width: 120px; 
+    font-size: 16px; 
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
+    overflow: visible; 
     margin-left: 0;
+    flex-shrink: 0;
   }
   .topbar-player-id { display: none; }
-  .topbar-right { gap: 8px; }
-  .topbar-avatar { width: 32px; height: 32px; }
+  .topbar-right { gap: 8px; margin-left: auto; }
+  .topbar-avatar { width: 34px; height: 34px; flex-shrink: 0; }
+  
+  /* Prevent Card Overflow */
+  .card, .stat-card, .quick-btn {
+    max-width: 100%;
+    word-wrap: break-word;
+  }
   
   /* Buttons & Interactions */
   .btn { width: 100%; justify-content: center; padding: 12px 20px; }
