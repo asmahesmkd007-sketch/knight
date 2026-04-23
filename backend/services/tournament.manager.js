@@ -65,7 +65,10 @@ class TournamentManager {
 
         if (!['full', 'locked', 'starting', 'live'].includes(t.status)) return;
 
-        const maxPlayers = t.timer_type === 3 ? 32 : 16;
+        let maxPlayers = 16;
+        if (t.timer_type === 3) maxPlayers = 32;
+        else if (t.timer_type === 5) maxPlayers = 100;
+
         let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
             .order('joined_at', { ascending: true })
@@ -272,7 +275,12 @@ class TournamentManager {
         });
 
         const available = tState.players.filter(p => p.status === 'alive' && !activeUserIds.has(p.user_id));
-        available.sort(() => Math.random() - 0.5);
+        
+        // Randomize available players for pairing
+        for (let i = available.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [available[i], available[j]] = [available[j], available[i]];
+        }
 
         while (available.length >= 2) {
             const p1 = available.shift();
