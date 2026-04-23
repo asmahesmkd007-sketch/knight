@@ -44,6 +44,7 @@
   <script src="/js/api.js?v=3"></script>
   <script>
     window.addEventListener('DOMContentLoaded', async () => {
+      if (!requireAuth()) return;
       // Load Sidebar
       const sidebarContainer = document.getElementById('sidebar-container');
       if (sidebarContainer) {
