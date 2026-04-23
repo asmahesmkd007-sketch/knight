@@ -376,7 +376,7 @@
         board = Chessboard('board', {
           draggable: true,
           position: 'start',
-          pieceTheme: 'https://chrisoakman.github.io/chessboardjs/img/chesspieces/wikipedia/{piece}.png',
+          pieceTheme: function(piece) { return 'https://www.chess.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png'; },
           onDragStart: onDragStart,
           onDrop: onDrop,
           onSnapEnd: () => {
@@ -614,7 +614,7 @@
           draggable: true,
           position: fen,
           orientation: myColor,
-          pieceTheme: 'https://chrisoakman.github.io/chessboardjs/img/chesspieces/wikipedia/{piece}.png',
+          pieceTheme: function(piece) { return 'https://www.chess.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png'; },
           onDragStart: onDragStart,
           onDrop: onDrop,
           onDragStart: onDragStart,
