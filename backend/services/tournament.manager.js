@@ -94,9 +94,10 @@ class TournamentManager {
             countdown = Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000));
         }
         
-        // Cap lobby countdown at 60s for paid knockout tournaments
+        // Force 1 minute lobby max for all paid tournaments
         if (tData.type === 'paid') {
             countdown = Math.min(60, countdown);
+            if (countdown === 0) countdown = 60; // Ensure at least some lobby time if just pickup
         }
 
         const tState = {
@@ -134,6 +135,16 @@ class TournamentManager {
                     tState.countdown--;
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
                     
+                    if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                        tState.phase = 'starting';
+                        tState.countdown = 60; // 1 min process time
+                        this.broadcastState(tId);
+                    }
+                }
+                else if (tState.phase === 'starting') {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+
                     if (tState.countdown <= 0 && !tState.nextRoundPending) {
                         tState.nextRoundPending = true;
                         tState.round = 1;
@@ -710,9 +721,9 @@ class TournamentManager {
         // Update memory immediately to prevent re-entry
         tState.status = 'live';
         tState.phase = 'lobby';
-        tState.countdown = 120;
+        tState.countdown = 60; // 1 min lobby
 
-        const liveLobbyEndsAt = new Date(Date.now() + 120000).toISOString();
+        const liveLobbyEndsAt = new Date(Date.now() + 60000).toISOString();
         const { data: t, error } = await supabase.from('tournaments')
             .update({ status: 'live', phase: 'lobby', live_lobby_ends_at: liveLobbyEndsAt })
             .eq('id', tournamentId).select().single();
