@@ -219,6 +219,29 @@
       z-index: 15;
       pointer-events: none;
     }
+    /* Mobile Optimization */
+    @media (max-width: 900px) {
+      .arena-layout {
+        flex-direction: column-reverse; /* Put Game Panel (Board) on top, Leaderboard below */
+        gap: 16px;
+      }
+      .leaderboard-panel {
+        width: 100%;
+        max-height: 300px; /* Limit height on mobile */
+      }
+      .game-panel {
+        width: 100%;
+      }
+      #board {
+        width: 100%;
+      }
+      .player-bar {
+        padding: 8px 12px;
+      }
+      .countdown-timer {
+        font-size: 28px;
+      }
+    }
   </style>
 </head>
 
