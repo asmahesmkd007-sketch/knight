@@ -173,6 +173,14 @@ class TournamentManager {
                 if (m.status === 'waiting_connect') {
                     m.connectTimeout--;
                     if (m.connectTimeout <= 0) {
+                        const isPaid = tState?.type === 'paid';
+                        if (isPaid) {
+                            // For Paid TRs, do NOT eliminate at 30s. 
+                            // Let the 3-minute match timer (ticking above) handle it.
+                            m.status = 'live'; 
+                            continue;
+                        }
+
                         const p1Online = m.player1.connected;
                         const p2Online = m.player2.connected;
                         if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
@@ -551,12 +559,13 @@ class TournamentManager {
         activeTournamentMatches.forEach((match) => {
             if (match.player1.userId === userId) { 
                 match.player1.connected = false; 
-                match.disconnectGrace = match.timer_type === 3 ? 3 : 120; // 3s for 3min TR
+                // Increased grace: 30s for 3min TR, 120s for others
+                match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
                 match.disconnectedPlayer = 'p1';
             }
             else if (match.player2.userId === userId) { 
                 match.player2.connected = false; 
-                match.disconnectGrace = match.timer_type === 3 ? 3 : 120; // 3s for 3min TR
+                match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
                 match.disconnectedPlayer = 'p2';
             }
         });
