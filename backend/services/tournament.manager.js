@@ -246,6 +246,16 @@ class TournamentManager {
                 const winnerId = match.player1.time <= 0 ? match.player2.userId : match.player1.userId;
                 this.resolveMatch(matchId, result, winnerId, 'timeout');
             }
+
+            // ANTI-STALL (30s MOVE RULE) - Only for 5min Hybrid TR
+            if (match.status === 'live' && match.timer_type === 5 && match.disconnectGrace === null) {
+                match.moveTimeout--;
+                if (match.moveTimeout <= 0) {
+                    const result = match.turn === 'w' ? 'player2_win' : 'player1_win';
+                    const winnerId = match.turn === 'w' ? match.player2.userId : match.player1.userId;
+                    this.resolveMatch(matchId, result, winnerId, 'stall_timeout');
+                }
+            }
             if (match.disconnectGrace !== null) {
                 match.disconnectGrace--;
                 if (match.disconnectGrace <= 0) {
@@ -384,7 +394,8 @@ class TournamentManager {
             winnerId: null,
             fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             disconnectGrace: null,
-            disconnectedPlayer: null
+            disconnectedPlayer: null,
+            moveTimeout: 30 // 30s per move anti-stall
         };
 
         if (p1Online && p2Online) {
@@ -598,6 +609,7 @@ class TournamentManager {
             const moveData = match.chess.move(moveSan);
             if (!moveData) return false;
             match.turn = match.chess.turn(); match.fen = match.chess.fen();
+            match.moveTimeout = 30; // Reset anti-stall
             this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.fen, turn: match.turn });
             if (match.chess.isGameOver()) {
                 const r = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
@@ -658,6 +670,11 @@ class TournamentManager {
         else return false;
 
         if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) match.status = 'live';
+        
+        match.disconnectGrace = null; 
+        match.disconnectedPlayer = null;
+        match.moveTimeout = 30; // Reset anti-stall window on rejoin
+
         socket.join(match.roomId);
         socket.emit('match_rejoined', {
             roomId: match.roomId, fen: match.chess.fen(), turn: match.turn,
