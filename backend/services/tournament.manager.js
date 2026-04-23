@@ -178,7 +178,7 @@ class TournamentManager {
                             // For Paid TRs, do NOT eliminate at 30s. 
                             // Let the 3-minute match timer (ticking above) handle it.
                             m.status = 'live'; 
-                            continue;
+                            return;
                         }
 
                         const p1Online = m.player1.connected;
