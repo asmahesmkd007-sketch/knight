@@ -359,6 +359,8 @@
 
     <script src="../js/api.js"></script>
     <script>
+        if (!requireAuth()) return;
+
         // Load sidebar
         fetch('../components/sidebar.html')
             .then(r => r.text())
