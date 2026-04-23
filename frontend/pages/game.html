@@ -42,6 +42,11 @@
     .chat-input-wrap button:active { transform: scale(0.95); }
     @media (max-width: 900px) { .game-layout { flex-direction: column; } .side-panel { width: 100%; } }
     .highlight-last-move { background: rgba(255, 255, 0, 0.4) !important; }
+    .promotion-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+    .promotion-content { background: var(--bg-secondary); padding: 20px; border-radius: 12px; text-align: center; }
+    .promotion-options { display: flex; gap: 10px; margin-top: 15px; }
+    .promotion-piece { cursor: pointer; padding: 10px; border-radius: 8px; transition: background 0.2s; }
+    .promotion-piece:hover { background: rgba(255,255,255,0.1); }
   </style>
 </head>
 <body>
@@ -96,15 +101,6 @@
             <div class="move-list" id="move-list"></div>
           </div>
 
-          <!-- Game Status Removed -->
-
-          <div class="card" id="bot-thinking" style="display:none">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div class="spinner" style="width:20px;height:20px;border-width:2px"></div>
-              <span style="font-size:13px;color:var(--text-secondary)"><i class="fa-solid fa-robot"></i> Bot is thinking...</span>
-            </div>
-          </div>
-          
           <div class="card chat-card">
             <div class="card-title" style="margin-bottom:8px"><i class="fa-solid fa-comments"></i> In-Game Chat</div>
             <div class="chat-messages" id="chat-messages">
@@ -139,9 +135,7 @@
 <div id="promotion-modal" class="promotion-modal">
   <div class="promotion-content">
     <div class="promotion-title">Select Promotion Piece</div>
-    <div class="promotion-options" id="promotion-options">
-       <!-- Populated by JS -->
-    </div>
+    <div class="promotion-options" id="promotion-options"></div>
   </div>
 </div>
 
@@ -151,7 +145,7 @@
 <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script src="/js/api.js"></script>
-  <script src="/js/sidebar.js"></script>
+<script src="/js/sidebar.js"></script>
 <script src="/js/socket.js"></script>
 <script>
 if (!requireAuth()) throw new Error();
@@ -181,17 +175,45 @@ let gameActive = false;
 let moveCount = 0;
 let selectedSquare = null;
 
+// Check for tournament elimination
+if (isTournament && tId) {
+    TournamentAPI.getById(tId).then(res => {
+        if (res?.success && res.tournament.players) {
+            const myP = res.tournament.players.find(p => (p.user_id?.id || p.user_id) === user.id);
+            if (myP && myP.status === 'eliminated') {
+                showEliminationOverlay();
+            }
+        }
+    });
+}
+
+function showEliminationOverlay() {
+    gameActive = false;
+    document.getElementById('result-overlay').classList.add('active');
+    document.getElementById('result-icon').innerHTML = '<i class="fa-solid fa-skull-crossbones"></i>';
+    document.getElementById('result-title').textContent = 'ELIMINATED';
+    document.getElementById('result-title').style.color = 'var(--error)';
+    document.getElementById('result-iq').textContent = 'You have been knocked out of this tournament.';
+    document.querySelector('.topbar-right').style.display = 'none';
+    if (board) board.draggable = false;
+}
+
 function removeHighlights() {
   $('#board .square-55d63').removeClass('highlight-move highlight-selected');
 }
 
-function updateLastMoveHighlight() {
+function updateLastMoveHighlight(from, to) {
   $('#board .square-55d63').removeClass('highlight-last-move');
-  const hist = chess.history({ verbose: true });
-  if (hist.length > 0) {
-    const last = hist[hist.length - 1];
-    highlightSquare(last.from, 'last-move');
-    highlightSquare(last.to, 'last-move');
+  if (from && to) {
+    $('.square-' + from).addClass('highlight-last-move');
+    $('.square-' + to).addClass('highlight-last-move');
+  } else {
+    const hist = chess.history({ verbose: true });
+    if (hist.length > 0) {
+      const last = hist[hist.length - 1];
+      $('.square-' + last.from).addClass('highlight-last-move');
+      $('.square-' + last.to).addClass('highlight-last-move');
+    }
   }
 }
 
@@ -223,14 +245,6 @@ function executeMove(from, to, promotion) {
   return true;
 }
 
-function updateLastMoveHighlight(from, to) {
-  $('#board .square-55d63').removeClass('highlight-last-move');
-  if (from && to) {
-    $('.square-' + from).addClass('highlight-last-move');
-    $('.square-' + to).addClass('highlight-last-move');
-  }
-}
-
 let pendingMove = null;
 function handlePromotion(source, target) {
   pendingMove = { from: source, to: target };
@@ -238,14 +252,12 @@ function handlePromotion(source, target) {
   const options = document.getElementById('promotion-options');
   options.innerHTML = '';
   
-  const color = chess.turn(); // 'w' or 'b'
+  const color = chess.turn(); 
   const pieces = ['q', 'r', 'b', 'n'];
-  const pIcons = { q: 'queen', r: 'rook', b: 'bishop', n: 'knight' };
 
   pieces.forEach(p => {
     const el = document.createElement('div');
     el.className = 'promotion-piece';
-    // Fix: Correct casing for piece images (lowercase color, uppercase piece)
     const pieceImg = `https://chessboardjs.com/img/chesspieces/wikipedia/${color}${p.toUpperCase()}.png`;
     el.innerHTML = `<img src="${pieceImg}" width="45">`;
     el.onclick = () => selectPromotion(p);
@@ -263,12 +275,10 @@ function selectPromotion(piece) {
   }
 }
 
-// Handle manual square clicks (Click-to-Move)
 $(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
   if (!gameActive || chess.game_over()) return;
   const square = $(this).attr('data-square');
   
-  // 1. If we already have a selected piece, try to move to this square
   if (selectedSquare && selectedSquare !== square) {
     const moves = chess.moves({ square: selectedSquare, verbose: true });
     const move = moves.find(m => m.to === square);
@@ -282,7 +292,6 @@ $(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
     }
   }
 
-  // 2. Otherwise, if it's our piece, select it
   const piece = chess.get(square);
   const myColorChar = myColor === 'white' ? 'w' : 'b';
   if (piece && piece.color === myColorChar) {
@@ -292,7 +301,6 @@ $(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
     const moves = chess.moves({ square: square, verbose: true });
     moves.forEach(m => highlightSquare(m.to, 'move'));
   } else {
-    // Clicked empty or enemy without a selected piece
     removeHighlights();
     selectedSquare = null;
   }
@@ -308,8 +316,6 @@ if (mode === 'bot') {
   document.getElementById('opp-name').innerHTML = `${escapeHTML(customName)} <i class="fa-solid fa-robot" style="margin-left:4px;color:var(--text-secondary)"></i>`;
   document.getElementById('opp-avatar').innerHTML = '<i class="fa-solid fa-microchip"></i>';
   document.getElementById('opp-iq').textContent = 'IQ: ' + botIQ;
-  
-  // Hide timers for bot matches explicitly
   document.getElementById('my-timer').style.display = 'none';
   document.getElementById('opp-timer').style.display = 'none';
 } else if (opponentData.username) {
@@ -317,9 +323,7 @@ if (mode === 'bot') {
   document.getElementById('opp-avatar').textContent = (opponentData.username || '?').replace('@', '')[0].toUpperCase();
 }
 
-// Init board
 function initBoard() {
-  console.log('[DEBUG] BOARD INIT: Setting up chessboard.js');
   board = Chessboard('board', {
     draggable: true,
     moveSpeed: 'slow',
@@ -333,18 +337,12 @@ function initBoard() {
     onSnapEnd: onSnapEnd,
     onMoveEnd: updateLastMoveHighlight
   });
-  console.log('[DEBUG] BOARD INIT: Board rendered successfully');
 }
 
 function onDragStart(source, piece) {
   if (!gameActive || chess.game_over()) return false;
-  
   const myColorChar = myColor === 'white' ? 'w' : 'b';
-  const isMyPiece = piece.charAt(0) === myColorChar;
-
-  if (chess.turn() !== myColorChar || !isMyPiece) return false;
-
-  // Visual selection feedback
+  if (chess.turn() !== myColorChar || piece.charAt(0) !== myColorChar) return false;
   removeHighlights();
   selectedSquare = source;
   highlightSquare(source, 'selected');
@@ -354,162 +352,16 @@ function onDragStart(source, piece) {
 
 function onDrop(source, target) {
   if (source === target) return;
-  
   const moves = chess.moves({ square: source, verbose: true });
   const move = moves.find(m => m.to === target);
-  
   if (!move) return 'snapback';
-  
   removeHighlights();
   selectedSquare = null;
-  
-  if (move.flags.includes('p')) {
-    handlePromotion(source, target);
-  } else {
-    executeMove(source, target, 'q');
-  }
+  if (move.flags.includes('p')) handlePromotion(source, target);
+  else executeMove(source, target, 'q');
 }
 
-function onSnapEnd() { 
-  board.position(chess.fen()); 
-}
-
-// ─── BOT ENGINE LOGIC ───
-const pieceValues = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 };
-
-const pawnEvalWhite = [
-  [0,  0,  0,  0,  0,  0,  0,  0],
-  [5, 10, 10,-20,-20, 10, 10,  5],
-  [5, -5,-10,  0,  0,-10, -5,  5],
-  [0,  0,  0, 20, 20,  0,  0,  0],
-  [5,  5, 10, 25, 25, 10,  5,  5],
-  [10, 10, 20, 30, 30, 20, 10, 10],
-  [50, 50, 50, 50, 50, 50, 50, 50],
-  [0,  0,  0,  0,  0,  0,  0,  0]
-];
-const knightEval = [
-  [-50,-40,-30,-30,-30,-30,-40,-50],
-  [-40,-20,  0,  0,  0,  0,-20,-40],
-  [-30,  0, 10, 15, 15, 10,  0,-30],
-  [-30,  5, 15, 20, 20, 15,  5,-30],
-  [-30,  0, 15, 20, 20, 15,  0,-30],
-  [-30,  5, 10, 15, 15, 10,  5,-30],
-  [-40,-20,  0,  5,  5,  0,-20,-40],
-  [-50,-40,-30,-30,-30,-30,-40,-50]
-];
-
-function evaluateBoard(game, iq) {
-  let totalEval = 0;
-  const brd = game.board();
-  
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      if (brd[i][j]) {
-        let val = pieceValues[brd[i][j].type] || 0;
-        
-        // Add positional evaluation mapping (center control) for better opening replication (Only for >600 IQ)
-        if (iq > 600) {
-           let rank = brd[i][j].color === 'w' ? i : 7 - i;
-           if (brd[i][j].type === 'p') val += (pawnEvalWhite[rank][j] / 10);
-           if (brd[i][j].type === 'n') val += (knightEval[rank][j] / 10);
-        }
-
-        totalEval += (brd[i][j].color === 'w' ? val : -val);
-      }
-    }
-  }
-  return totalEval;
-}
-
-function minimax(game, depth, alpha, beta, isMaximizing) {
-  if (depth === 0 || game.game_over()) return evaluateBoard(game, botIQ);
-
-  let moves = game.moves();
-  moves.sort((a,b) => (b.includes('x') ? 10 : 0) - (a.includes('x') ? 10 : 0));
-  
-  if (isMaximizing) {
-    let bestVal = -Infinity;
-    for (let i = 0; i < moves.length; i++) {
-      game.move(moves[i]);
-      bestVal = Math.max(bestVal, minimax(game, depth - 1, alpha, beta, false));
-      game.undo();
-      alpha = Math.max(alpha, bestVal);
-      if (beta <= alpha) break; // Alpha-beta pruning
-    }
-    return bestVal;
-  } else {
-    let bestVal = Infinity;
-    for (let i = 0; i < moves.length; i++) {
-      game.move(moves[i]);
-      bestVal = Math.min(bestVal, minimax(game, depth - 1, alpha, beta, true));
-      game.undo();
-      beta = Math.min(beta, bestVal);
-      if (beta <= alpha) break; // Alpha-beta pruning
-    }
-    return bestVal;
-  }
-}
-
-function getBestMove(game, depth) {
-  const moves = game.moves();
-  const isMaximizing = game.turn() === 'w';
-  let bestMove = null;
-  let bestVal = isMaximizing ? -Infinity : Infinity;
-
-  // Shuffle moves but prioritize captures strongly to speed up deep alpha-beta pruning branches!
-  moves.sort((a, b) => {
-     let aVal = a.includes('x') ? 10 : (a.includes('+') ? 5 : 0);
-     let bVal = b.includes('x') ? 10 : (b.includes('+') ? 5 : 0);
-     if (aVal === bVal) return Math.random() - 0.5;
-     return bVal - aVal;
-  });
-
-  for (let i = 0; i < moves.length; i++) {
-    game.move(moves[i]);
-    let boardVal = minimax(game, depth - 1, -Infinity, Infinity, !isMaximizing);
-    game.undo();
-    
-    if (isMaximizing) {
-      if (boardVal > bestVal) { bestVal = boardVal; bestMove = moves[i]; }
-    } else {
-      if (boardVal < bestVal) { bestVal = boardVal; bestMove = moves[i]; }
-    }
-  }
-  return bestMove || moves[0];
-}
-
-function makeBotMove() {
-  const moves = chess.moves();
-  if (moves.length === 0 || chess.game_over()) { document.getElementById('bot-thinking').style.display = 'none'; showResult(); return; }
-  
-  let move;
-  
-  // Strict mappings to mirror Chess.com ranges
-  // 1. Determine blunder chance based on ELO/IQ
-  let blunderChance = 0;
-  let depth = 1;
-  
-  if (botIQ < 600) { blunderChance = 0.40; depth = 1; }
-  else if (botIQ < 900) { blunderChance = 0.15; depth = 2; }
-  else if (botIQ < 1400) { blunderChance = 0.05; depth = 3; }
-  else { depth = 3; blunderChance = 0.0; } // Capped at Depth 3 to prevent JS thread locking and UI stutters
-  
-  // 2. Execute blunder or calculate depth
-  if (Math.random() < blunderChance) {
-      move = moves[Math.floor(Math.random() * moves.length)];
-  } else {
-      move = getBestMove(chess, depth);
-  }
-
-  chess.move(move);
-  board.position(chess.fen());
-  setTimeout(updateLastMoveHighlight, 250);
-  
-  addMoveToList(move);
-  updatePlayerBar();
-  document.getElementById('bot-thinking').style.display = 'none';
-  if (chess.game_over()) showResult();
-}
+function onSnapEnd() { board.position(chess.fen()); }
 
 function addMoveToList(san) {
   moveCount++;
@@ -529,13 +381,10 @@ function addMoveToList(san) {
 
 function updatePlayerBar() {
   const myColorChar = myColor === 'white' ? 'w' : 'b';
-  const oppColorChar = myColor === 'white' ? 'b' : 'w';
   const myTurn = chess.turn() === myColorChar;
   document.getElementById('my-bar').classList.toggle('active', myTurn);
   document.getElementById('opponent-bar').classList.toggle('active', !myTurn);
-  const statusEl = document.getElementById('game-status');
-  if (statusEl) statusEl.innerHTML = myTurn ? '<i class="fa-solid fa-circle" style="color:var(--success);"></i> Your turn' : '⏳ Opponent\'s turn';
-
+  
   const init = { p: 8, n: 2, b: 2, r: 2, q: 1 };
   const cur = { w: { p:0, n:0, b:0, r:0, q:0 }, b: { p:0, n:0, b:0, r:0, q:0 } };
   let wMat = 0, bMat = 0;
@@ -548,10 +397,7 @@ function updatePlayerBar() {
     } 
   }));
 
-  const myMat = myColor === 'white' ? wMat : bMat;
-  const oppMat = myColor === 'white' ? bMat : wMat;
-  const myAdv = myMat - oppMat, oppAdv = oppMat - myMat;
-
+  const oppColorChar = myColor === 'white' ? 'b' : 'w';
   let myCap = '', oppCap = '';
   const pieceOrder = ['p', 'b', 'n', 'r', 'q'];
   const pIcons = { p: 'fa-chess-pawn', n: 'fa-chess-knight', b: 'fa-chess-bishop', r: 'fa-chess-rook', q: 'fa-chess-queen' };
@@ -564,10 +410,6 @@ function updatePlayerBar() {
         oppCap += `<i class="fa-solid ${pIcons[type]}" style="margin-right:2px"></i>`;
      }
   }
-
-  if (myAdv > 0) myCap += `<span style="font-size:11px;margin-left:4px;opacity:0.7">+${myAdv}</span>`;
-  if (oppAdv > 0) oppCap += `<span style="font-size:11px;margin-left:4px;opacity:0.7">+${oppAdv}</span>`;
-
   document.getElementById('my-captured').innerHTML = myCap;
   document.getElementById('opp-captured').innerHTML = oppCap;
 }
@@ -575,7 +417,7 @@ function updatePlayerBar() {
 function startTimer() {
   document.getElementById('my-timer').textContent = fmt.countdown(myTime);
   document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
-  if (mode === 'bot') return; // No timer for bot
+  if (mode === 'bot') return;
   timerInterval = setInterval(() => {
     const myColorChar = myColor === 'white' ? 'w' : 'b';
     if (chess.turn() === myColorChar) {
@@ -586,11 +428,10 @@ function startTimer() {
       if (myTime <= 0) { clearInterval(timerInterval); showResult('timeout_loss'); }
     } else {
       oppTime--;
-      if (oppTime <= 0) oppTime = 0; // prevent negative timer
       const el = document.getElementById('opp-timer');
       el.textContent = fmt.countdown(oppTime);
       el.classList.toggle('low', oppTime < 30 && oppTime > 0);
-      if (oppTime === 0) clearInterval(timerInterval); // wait for server to end game
+      if (oppTime <= 0) clearInterval(timerInterval);
     }
   }, 1000);
 }
@@ -598,149 +439,53 @@ function startTimer() {
 function showResult(reason) {
   clearInterval(timerInterval);
   gameActive = false;
-  const overlay = document.getElementById('result-overlay');
+  document.getElementById('result-overlay').classList.add('active');
   const icon = document.getElementById('result-icon');
   const title = document.getElementById('result-title');
   const iqEl = document.getElementById('result-iq');
-  overlay.classList.add('active');
 
-  let resolveResult = 'draw';
   if (reason === 'timeout_loss') {
-    icon.innerHTML = '<i class="fa-solid fa-clock"></i>'; title.textContent = 'Time\'s Up!'; title.style.color = 'var(--error)'; iqEl.textContent = '-5 IQ';
-    resolveResult = 'player2_win';
+    icon.innerHTML = '<i class="fa-solid fa-clock"></i>'; title.textContent = 'Time Out!'; iqEl.textContent = 'You ran out of time.';
   } else if (chess.in_checkmate()) {
-    const myColorChar = myColor === 'white' ? 'w' : 'b';
-    if (chess.turn() !== myColorChar) {
-      icon.innerHTML = '<i class="fa-solid fa-trophy"></i>'; title.textContent = 'You Won!'; title.style.color = '#5bc0eb'; iqEl.textContent = '+15 IQ';
-      resolveResult = 'player1_win';
-    } else {
-      icon.innerHTML = '<i class="fa-solid fa-face-frown"></i>'; title.textContent = 'You Lost!'; title.style.color = 'var(--error)'; iqEl.textContent = '-5 IQ';
-      resolveResult = 'player2_win';
-    }
-  } else if (chess.in_draw() || chess.in_stalemate()) {
-    icon.innerHTML = '<i class="fa-solid fa-handshake"></i>'; title.textContent = 'Draw!'; title.style.color = 'var(--text-secondary)'; iqEl.textContent = '+10 IQ';
-    resolveResult = 'draw';
-  } else if (reason === 'resign') {
-    icon.innerHTML = '<i class="fa-solid fa-flag-checkered"></i>'; title.textContent = 'You Resigned'; iqEl.textContent = '-5 IQ';
-    resolveResult = 'player2_win';
+    const won = chess.turn() !== (myColor === 'white' ? 'w' : 'b');
+    icon.innerHTML = won ? '<i class="fa-solid fa-trophy"></i>' : '<i class="fa-solid fa-face-frown"></i>';
+    title.textContent = won ? 'You Won!' : 'You Lost';
+    iqEl.textContent = won ? 'Checkmate!' : 'You were checkmated.';
   } else {
-    icon.innerHTML = '<i class="fa-solid fa-flag-checkered"></i>'; title.textContent = 'Game Over'; iqEl.textContent = '';
-  }
-
-  if (mode === 'bot') {
-    GameAPI.saveBotMatch(resolveResult, chess.fen());
+    icon.innerHTML = '<i class="fa-solid fa-handshake"></i>'; title.textContent = 'Draw!'; iqEl.textContent = 'Game ended in a draw.';
   }
 }
 
 function resignGame() {
   if (!gameActive) return;
-  if (confirm('Are you sure you want to resign?')) {
+  if (confirm('Resign this match?')) {
     if (mode !== 'bot') SocketActions.resign(matchId, user.id);
-    chess = new Chess();
-    showResult('resign');
+    showResult('resigned');
   }
-}
-
-function undoMove() {
-  if (mode !== 'bot' || chess.game_over() || !gameActive) return;
-  
-  // Can only undo if at least one full turn has passed (bot played)
-  if (moveCount < 2) {
-    Toast.info("Nothing to undo yet.");
-    return;
-  }
-  
-  // Undo Bot
-  chess.undo();
-  // Undo Player
-  chess.undo();
-  
-  board.position(chess.fen());
-  
-  // Remove last 2 items from DOM
-  const list = document.getElementById('move-list');
-  if (list.lastChild) list.removeChild(list.lastChild); // bot move text
-  if (list.lastChild) list.removeChild(list.lastChild); // my move text
-  
-  // If the previous child was a number line with no moves, remove the number
-  if (list.lastChild && list.lastChild.className === 'move-number') {
-      list.removeChild(list.lastChild);
-  }
-  
-  moveCount -= 2;
-  updatePlayerBar();
-  updateLastMoveHighlight();
-  Toast.success("Move Undone!");
 }
 
 function sendChatMessage() {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
-  if (!msg || (!gameActive && mode !== 'bot')) return; // Allow chat after game over ONLY for bot maybe? Or just keep it generic
-  
-  if (user?.settings?.chat_enabled === false) {
-     appendChat('System', 'You have disabled chat in your settings!', 'system');
-     input.value = '';
-     return;
-  }
-
+  if (!msg) return;
   appendChat('You', msg, 'me');
   input.value = '';
-  
-  if (mode !== 'bot') {
-    // Send to real player
-    _socket?.emit('chat_msg', { matchId, username: user.username, message: msg });
-  } else {
-    // Trigger localized AI bot logic
-    setTimeout(() => { triggerBotResponse(msg); }, 800 + Math.random() * 1200);
-  }
+  if (mode !== 'bot') _socket?.emit('chat_msg', { matchId, username: user.username, message: msg });
 }
 
 function appendChat(sender, message, type) {
   const box = document.getElementById('chat-messages');
   const el = document.createElement('div');
   el.className = 'msg ' + type;
-  if(type !== 'system') {
-     el.innerHTML = `<div class="msg-name">${sender}</div><div>${escapeHTML(message)}</div>`;
-  } else {
-     el.textContent = message;
-  }
+  el.innerHTML = `<div class="msg-name">${sender}</div><div>${message}</div>`;
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
 }
 
 function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag])); }
 
-function triggerBotResponse(userMsg) {
-  const text = userMsg.toLowerCase();
-  let reply = "I am focusing on my calculations. I cannot be distracted.";
-  
-  if (text.includes("hello") || text.includes("hi") || text.includes("hey")) {
-      const intros = ["Greetings human.", "Hi! Prepare to lose your elo.", "Hello! Are you ready for some tactical depth?", "Sys-online. Acknowledged."];
-      reply = intros[Math.floor(Math.random() * intros.length)];
-  } else if (text.includes("resign")) {
-      reply = "I am a silicon entity. I calculate checkmates, I do not resign.";
-  } else if (text.includes("why") || text.includes("what")) {
-      reply = "My neural network evaluated that line as mathematically superior.";
-  } else if (text.includes("gg") || text.includes("good game")) {
-      reply = "GG indeed. My CPU enjoyed processing this match.";
-  } else if (text.includes("cheat") || text.includes("engine")) {
-      reply = "I literally am an engine. What did you expect?";
-  } else if (text.includes("undo") || text.includes("takeback")) {
-      reply = "You may use the Undo button at the top to revert mistakes. I will allow it.";
-  } else if (text.includes("hah")) {
-      reply = "01001000 01000001 01001000. That means 'Laugh'.";
-  }
-
-  appendChat('Bot' + botIQ, reply, 'opp');
-}
-
-// Socket listeners
 const sock = initSocket();
-
-// [DEBUG] JOINING ROOM
 if (matchId) {
-    console.log('[DEBUG] JOINING ROOM: match_' + matchId);
     sock.emit('join_match', { matchId, userId: user.id, isTournament });
 }
 
@@ -748,79 +493,32 @@ sock.on('match_sync', (data) => {
   if (data.pgn) {
     chess.load_pgn(data.pgn);
     board.position(chess.fen());
-    
-    // Reconstruct move history list
     const list = document.getElementById('move-list');
-    list.innerHTML = '';
-    moveCount = 0;
-    const history = chess.history();
-    history.forEach(san => addMoveToList(san));
-  } else if (data.fen) {
-    chess.load(data.fen);
-    board.position(data.fen);
+    list.innerHTML = ''; moveCount = 0;
+    chess.history().forEach(san => addMoveToList(san));
   }
-
-  // Update last move highlight
-  setTimeout(updateLastMoveHighlight, 250);
-
-  // Sync timers
   myTime = myColor === 'white' ? data.white_time : data.black_time;
   oppTime = myColor === 'white' ? data.black_time : data.white_time;
-  document.getElementById('my-timer').textContent = fmt.countdown(myTime);
-  document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
-  
-  if (data.moveCount) {
-    moveCount = data.moveCount;
-  }
-
-  // Restore opponent info if it was lost/missing
-  if (data.opponent) {
-    document.getElementById('opp-name').textContent = fmt.username(data.opponent.username);
-    document.getElementById('opp-avatar').textContent = (data.opponent.username || '?').replace('@', '')[0].toUpperCase();
-  }
-
-  updatePlayerBar();
-});
-
-sock.on('move_error', (data) => {
-  Toast.error(data.message || 'Move failed/rejected.');
-  // Undo the move locally
-  chess.undo();
-  board.position(chess.fen());
-  if (moveCount > 0) {
-    const list = document.getElementById('move-list');
-    if (list.lastChild) list.removeChild(list.lastChild);
-    moveCount--;
-  }
   updatePlayerBar();
 });
 
 sock.on('move_made', (data) => {
-  if (data.fen) { 
-    chess.load(data.fen); 
-    board.position(data.fen); 
-    setTimeout(updateLastMoveHighlight, 250);
-  }
-  if (data.move) { 
-    addMoveToList(data.move.san); 
-    removeHighlights(); 
-  }
+  if (data.fen) { chess.load(data.fen); board.position(data.fen); setTimeout(updateLastMoveHighlight, 250); }
+  if (data.move) { addMoveToList(data.move.san); removeHighlights(); }
   updatePlayerBar();
   if (chess.game_over()) showResult();
 });
+
 sock.on('timer_update', (data) => {
   myTime = myColor === 'white' ? data.white_time : data.black_time;
   oppTime = myColor === 'white' ? data.black_time : data.white_time;
   document.getElementById('my-timer').textContent = fmt.countdown(myTime);
   document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
-  document.getElementById('my-timer').classList.toggle('low', myTime < 30);
-  document.getElementById('opp-timer').classList.toggle('low', oppTime < 30);
 });
+
 sock.on('chat_msg', (data) => {
-  if (user?.settings?.chat_enabled === false) return; // Mute locally if disabled
-  const senderName = data.username || 'Opponent';
-  if (data.username === user.username) return; // Ignore own bounces
-  appendChat(fmt.username(senderName), data.message, 'opp');
+  if (data.username === user.username) return;
+  appendChat(data.username || 'Opponent', data.message, 'opp');
 });
 
 sock.on('game_over', (data) => {
@@ -830,101 +528,18 @@ sock.on('game_over', (data) => {
   const isDraw = data.result === 'draw';
   document.getElementById('result-overlay').classList.add('active');
   document.getElementById('result-icon').innerHTML = isDraw ? '<i class="fa-solid fa-handshake"></i>' : (won ? '<i class="fa-solid fa-trophy"></i>' : '<i class="fa-solid fa-face-frown"></i>');
-  document.getElementById('result-title').innerHTML = isDraw ? 'Draw!' : (won ? 'You Won! <i class="fa-solid fa-champagne-glasses"></i>' : 'You Lost');
-  document.getElementById('result-title').style.color = isDraw ? '' : (won ? '#5bc0eb' : 'var(--error)');
-
-  let reasonMsg = '';
-  if (data.reason === 'disconnect') reasonMsg = 'Opponent disconnected';
-  else if (data.reason === 'abandoned') reasonMsg = 'Match abandoned (No move in 30s)';
-  else if (data.reason === 'timeout') reasonMsg = 'Time out';
-  else if (data.reason === 'cheat_detected') reasonMsg = 'Opponent banned for cheating';
-  
-  document.getElementById('result-iq').textContent = reasonMsg;
+  document.getElementById('result-title').textContent = isDraw ? 'Draw!' : (won ? 'You Won!' : 'You Lost');
+  document.getElementById('result-iq').textContent = data.reason || '';
 });
 
-// Start game
+sock.on('tournament_eliminated', () => {
+    showEliminationOverlay();
+});
+
 initBoard();
 gameActive = true;
 startTimer();
 updatePlayerBar();
-
-if (mode === 'bot') {
-  document.getElementById('btn-undo').style.display = 'inline-flex';
-  if (myColor === 'black') {
-     document.getElementById('bot-thinking').style.display = 'block';
-     setTimeout(makeBotMove, 800);
-  }
-}
-
-const statusElem = document.getElementById('game-status');
-if (statusElem) statusElem.innerHTML = myColor === 'white' ? '<i class="fa-solid fa-circle" style="color:var(--success);"></i> Your turn (White)' : '⏳ Waiting (Black)';
-
-const titleElem = document.getElementById('game-title');
-if (titleElem) titleElem.innerHTML = mode === 'bot' ? `<i class="fa-solid fa-chess-pawn"></i> vs Bot (IQ ${botIQ})` : '<i class="fa-solid fa-chess-pawn"></i> LIVE GAME';
-
-Toast.info(mode === 'bot' ? `Playing vs Bot (IQ ${botIQ})` : 'Game started! Good luck!');
-
-// ─── ANTI-CHEAT DETECTION ───
-let cheatStrikes = 0;
-
-function antiCheatWarning() {
-   if (!gameActive || mode === 'bot') return; // Don't ban people playing vs bot
-   let warn = document.getElementById('cheat-warn-overlay');
-   if (!warn) {
-      warn = document.createElement('div');
-      warn.id = 'cheat-warn-overlay';
-      warn.style.position = 'fixed'; warn.style.inset = '0';
-      warn.style.background = 'rgba(230, 40, 40, 0.98)';
-      warn.style.zIndex = '999999'; warn.style.display = 'flex';
-      warn.style.flexDirection = 'column'; warn.style.alignItems = 'center';
-      warn.style.justifyContent = 'center'; warn.style.color = '#fff';
-      warn.style.textAlign = 'center'; warn.style.padding = '40px';
-      warn.innerHTML = `
-         <i class="fa-solid fa-triangle-exclamation" style="font-size:100px; margin-bottom:20px; color:#fff;"></i>
-         <h1 style="font-family:var(--font-display); font-size:40px; font-weight:900; margin-bottom:10px; text-transform:uppercase;">Anti-Cheat Warning</h1>
-         <p style="font-size:18px; max-width:600px; margin-bottom:30px;">
-            Leaving the match or minimizing the browser is strictly prohibited. If you use a chess engine/bot, your account will be <b>BANNED</b> and coins <b>CONFISCATED</b>.
-         </p>
-         <button class="btn btn-secondary btn-lg" style="color:#000" onclick="document.getElementById('cheat-warn-overlay').style.display='none'">I Understand, Return to Match</button>
-      `;
-      document.body.appendChild(warn);
-   }
-   warn.style.display = 'flex';
-}
-
-function handleCheatViolation() {
-   if (!gameActive || mode === 'bot') return;
-   cheatStrikes++;
-   if (cheatStrikes === 1) {
-      antiCheatWarning();
-   } else if (cheatStrikes >= 2) {
-      sock.emit('cheat_detected', { matchId, userId: user.id });
-      gameActive = false;
-   }
-}
-
-// ─── ANTI-CHEAT DETECTION (REFINED) ───
-// Detects if the user is copying board state (FEN)
-document.addEventListener('copy', (e) => {
-   if (gameActive && mode !== 'bot') {
-       e.preventDefault();
-       Toast.error("Copying game state is restricted during LIVE matches.");
-   }
-});
-
-// Block context menu on the board to prevent easy engine analysis
-document.getElementById('board').addEventListener('contextmenu', (e) => {
-   if (gameActive) e.preventDefault();
-});
-
-// Remove aggressive tab-switch ban as requested
-/* 
-document.addEventListener("visibilitychange", () => {
-   if (document.hidden && gameActive) handleCheatViolation();
-});
-*/
-
 </script>
 </body>
 </html>
-

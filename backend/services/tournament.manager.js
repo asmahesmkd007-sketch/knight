@@ -492,10 +492,9 @@ class TournamentManager {
             match.player2.piecesValue = p2Pieces;
         }
 
-        const isPaid = tState?.type === 'paid';
         const isHybrid = tState?.timer === 5;
 
-        if (isPaid) {
+        if (isHybrid) {
             // 🏆 HYBRID SCORING CALCULATION
             const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
             const calculatePoints = (fen, color) => {
@@ -552,7 +551,8 @@ class TournamentManager {
                 actualLoserId = (winnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
             }
 
-            if (actualLoserId) {
+            // 🛡️ ONLY ELIMINATE IF NOT IN MAIN ROUND
+            if (actualLoserId && tState.phase !== 'main_round') {
                 const pIdx = tState.players.findIndex(p => p.user_id === actualLoserId);
                 if (pIdx !== -1) {
                     tState.players[pIdx].status = 'eliminated';
