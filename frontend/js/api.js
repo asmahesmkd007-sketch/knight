@@ -246,7 +246,8 @@ const loadSidebar = async () => {
   const container = document.getElementById('sidebar-container');
   if (!container) return;
   try {
-    const res = await fetch('/components/sidebar.html');
+    let res = await fetch('/components/sidebar.html');
+    if (!res.ok) res = await fetch('../components/sidebar.html');
     const html = await res.text();
     container.innerHTML = html;
     

@@ -371,20 +371,23 @@
 
     <script src="/js/api.js"></script>
     <script>
-        if (!requireAuth()) return;
-        const user = getUser();
-        loadSidebar();
-
-        // Populate Topbar
-        if (user) {
-            document.getElementById('tb-pid').textContent = user.player_id || '...';
-            const avatar = document.getElementById('tb-avatar');
-            if (user.profile_image) {
-                avatar.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-            } else {
-                avatar.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!requireAuth()) return;
+            
+            // Wait for sidebar to load
+            await loadSidebar();
+            
+            const user = getUser();
+            if (user) {
+                document.getElementById('tb-pid').textContent = user.player_id || '...';
+                const avatar = document.getElementById('tb-avatar');
+                if (user.profile_image) {
+                    avatar.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                } else {
+                    avatar.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+                }
             }
-        }
+        });
     </script>
 </body>
 </html>
