@@ -214,35 +214,82 @@ const autoCreatePaidTournaments = async () => {
 // ─── DISTRIBUTE TOURNAMENT PRIZES ───────────────────────────
 const distributeTournamentPrizes = async (tournament) => {
   try {
-    const { data: winners } = await supabase.from('tournament_players')
-      .select('user_id, score')
+    // 1. Fetch all finished matches for this tournament to determine bracket results
+    const { data: matches } = await supabase.from('matches')
+      .select('player1_id, player2_id, winner_id, round')
       .eq('tournament_id', tournament.id)
-      .order('score', { ascending: false })
-      .limit(3);
-    if (!winners || winners.length === 0) return;
+      .eq('status', 'finished')
+      .order('round', { ascending: false });
 
+    if (!matches || matches.length === 0) return;
+
+    const maxRound = matches[0].round;
+    const finalMatch = matches.find(m => m.round === maxRound);
+    
+    if (!finalMatch || !finalMatch.winner_id) return;
+
+    // TOP 1 & 2 (Finalists)
+    const top1 = finalMatch.winner_id;
+    const top2 = (finalMatch.winner_id === finalMatch.player1_id) ? finalMatch.player2_id : finalMatch.player1_id;
+
+    // TOP 3 (Highest score among Semifinal losers)
+    // Semifinals are maxRound - 1
+    const semiFinalRound = maxRound - 1;
+    const semiMatches = matches.filter(m => m.round === semiFinalRound);
+    
+    let candidates = [];
+    semiMatches.forEach(m => {
+        const loserId = (m.winner_id === m.player1_id) ? m.player2_id : m.player1_id;
+        if (loserId && loserId !== top1 && loserId !== top2) {
+            candidates.push(loserId);
+        }
+    });
+
+    let top3 = null;
+    if (candidates.length > 0) {
+        const { data: candidateData } = await supabase.from('tournament_players')
+            .select('user_id, score')
+            .eq('tournament_id', tournament.id)
+            .in('user_id', candidates)
+            .order('score', { ascending: false })
+            .limit(1);
+        
+        if (candidateData && candidateData.length > 0) {
+            top3 = candidateData[0].user_id;
+        }
+    }
+
+    const winners = [top1, top2, top3].filter(id => id !== null);
     const prizes = [tournament.prize_first, tournament.prize_second, tournament.prize_third];
+
     for (let i = 0; i < winners.length; i++) {
+        const userId = winners[i];
         const amount = prizes[i];
+
         if (amount > 0) {
-            // Insert into leaderboard table
+            // Insert into leaderboard
             await supabase.from('leaderboard').insert({
                 tournament_id: tournament.id,
-                user_id: winners[i].user_id,
+                user_id: userId,
                 rank: i + 1,
                 prize: amount
             });
 
-            const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', winners[i].user_id).single();
+            // Update wallet
+            const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
             if (!wallet) continue;
+            
             const newBalance = Number(wallet.balance) + amount;
-            await supabase.from('wallets').update({ balance: newBalance }).eq('user_id', winners[i].user_id);
+            await supabase.from('wallets').update({ balance: newBalance }).eq('user_id', userId);
+            
+            // Record transaction
             await supabase.from('transactions').insert({ 
-              user_id: winners[i].user_id, type: 'tournament_prize', amount, 
+              user_id: userId, type: 'tournament_prize', amount, 
               status: 'success', reference_id: tournament.id, balance_after: newBalance,
               description: `Prize: Rank ${i+1} in TR-${tournament.tr_id}`
             });
-            console.log(`💰 Prize ${amount} coins → ${winners[i].user_id} (Rank ${i+1})`);
+            
+            console.log(`💰 Prize Distribution: Rank ${i+1} (${amount} coins) → ${userId}`);
         }
     }
   } catch (err) { console.error('Prize distribution error:', err); }
