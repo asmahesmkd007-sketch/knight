@@ -105,7 +105,14 @@
         <!-- ROOM PANEL -->
         <div id="panel-room" class="panel">
           <div class="card">
-            <div class="card-title">Room Match</div>
+            <div class="card-title">Select Room Timer</div>
+            <div class="timer-grid" style="margin-bottom:24px">
+              <div class="timer-btn selected" onclick="selectTimer(1, this)">1<div class="timer-sub">Bullet</div></div>
+              <div class="timer-btn" onclick="selectTimer(3, this)">3<div class="timer-sub">Blitz</div></div>
+              <div class="timer-btn" onclick="selectTimer(5, this)">5<div class="timer-sub">Rapid</div></div>
+              <div class="timer-btn" onclick="selectTimer(10, this)">10<div class="timer-sub">Classical</div></div>
+            </div>
+            
             <div class="grid-2" style="gap:16px;margin-bottom:16px">
               <button class="btn btn-primary btn-lg" onclick="createRoom()"><i class="fa-solid fa-plus"></i> Create Room</button>
               <div>
@@ -307,4 +314,3 @@ if (urlParams.get('acceptChallenge')) {
 </script>
 </body>
 </html>
-
