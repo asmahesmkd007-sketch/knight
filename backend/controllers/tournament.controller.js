@@ -157,7 +157,8 @@ const autoCreatePaidTournaments = async () => {
     const entries = [5, 10, 15, 20, 30, 50, 80, 100, 200, 500];
     const types = [
       { timer: 1, max: 16, suffix: '1 Min Knockout TR' },
-      { timer: 3, max: 32, suffix: '3 Min Paid TR' }
+      { timer: 3, max: 32, suffix: '3 Min Paid TR' },
+      { timer: 5, max: 32, suffix: '5 Min Paid TR' }
     ];
     
     for (const tType of types) {
@@ -208,13 +209,14 @@ const autoCreatePaidTournaments = async () => {
               prizes.fourth = Math.floor(pool * 0.033);
               prizes.fifth = Math.floor(pool * 0.033);
               prizes.sixth = Math.floor(pool * 0.033);
-            } else {
-              // 5 Min Hybrid (Top 16)
-              prizes.first = Math.floor(pool * 0.30);
+            } else if (tType.timer === 5) {
+              // 5 Min Knockout (Top 6) - 15.1% fee hidden
+              prizes.first = Math.floor(pool * 0.35);
               prizes.second = Math.floor(pool * 0.25);
               prizes.third = Math.floor(pool * 0.15);
-              // 4th-16th get 1% each
-              prizes.top16_others = Math.floor(pool * 0.01);
+              prizes.fourth = Math.floor(pool * 0.033);
+              prizes.fifth = Math.floor(pool * 0.033);
+              prizes.sixth = Math.floor(pool * 0.033);
             }
 
             const { error: insErr } = await supabase.from('tournaments').insert({
@@ -259,23 +261,23 @@ const distributeTournamentPrizes = async (tournament) => {
     let prizes = [];
     if (tournament.timer_type === 5) {
       const pool = tournament.prize_pool || 0;
-      // Get all tournament players sorted by score
+      // Get all tournament players sorted by round (progression) then score
       const { data: allPlayers } = await supabase.from('tournament_players')
-          .select('user_id, score, status')
+          .select('user_id, score, status, profiles(username)')
           .eq('tournament_id', tournament.id)
-          .order('score', { ascending: false });
+          .order('score', { ascending: false }); // Score already includes Piece Points + Win/Draw points
       
-      // Winner list: Top 16
-      const winnersList = allPlayers?.slice(0, 16) || [];
-      const winnerIds = winnersList.map(p => p.user_id);
+      // Winner list: Top 6
+      const winnersList = allPlayers?.slice(0, 6) || [];
       
       const prizeAmounts = [
-        Math.floor(pool * 0.30),
-        Math.floor(pool * 0.25),
-        Math.floor(pool * 0.15)
+        Math.floor(pool * 0.35), // 1st
+        Math.floor(pool * 0.25), // 2nd
+        Math.floor(pool * 0.15), // 3rd
+        Math.floor(pool * 0.033), // 4th
+        Math.floor(pool * 0.033), // 5th
+        Math.floor(pool * 0.033)  // 6th
       ];
-      // 4th-16th: 1% each
-      for (let i = 3; i < 16; i++) prizeAmounts.push(Math.floor(pool * 0.01));
 
       for (let i = 0; i < winnersList.length; i++) {
         await processPrize(winnersList[i].user_id, i + 1, prizeAmounts[i], tournament);

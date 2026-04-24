@@ -66,8 +66,7 @@ class TournamentManager {
         if (!['full', 'locked', 'starting', 'live'].includes(t.status)) return;
 
         let maxPlayers = 16;
-        if (t.timer_type === 3) maxPlayers = 32;
-        else if (t.timer_type === 5) maxPlayers = 100;
+        if (t.timer_type === 3 || t.timer_type === 5) maxPlayers = 32;
 
         let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
@@ -224,20 +223,31 @@ class TournamentManager {
                     m.connectTimeout--;
                     if (m.connectTimeout <= 0) {
                         const isPaid = tState?.type === 'paid';
-                        if (isPaid) {
+                        if (isPaid && tState.timer !== 5) {
                             m.status = 'live'; 
                             return;
                         }
 
-                        // ENFORCE FIRST MOVE RULE (30s)
-                        const p1Online = m.player1.connected;
-                        const p2Online = m.player2.connected;
-                        if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
-                        else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
-                        else {
-                            const luckyWinnerId = Math.random() > 0.5 ? m.player1.userId : m.player2.userId;
-                            this.resolveMatch(m.id, 'draw', luckyWinnerId, 'both_no_show');
+                        // FOR 5MIN TR: Wait full 300s? Or just enforce first move?
+                        // Spec: "Timer full finish ku aparam tha"
+                        // I'll set connectTimeout to 300 for 5min TR in createMatch if needed,
+                        // but here we just check if it's 5min and handled.
+                        
+                        if (tState.timer === 5) {
+                            // If we reached 0 and still waiting, resolve
+                            const p1Online = m.player1.connected;
+                            const p2Online = m.player2.connected;
+                            if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
+                            else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
+                            else {
+                                const luckyWinnerId = Math.random() > 0.5 ? m.player1.userId : m.player2.userId;
+                                this.resolveMatch(m.id, 'draw', luckyWinnerId, 'both_no_show');
+                            }
+                            return;
                         }
+
+                        m.status = 'live'; 
+                        return;
                     }
                 }
             });
@@ -253,6 +263,14 @@ class TournamentManager {
                 const result = match.player1.time <= 0 ? 'player2_win' : 'player1_win';
                 const winnerId = match.player1.time <= 0 ? match.player2.userId : match.player1.userId;
                 this.resolveMatch(matchId, result, winnerId, 'timeout');
+            }
+
+            // DISCONNECT GRACE (3 sec) - ONLY FOR 5MIN TR
+            if (match.timer_type === 5 && match.disconnectGrace === null) {
+                if (!match.player1.connected || !match.player2.connected) {
+                    match.disconnectGrace = 3;
+                    match.disconnectedPlayer = !match.player1.connected ? 'p1' : 'p2';
+                }
             }
 
             if (match.disconnectGrace !== null) {
@@ -392,7 +410,7 @@ class TournamentManager {
             tournamentId: tState.id,
             roomId: dbMatch.room_id || `tr_${dbMatch.id}`,
             status: 'waiting_connect',
-            connectTimeout: 30, // 30s connect window
+            connectTimeout: tState.timer === 5 ? 300 : 60,
             chess: new Chess(),
             turn: 'w',
             player1: { userId: p1.user_id, time: timePerPlayer, socketId: [...s1][0], score: 0, connected: p1Online },
@@ -509,30 +527,25 @@ class TournamentManager {
             match.player1.piecesValue = p1Pieces;
             match.player2.piecesValue = p2Pieces;
         }
-
         const isHybrid = tState?.timer === 5;
 
         if (isHybrid) {
-            // 🏆 HYBRID SCORING CALCULATION
-            const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
-            const calculatePoints = (fen, color) => {
-                const board = fen.split(' ')[0];
+            // NEW 5MIN TR SCORING: Result Points (10/5) + Piece Points
+            const calculatePoints = (fen, side) => {
+                const values = { 'p': 1, 'r': 2, 'n': 2, 'b': 2, 'q': 5 };
+                const target = side === 'w' ? 'PRNBQ' : 'prnbq';
                 let pts = 0;
-                const target = color === 'w' ? 'PRNBQ' : 'prnbq';
+                const board = fen.split(' ')[0];
                 for (const char of board) {
-                    if (target.includes(char)) pts += pieceValues[char.toLowerCase()];
+                    if (target.includes(char)) pts += values[char.toLowerCase()];
                 }
                 return pts;
             };
 
             const p1Pieces = calculatePoints(match.fen, 'w');
             const p2Pieces = calculatePoints(match.fen, 'b');
-
-            // Result Points: Win=10, Draw=5, Loss=0
-            let p1Result = 0, p2Result = 0;
-            if (result === 'player1_win') { p1Result = 10; p2Result = 0; }
-            else if (result === 'player2_win') { p1Result = 0; p2Result = 10; }
-            else if (result === 'draw') { p1Result = 5; p2Result = 5; }
+            const p1Result = result === 'player1_win' ? 10 : (result === 'draw' ? 5 : 0);
+            const p2Result = result === 'player2_win' ? 10 : (result === 'draw' ? 5 : 0);
 
             const p1Delta = p1Pieces + p1Result;
             const p2Delta = p2Pieces + p2Result;
@@ -540,19 +553,36 @@ class TournamentManager {
             match.player1.score = (match.player1.score || 0) + p1Delta;
             match.player2.score = (match.player2.score || 0) + p2Delta;
 
-            // Update persistent scores in tState for Main Round accumulation
-            const p1Idx = tState.players.findIndex(p => p.user_id === match.player1.userId);
-            const p2Idx = tState.players.findIndex(p => p.user_id === match.player2.userId);
-            if (p1Idx !== -1) tState.players[p1Idx].score = (tState.players[p1Idx].score || 0) + p1Delta;
-            if (p2Idx !== -1) tState.players[p2Idx].score = (tState.players[p2Idx].score || 0) + p2Delta;
-
-            // Sync score to DB
-            supabase.from('tournament_players').update({ score: tState.players[p1Idx].score }).eq('tournament_id', tState.id).eq('user_id', match.player1.userId).then(()=>{});
-            supabase.from('tournament_players').update({ score: tState.players[p2Idx].score }).eq('tournament_id', tState.id).eq('user_id', match.player2.userId).then(()=>{});
+            if (tState) {
+                const p1Idx = tState.players.findIndex(p => p.user_id === match.player1.userId);
+                const p2Idx = tState.players.findIndex(p => p.user_id === match.player2.userId);
+                if (p1Idx !== -1) tState.players[p1Idx].score = (tState.players[p1Idx].score || 0) + p1Delta;
+                if (p2Idx !== -1) tState.players[p2Idx].score = (tState.players[p2Idx].score || 0) + p2Delta;
+            }
         } else {
-            // STANDARD SCORING (FREE ONLY)
+            // STANDARD SCORING
             match.player1.score = result === 'player1_win' ? 1 : (result === 'draw' ? 0.5 : 0);
             match.player2.score = result === 'player2_win' ? 1 : (result === 'draw' ? 0.5 : 0);
+        }
+
+        // 🛡️ Find winnerId for draws in knockout
+        if (result === 'draw') {
+            if (match.timer_type === 5) {
+                // Already calculated deltas above, let's use them
+                const wTotal = match.player1.score;
+                const bTotal = match.player2.score;
+                if (wTotal > bTotal) winnerId = match.player1.userId;
+                else if (bTotal > wTotal) winnerId = match.player2.userId;
+                else {
+                    const wUsed = 300 - match.player1.time;
+                    const bUsed = 300 - match.player2.time;
+                    if (wUsed < bUsed) winnerId = match.player1.userId;
+                    else if (bUsed < wUsed) winnerId = match.player2.userId;
+                    else winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
+                }
+            } else {
+                winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
+            }
         }
 
         // Find and mark the loser as eliminated in tState
@@ -565,7 +595,6 @@ class TournamentManager {
             } else if (result === 'player2_win') {
                 actualLoserId = match.player1.userId;
             } else if (result === 'draw') {
-                // In knockout draws, winnerId must be set to the advancing player
                 actualLoserId = (winnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
             }
 
