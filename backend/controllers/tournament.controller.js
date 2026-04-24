@@ -79,19 +79,27 @@ const joinTournament = async (req, res) => {
     // Join Logic: Free TR allows joining during 'live'. Paid TR only during 'upcoming'.
     if (tournament.type === 'free') {
         if (!['upcoming', 'live'].includes(tournament.status)) {
+            console.log(`🚫 Join rejected: Free TR ${tournament.id} status is ${tournament.status}`);
             return res.status(400).json({ success: false, message: 'Tournament is closed.' });
         }
     } else {
         if (tournament.status !== 'upcoming') {
+            console.log(`🚫 Join rejected: Paid TR ${tournament.id} status is ${tournament.status}`);
             return res.status(400).json({ success: false, message: 'Paid tournaments lock once live. Registration closed.' });
         }
     }
 
-    if (tournament.current_players >= tournament.max_players) return res.status(400).json({ success: false, message: 'Tournament is full.' });
+    if (tournament.current_players >= tournament.max_players) {
+        console.log(`🚫 Join rejected: TR ${tournament.id} is full (${tournament.current_players}/${tournament.max_players})`);
+        return res.status(400).json({ success: false, message: 'Tournament is full.' });
+    }
 
     // Prevent duplicate join
     const { data: already } = await supabase.from('tournament_players').select('id').eq('tournament_id', req.params.id).eq('user_id', req.user.id).maybeSingle();
-    if (already) return res.status(400).json({ success: false, message: 'Already joined.' });
+    if (already) {
+        console.log(`🚫 Join rejected: User ${req.user.id} already joined TR ${tournament.id}`);
+        return res.status(400).json({ success: false, message: 'Already joined.' });
+    }
 
     // FRESH COUNT CHECK (to prevent race conditions)
     const { count: currentCount } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', req.params.id);

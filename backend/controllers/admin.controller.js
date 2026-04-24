@@ -76,7 +76,7 @@ const updateUserStatus = async (req, res) => {
 const getPendingKYC = async (req, res) => {
   try {
     const { data: kycs } = await supabase
-      .from('kyc')
+      .from('kyc_requests')
       .select('*, profiles(username, email, player_id)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
@@ -92,7 +92,7 @@ const reviewKYC = async (req, res) => {
     
     // KYC record fetch
     const { data: kyc, error: kycErr } = await supabase
-      .from('kyc')
+      .from('kyc_requests')
       .select('*')
       .eq('id', req.params.id)
       .single();
@@ -105,7 +105,7 @@ const reviewKYC = async (req, res) => {
 
     // KYC table update
     await supabase
-      .from('kyc')
+      .from('kyc_requests')
       .update({
         status: newStatus,
         rejection_reason: rejection_reason || '',
