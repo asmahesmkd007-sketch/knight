@@ -669,11 +669,11 @@ class TournamentManager {
         const connectedSockets = this.io.sockets.adapter.rooms.get(`tournament_${tournamentId}`);
         if (!connectedSockets) return;
 
-        for (const socketId of connectedSockets) {
+        connectedSockets.forEach(socketId => {
             const socket = this.io.sockets.sockets.get(socketId);
-            if (!socket || !socket.userId) continue;
+            const userId = socket?.userId || socket?.handshake?.auth?.userId;
+            if (!socket || !userId) return;
 
-            const userId = socket.userId;
             const myMatch = tState.matches.find(m => (m.status !== 'finished') && (m.player1.userId === userId || m.player2.userId === userId));
 
             const personalizedState = {
@@ -686,7 +686,7 @@ class TournamentManager {
                 }] : []
             };
             socket.emit(`tournament_sync_${tournamentId}`, personalizedState);
-        }
+        });
     }
 
     static onPlayerConnected(userId, socket) {

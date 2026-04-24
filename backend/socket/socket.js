@@ -37,6 +37,17 @@ module.exports = (io) => {
         const tIdStr = String(tournamentId);
         socket.join(`tournament_${tIdStr}`);
         TournamentManager.broadcastState(tIdStr);
+        // Direct sync for joining socket to avoid race conditions with room map
+        const tState = TournamentManager.activeTourneys?.get(tIdStr);
+        if (tState) {
+            const baseState = {
+                id: tState.id, tr_id: tState.tr_id, status: tState.status, phase: tState.phase,
+                countdown: tState.countdown, round: tState.round,
+                players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, score: p.score, status: p.status, slot: p.slot })),
+                matches: []
+            };
+            socket.emit(`tournament_sync_${tIdStr}`, baseState);
+        }
         console.log(`Socket ${socket.id} joined tournament room: ${tIdStr}`);
     });
 
@@ -49,6 +60,7 @@ module.exports = (io) => {
       }
 
       socketToUser.set(socket.id, { userId, username });
+      socket.userId = userId; // Critical for personalized tournament broadcasts
       userToSocket.set(userId, socket.id);
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
       userSockets.get(userId).add(socket.id);
