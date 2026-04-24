@@ -161,7 +161,7 @@ if (matchId) localStorage.setItem('px_active_match', matchId);
 
 const matchData = JSON.parse(localStorage.getItem('px_match') || '{}');
 const mode = params.get('mode') || matchData.mode || 'random';
-let myColor = 'white'; 
+let myColor = matchData.color || 'white'; 
 const opponentData = matchData.opponent || {};
 const botIQ = parseInt(params.get('iq') || localStorage.getItem('px_bot_iq') || '100');
 let timerType = matchData.timer || 1;
@@ -335,7 +335,7 @@ function initBoard() {
     onDragStart: onDragStart,
     onDrop: onDrop,
     onSnapEnd: onSnapEnd,
-    onMoveEnd: updateLastMoveHighlight
+    onMoveEnd: () => updateLastMoveHighlight()
   });
 }
 
@@ -490,6 +490,9 @@ if (matchId) {
 }
 
 sock.on('match_sync', (data) => {
+  if (data.myColor) myColor = data.myColor;
+  if (board) board.orientation(myColor);
+  
   if (data.pgn) {
     chess.load_pgn(data.pgn);
     board.position(chess.fen());

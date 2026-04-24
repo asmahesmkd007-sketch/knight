@@ -35,7 +35,7 @@ const initSocket = () => {
     });
   });
 
-  _socket.on('disconnect', () => console.log('<i class="fa-solid fa-plug"></i> Socket disconnected'));
+  _socket.on('disconnect', () => console.log('🔌 Socket disconnected'));
   _socket.on('connect_error', (e) => console.warn('Socket error:', e.message));
 
   _socket.on('auth_error', async (data) => {
