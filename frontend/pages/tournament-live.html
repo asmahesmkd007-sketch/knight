@@ -582,8 +582,14 @@
       }, 1000);
     }
 
+    let lastRenderTime = 0;
     function renderLeaderboard(players) {
       if (!players || !Array.isArray(players) || !user) return;
+      
+      // OPTIMIZATION: Max 1 render per second to keep UI smooth
+      const now = Date.now();
+      if (now - lastRenderTime < 1000) return; 
+      lastRenderTime = now;
 
       const myP = players.find(p => (p.user_id?.id || p.user_id) === user.id);
       if (myP) {
@@ -599,7 +605,14 @@
           return (b.score || 0) - (a.score || 0);
         });
 
-      const html = sorted.map((p, i) => {
+      // OPTIMIZATION: Only render Top 16 + Me to save DOM cycles
+      let displayPool = sorted.slice(0, 16);
+      if (myP && sorted.indexOf(myP) >= 16) {
+          displayPool.push(myP);
+      }
+
+      const html = displayPool.map((p) => {
+        const i = sorted.indexOf(p); // Get actual rank
         const name = p.username || p.profiles?.username || 'Player';
         const isMe = (p.user_id?.id || p.user_id) === user.id;
         const isEliminated = p.status === 'eliminated';
@@ -611,10 +624,7 @@
           if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
           else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
           else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
-          else if (i < 16 && tournamentConfig.timer_type === 5) { statusText = `${i + 1}th WINNER 💠`; statusColor = '#3498db'; }
-          else if (i === 3 && tournamentConfig.timer_type === 3) { statusText = '4th WINNER 🎖️'; statusColor = '#5bc0eb'; }
-          else if (i === 4 && tournamentConfig.timer_type === 3) { statusText = '5th WINNER 🎗️'; statusColor = '#9b59b6'; }
-          else if (i === 5 && tournamentConfig.timer_type === 3) { statusText = '6th WINNER 💠'; statusColor = '#3498db'; }
+          else if (i < 16 && (tournamentConfig.timer_type === 5)) { statusText = `${i + 1}th WINNER 💠`; statusColor = '#3498db'; }
           else { statusText = 'ELIMINATED'; statusColor = '#ff4d4d'; }
         }
 
