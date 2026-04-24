@@ -660,11 +660,16 @@ class TournamentManager {
         const tState = activeTourneys.get(tournamentId);
         if (!tState || !this.io) return;
 
-        // MEMORY OPTIMIZATION: Slim clean state for general room
+        // MEMORY OPTIMIZATION: Pre-calculate players list once per broadcast
+        const basePlayers = tState.players.map(p => ({ 
+            user_id: p.user_id, username: p.username, rank: p.rank, 
+            score: p.score, status: p.status, slot: p.slot 
+        }));
+
         const baseState = {
             id: tState.id, tr_id: tState.tr_id, status: tState.status, phase: tState.phase,
             countdown: tState.countdown, round: tState.round,
-            players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, score: p.score, status: p.status, slot: p.slot }))
+            players: basePlayers
         };
 
         // We could emit baseState to everyone, but they also need THEIR OWN match.
