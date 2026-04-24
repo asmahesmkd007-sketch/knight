@@ -16,6 +16,7 @@ const createDepositOrder = async (req, res) => {
     if (req.user.kyc_status !== 'verified') return res.status(403).json({ success: false, message: 'KYC required to use wallet.' });
     const amount = Number(req.body.amount);
     if (!amount || isNaN(amount) || amount < 10) return res.status(400).json({ success: false, message: 'Minimum deposit is ₹10.' });
+    if (amount > 100000) return res.status(400).json({ success: false, message: 'Maximum deposit is ₹1,00,000.' });
 
     const order = await createOrder({ 
       amount, 
@@ -39,8 +40,9 @@ const createDepositOrder = async (req, res) => {
       app_id: process.env.CASHFREE_APP_ID 
     });
   } catch (err) {
-    console.error('Deposit order error:', err);
-    res.status(500).json({ success: false, message: 'Failed to create payment order.' });
+    console.error('Deposit order error:', err.response?.data || err);
+    const msg = err.response?.data?.message || 'Failed to create payment order.';
+    res.status(500).json({ success: false, message: msg });
   }
 };
 

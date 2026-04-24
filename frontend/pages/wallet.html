@@ -149,7 +149,7 @@
       </div>
       <div class="input-group">
         <label for="deposit-amount" class="input-label">Enter Amount (₹)</label>
-        <input type="number" id="deposit-amount" class="input" placeholder="Min ₹10" min="10">
+        <input type="number" id="deposit-amount" class="input" placeholder="₹10 - ₹1,00,000" min="10" max="100000">
       </div>
       <div style="font-size:12px;color:#5bc0eb;margin-bottom:16px">You will receive: <span
           id="coins-preview">0</span> coins</div>
@@ -426,10 +426,16 @@
     async function initiatePayment() {
       const amount = parseInt(document.getElementById('deposit-amount').value);
       if (!amount || amount < 10) return Toast.error('Minimum deposit is ₹10');
+      if (amount > 100000) return Toast.error('Maximum deposit is ₹1,00,000');
+
       const btn = document.getElementById('pay-btn');
       btn.disabled = true; btn.textContent = 'Creating order...';
       const res = await WalletAPI.createDepositOrder(amount);
-      if (!res?.success) { Toast.error(res?.message || 'Failed to create order'); btn.disabled = false; btn.textContent = 'Pay via Cashfree'; return; }
+      if (!res?.success) { 
+        Toast.error(res?.message || 'Failed to create order'); 
+        btn.disabled = false; btn.textContent = 'Pay via Cashfree'; 
+        return; 
+      }
 
       const cashfree = Cashfree({ mode: "sandbox" }); // TODO: Switch to "production" in prod
       
