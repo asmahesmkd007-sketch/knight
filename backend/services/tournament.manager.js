@@ -610,11 +610,14 @@ class TournamentManager {
         });
         processMatchResult(matchId, result, winnerId, match.fen).catch(() => {});
         
-        // MEMORY OPTIMIZATION: Purge match from memory
-        activeTournamentMatches.delete(matchId);
-        if (tState) {
-            tState.matches = tState.matches.filter(m => m.id !== matchId);
-        }
+        // MEMORY OPTIMIZATION: Purge match from memory after 10s grace
+        // (Grace is needed so frontend can detect match ended)
+        setTimeout(() => {
+            activeTournamentMatches.delete(matchId);
+            if (tState) {
+                tState.matches = tState.matches.filter(m => m.id !== matchId);
+            }
+        }, 10000);
     }
 
     static handleMove(userId, matchId, moveSan) {
@@ -674,7 +677,8 @@ class TournamentManager {
             const userId = socket?.userId || socket?.handshake?.auth?.userId;
             if (!socket || !userId) return;
 
-            const myMatch = tState.matches.find(m => (m.status !== 'finished') && (m.player1.userId === userId || m.player2.userId === userId));
+            // Include current active match OR recently finished match
+            const myMatch = tState.matches.find(m => m.player1.userId === userId || m.player2.userId === userId);
 
             const personalizedState = {
                 ...baseState,
