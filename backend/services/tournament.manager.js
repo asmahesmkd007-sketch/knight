@@ -327,9 +327,16 @@ class TournamentManager {
             }
         });
 
-        // Persist statuses to DB
-        for (const p of tState.players) {
-            await supabase.from('tournament_players').update({ status: p.status, rank: p.rank }).eq('tournament_id', tState.id).eq('user_id', p.user_id);
+        // Persist statuses to DB efficiently
+        const updates = tState.players.map(p => 
+            supabase.from('tournament_players')
+                .update({ status: p.status, rank: p.rank })
+                .eq('tournament_id', tState.id)
+                .eq('user_id', (p.user_id?.id || p.user_id))
+        );
+        // Run in parallel chunks to avoid overloading connection pool
+        for (let i = 0; i < updates.length; i += 10) {
+            await Promise.all(updates.slice(i, i + 10));
         }
         this.broadcastState(tState.id);
     }
@@ -597,13 +604,17 @@ class TournamentManager {
         supabase.from('tournament_players').update({ score: match.player1.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player1.userId).then(()=>{});
         supabase.from('tournament_players').update({ score: match.player2.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player2.userId).then(()=>{});
 
-        this.broadcastState(match.tournamentId);
         this.io.to(match.roomId).emit('game_over', {
             result, winnerId, reason, fen: match.fen,
             p1_score: match.player1.score, p2_score: match.player2.score
         });
         processMatchResult(matchId, result, winnerId, match.fen).catch(() => {});
+        
+        // MEMORY OPTIMIZATION: Purge match from memory
         activeTournamentMatches.delete(matchId);
+        if (tState) {
+            tState.matches = tState.matches.filter(m => m.id !== matchId);
+        }
     }
 
     static handleMove(userId, matchId, moveSan) {
@@ -645,18 +656,37 @@ class TournamentManager {
     static broadcastState(tournamentId) {
         const tState = activeTourneys.get(tournamentId);
         if (!tState || !this.io) return;
-        const cleanState = {
+
+        // MEMORY OPTIMIZATION: Slim clean state for general room
+        const baseState = {
             id: tState.id, tr_id: tState.tr_id, status: tState.status, phase: tState.phase,
             countdown: tState.countdown, round: tState.round,
-            players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, score: p.score, status: p.status, slot: p.slot })),
-            matches: tState.matches.map(m => ({
-                id: m.id, roomId: m.roomId, status: m.status,
-                player1: { userId: m.player1.userId, time: m.player1.time, score: m.player1.score, connected: m.player1.connected },
-                player2: { userId: m.player2.userId, time: m.player2.time, score: m.player2.score, connected: m.player2.connected },
-                fen: m.fen
-            }))
+            players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, score: p.score, status: p.status, slot: p.slot }))
         };
-        this.io.to(`tournament_${tournamentId}`).emit(`tournament_sync_${tournamentId}`, cleanState);
+
+        // We could emit baseState to everyone, but they also need THEIR OWN match.
+        // Instead of room emit, we personalize for active players.
+        const connectedSockets = this.io.sockets.adapter.rooms.get(`tournament_${tournamentId}`);
+        if (!connectedSockets) return;
+
+        for (const socketId of connectedSockets) {
+            const socket = this.io.sockets.sockets.get(socketId);
+            if (!socket || !socket.userId) continue;
+
+            const userId = socket.userId;
+            const myMatch = tState.matches.find(m => (m.status !== 'finished') && (m.player1.userId === userId || m.player2.userId === userId));
+
+            const personalizedState = {
+                ...baseState,
+                matches: myMatch ? [{
+                    id: myMatch.id, roomId: myMatch.roomId, status: myMatch.status,
+                    player1: { userId: myMatch.player1.userId, time: myMatch.player1.time, score: myMatch.player1.score, connected: myMatch.player1.connected },
+                    player2: { userId: myMatch.player2.userId, time: myMatch.player2.time, score: myMatch.player2.score, connected: myMatch.player2.connected },
+                    fen: myMatch.fen
+                }] : []
+            };
+            socket.emit(`tournament_sync_${tournamentId}`, personalizedState);
+        }
     }
 
     static onPlayerConnected(userId, socket) {
