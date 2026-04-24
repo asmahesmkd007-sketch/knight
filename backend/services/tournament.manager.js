@@ -372,12 +372,23 @@ class TournamentManager {
                 const sockets = userSockets.get(p.user_id);
                 if (sockets) {
                     sockets.forEach(sid => {
-                        this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
+                this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
                         this.io.to(sid).emit('tournament_eliminated');
                     });
                 }
             }
         });
+    }
+
+    static calculatePoints(fen, side) {
+        const values = { 'p': 1, 'r': 2, 'n': 2, 'b': 2, 'q': 5, 'k': 0 };
+        const target = side === 'w' ? 'PRNBQ' : 'prnbq';
+        let pts = 0;
+        const board = fen.split(' ')[0];
+        for (const char of board) {
+            if (target.includes(char)) pts += values[char.toLowerCase()] || 0;
+        }
+        return pts;
     }
 
     static async resolveMatch(matchId, result, winnerId, reason) {
@@ -391,36 +402,25 @@ class TournamentManager {
         match.fen = match.chess.fen();
 
         const tState = activeTourneys.get(match.tournamentId);
+        const isKnockout = tState && tState.timer !== 5;
+        const isHybrid = tState && tState.timer === 5;
 
-        // 🛡️ TIE-BREAK FOR KNOCKOUT DRAWS
-        if (result === 'draw' && tState) {
-            const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5, k: 0 };
-            const calculatePoints = (fen, color) => {
-                const board = fen.split(' ')[0];
-                let pts = 0;
-                const target = color === 'w' ? 'PRNBQ' : 'prnbq';
-                for (const char of board) {
-                    if (target.includes(char)) pts += pieceValues[char.toLowerCase()];
-                }
-                return pts;
-            };
-
-            const p1Pieces = calculatePoints(match.fen, 'w');
-            const p2Pieces = calculatePoints(match.fen, 'b');
+        // 🛡️ TIE-BREAK FOR KNOCKOUT DRAWS (1min/3min)
+        if (result === 'draw' && isKnockout) {
+            const p1Pieces = this.calculatePoints(match.fen, 'w');
+            const p2Pieces = this.calculatePoints(match.fen, 'b');
             
-            const p1Total = p1Pieces + 5; // 5 result points for draw
-            const p2Total = p2Pieces + 5;
-
-            if (p1Total > p2Total) {
+            if (p1Pieces > p2Pieces) {
                 winnerId = match.player1.userId;
-            } else if (p2Total > p1Total) {
+            } else if (p2Pieces > p1Pieces) {
                 winnerId = match.player2.userId;
             } else {
-                // If equal points, less time used wins
-                const p1TimeUsed = (match.timer_type === 3 ? 180 : 60) - match.player1.time;
-                const p2TimeUsed = (match.timer_type === 3 ? 180 : 60) - match.player2.time;
-                if (p1TimeUsed < p2TimeUsed) winnerId = match.player1.userId;
-                else if (p2TimeUsed < p1TimeUsed) winnerId = match.player2.userId;
+                // If equal pieces, less time used wins
+                const maxTime = match.timer_type * 60;
+                const p1Used = maxTime - match.player1.time;
+                const p2Used = maxTime - match.player2.time;
+                if (p1Used < p2Used) winnerId = match.player1.userId;
+                else if (p2Used < p1Used) winnerId = match.player2.userId;
                 else winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
             }
             
@@ -428,119 +428,75 @@ class TournamentManager {
             match.winnerId = winnerId;
             match.result = result;
             reason = 'tie_break';
-            match.player1.piecesValue = p1Pieces;
-            match.player2.piecesValue = p2Pieces;
         }
-        const isHybrid = tState?.timer === 5;
 
+        // 5MIN TR SCORING: Result Points (10/5) + Piece Points
         if (isHybrid) {
-            // NEW 5MIN TR SCORING: Result Points (10/5) + Piece Points
-            const calculatePoints = (fen, side) => {
-                const values = { 'p': 1, 'r': 2, 'n': 2, 'b': 2, 'q': 5 };
-                const target = side === 'w' ? 'PRNBQ' : 'prnbq';
-                let pts = 0;
-                const board = fen.split(' ')[0];
-                for (const char of board) {
-                    if (target.includes(char)) pts += values[char.toLowerCase()];
-                }
-                return pts;
-            };
-
-            const p1Pieces = calculatePoints(match.fen, 'w');
-            const p2Pieces = calculatePoints(match.fen, 'b');
+            const p1Pieces = this.calculatePoints(match.fen, 'w');
+            const p2Pieces = this.calculatePoints(match.fen, 'b');
             const p1Result = result === 'player1_win' ? 10 : (result === 'draw' ? 5 : 0);
             const p2Result = result === 'player2_win' ? 10 : (result === 'draw' ? 5 : 0);
 
-            const p1Delta = p1Pieces + p1Result;
-            const p2Delta = p2Pieces + p2Result;
-
-            match.player1.score = (match.player1.score || 0) + p1Delta;
-            match.player2.score = (match.player2.score || 0) + p2Delta;
+            match.player1.score = (match.player1.score || 0) + p1Pieces + p1Result;
+            match.player2.score = (match.player2.score || 0) + p2Pieces + p2Result;
 
             if (tState) {
-                const p1Idx = tState.players.findIndex(p => p.user_id === match.player1.userId);
-                const p2Idx = tState.players.findIndex(p => p.user_id === match.player2.userId);
-                if (p1Idx !== -1) tState.players[p1Idx].score = (tState.players[p1Idx].score || 0) + p1Delta;
-                if (p2Idx !== -1) tState.players[p2Idx].score = (tState.players[p2Idx].score || 0) + p2Delta;
+                const p1 = tState.players.find(p => p.user_id === match.player1.userId);
+                const p2 = tState.players.find(p => p.user_id === match.player2.userId);
+                if (p1) p1.score = (p1.score || 0) + (p1Pieces + p1Result);
+                if (p2) p2.score = (p2.score || 0) + (p2Pieces + p2Result);
+            }
+
+            // For hybrid draws in knockout stages, determine a winner to advance
+            if (result === 'draw') {
+                if (match.player1.score > match.player2.score) winnerId = match.player1.userId;
+                else if (match.player2.score > match.player1.score) winnerId = match.player2.userId;
+                else {
+                    const wUsed = 300 - match.player1.time;
+                    const bUsed = 300 - match.player2.time;
+                    winnerId = (wUsed < bUsed) ? match.player1.userId : (bUsed < wUsed ? match.player2.userId : (Math.random() > 0.5 ? match.player1.userId : match.player2.userId));
+                }
+                match.winnerId = winnerId;
             }
         } else {
-            // STANDARD SCORING
+            // STANDARD SCORING for non-hybrid
             match.player1.score = result === 'player1_win' ? 1 : (result === 'draw' ? 0.5 : 0);
             match.player2.score = result === 'player2_win' ? 1 : (result === 'draw' ? 0.5 : 0);
         }
 
-        // 🛡️ Find winnerId for draws in knockout
-        if (result === 'draw') {
-            if (match.timer_type === 5) {
-                // Already calculated deltas above, let's use them
-                const wTotal = match.player1.score;
-                const bTotal = match.player2.score;
-                if (wTotal > bTotal) winnerId = match.player1.userId;
-                else if (bTotal > wTotal) winnerId = match.player2.userId;
-                else {
-                    const wUsed = 300 - match.player1.time;
-                    const bUsed = 300 - match.player2.time;
-                    if (wUsed < bUsed) winnerId = match.player1.userId;
-                    else if (bUsed < wUsed) winnerId = match.player2.userId;
-                    else winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
-                }
-            } else {
-                winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
-            }
-        }
-
-        // Find and mark the loser as eliminated in tState
+        // Find and mark the loser as eliminated
         const { userSockets } = require('../socket/socket');
         if (tState) {
-            let actualLoserId = null;
+            let loserId = null;
+            if (result === 'player1_win') loserId = match.player2.userId;
+            else if (result === 'player2_win') loserId = match.player1.userId;
+            else if (result === 'draw') loserId = (winnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
 
-            if (result === 'player1_win') {
-                actualLoserId = match.player2.userId;
-            } else if (result === 'player2_win') {
-                actualLoserId = match.player1.userId;
-            } else if (result === 'draw') {
-                actualLoserId = (winnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
-            }
-
-            // 🛡️ ONLY ELIMINATE IF NOT IN MAIN ROUND
-            if (actualLoserId && tState.phase !== 'main_round') {
-                const pIdx = tState.players.findIndex(p => p.user_id === actualLoserId);
-                if (pIdx !== -1) {
-                    tState.players[pIdx].status = 'eliminated';
-                    // Notify eliminated player
-                    const sockets = userSockets.get(actualLoserId);
-                    if (sockets) {
-                        sockets.forEach(sid => {
-                            this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
-                            this.io.to(sid).emit('tournament_eliminated');
-                        });
-                    }
+            if (loserId) {
+                const p = tState.players.find(pl => pl.user_id === loserId);
+                if (p) {
+                    p.status = 'eliminated';
+                    const sockets = userSockets.get(loserId);
+                    if (sockets) sockets.forEach(sid => {
+                        this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
+                        this.io.to(sid).emit('tournament_eliminated');
+                    });
                 }
             }
             this.broadcastState(tState.id);
         }
 
+        // DB Updates
         supabase.from('matches').update({ result, winner_id: winnerId, status: 'finished', end_time: new Date().toISOString() }).eq('id', matchId).then(()=>{});
-
         supabase.from('tournament_players').update({ score: match.player1.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player1.userId).then(()=>{});
         supabase.from('tournament_players').update({ score: match.player2.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player2.userId).then(()=>{});
 
-        this.io.to(match.roomId).emit('game_over', {
-            result, winnerId, reason, fen: match.fen,
-            p1_score: match.player1.score, p2_score: match.player2.score
-        });
+        this.io.to(match.roomId).emit('game_over', { result, winnerId, reason, fen: match.fen, p1_score: match.player1.score, p2_score: match.player2.score });
         processMatchResult(matchId, result, winnerId, match.fen).catch(() => {});
         
-        // MEMORY OPTIMIZATION: Slim match immediately
-        match.status = 'finished';
-        delete match.game; 
-
-        // Grace period for frontend sync (reduced to 5s for better memory)
         setTimeout(() => {
             activeTournamentMatches.delete(matchId);
-            if (tState) {
-                tState.matches = tState.matches.filter(m => m.id !== matchId);
-            }
+            if (tState) tState.matches = tState.matches.filter(m => m.id !== matchId);
         }, 5000);
     }
 

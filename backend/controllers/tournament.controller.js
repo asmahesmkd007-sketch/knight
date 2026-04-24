@@ -194,30 +194,13 @@ const autoCreatePaidTournaments = async () => {
                 continue;
             }
 
-            const trId = `TR-${tType.timer}-${nextNum}`;
             const pool = entry * tType.max;
-            let prizes = {};
+            const trId = `TR-${tType.timer}-${nextNum}`;
             
-            if (tType.timer === 1) {
-              prizes.first = Math.floor(pool * 0.35);
-              prizes.second = Math.floor(pool * 0.30);
-              prizes.third = Math.floor(pool * 0.20);
-            } else if (tType.timer === 3) {
-              prizes.first = Math.floor(pool * 0.35);
-              prizes.second = Math.floor(pool * 0.25);
-              prizes.third = Math.floor(pool * 0.15);
-              prizes.fourth = Math.floor(pool * 0.033);
-              prizes.fifth = Math.floor(pool * 0.033);
-              prizes.sixth = Math.floor(pool * 0.033);
-            } else if (tType.timer === 5) {
-              // 5 Min Knockout (Top 6) - 15.1% fee hidden
-              prizes.first = Math.floor(pool * 0.35);
-              prizes.second = Math.floor(pool * 0.25);
-              prizes.third = Math.floor(pool * 0.15);
-              prizes.fourth = Math.floor(pool * 0.033);
-              prizes.fifth = Math.floor(pool * 0.033);
-              prizes.sixth = Math.floor(pool * 0.033);
-            }
+            // PRIZE CALCULATION (Hidden 15.1% fee)
+            const p1 = Math.floor(pool * 0.35);
+            const p2 = Math.floor(pool * 0.25);
+            const p3 = Math.floor(pool * 0.15);
 
             const { error: insErr } = await supabase.from('tournaments').insert({
               name: `${entry} Coin - ${tType.suffix}`,
@@ -228,9 +211,9 @@ const autoCreatePaidTournaments = async () => {
               max_players: tType.max,
               status: 'upcoming',
               prize_pool: pool,
-              prize_first: prizes.first,
-              prize_second: prizes.second,
-              prize_third: prizes.third,
+              prize_first: p1,
+              prize_second: p2,
+              prize_third: p3,
               tr_id: trId,
               start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
               phase: 'upcoming'

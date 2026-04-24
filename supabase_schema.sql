@@ -82,7 +82,8 @@ CREATE TABLE IF NOT EXISTS tournaments (
   prize_second      NUMERIC DEFAULT 0,
   prize_third       NUMERIC DEFAULT 0,
   created_by        UUID REFERENCES profiles(id),
-  created_at        TIMESTAMPTZ DEFAULT NOW()
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  completed_at      TIMESTAMPTZ -- Final completion timestamp
 );
 
 -- ─── TOURNAMENT PLAYERS ────────────────────────────────────
@@ -91,6 +92,7 @@ CREATE TABLE IF NOT EXISTS tournament_players (
   tournament_id  UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
   user_id        UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   score          NUMERIC DEFAULT 0,
+  piece_points   INTEGER DEFAULT 0, -- Piece value points for 5min TR
   wins           INTEGER DEFAULT 0,
   losses         INTEGER DEFAULT 0,
   draws          INTEGER DEFAULT 0,
@@ -114,6 +116,7 @@ CREATE TABLE IF NOT EXISTS matches (
   iq_change_p1    INTEGER DEFAULT 0,
   iq_change_p2    INTEGER DEFAULT 0,
   moves           JSONB DEFAULT '[]'::jsonb,
+  fen             TEXT DEFAULT 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   room_id         TEXT,
   status          TEXT DEFAULT 'waiting' CHECK (status IN ('waiting','active','finished','cancelled')),
   bot_difficulty  INTEGER,
@@ -126,7 +129,7 @@ CREATE TABLE IF NOT EXISTS matches (
 );
 
 -- ─── LEADERBOARD ──────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS tournament_leaderboard (
+CREATE TABLE IF NOT EXISTS leaderboard (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   tournament_id   UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
   user_id         UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,

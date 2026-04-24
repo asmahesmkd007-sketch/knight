@@ -36,8 +36,7 @@ app.use(cors({
 // ─── RAZORPAY WEBHOOK ────────────────────────────────────
 app.post('/api/webhook/razorpay', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    const { verifyWebhookSignature } = require('./config/razorpay');
-    const { supabase } = require('./config/supabase');
+    const { verifyWebhookSignature, supabase } = require('./config');
     const sig = req.headers['x-razorpay-signature'];
     const bodyString = req.body.toString('utf8');
     const body = JSON.parse(bodyString);
@@ -93,10 +92,6 @@ app.get('/api/health', (req, res) => {
 // ─── SOCKET.IO ────────────────────────────────────────────
 require(path.join(__dirname, './socket/socket'))(io);
 
-// ─── TOURNAMENT MANAGER ────────────────────────────────────
-const TournamentManager = require('./services/tournament.manager');
-// TournamentManager is already initialized inside socket/socket.js
-
 // ─── STATIC FRONTEND ─────────────────────────────────────
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -112,14 +107,7 @@ setTimeout(() => {
   autoCreatePaidTournaments();
 }, 3000);
 
-// ─── STATIC FILES ──────────────────────────────────────────
-app.use(express.static(path.join(__dirname, '../frontend')));
-
 // ─── CATCH-ALL → SERVE FRONTEND ───────────────────────────
-app.get('/pages/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend', req.path));
-});
-
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/pages/login.html'));
 });
