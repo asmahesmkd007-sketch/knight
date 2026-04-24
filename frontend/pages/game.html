@@ -74,6 +74,7 @@
                  <div style="font-size:11px;color:var(--text-muted)" id="opp-iq">IQ: ...</div>
               </div>
               <div id="opp-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
+              <div id="bot-thinking" style="display:none;font-size:10px;color:var(--teal);margin-top:2px"><i class="fa-solid fa-microchip fa-spin"></i> Bot is thinking...</div>
             </div>
             <div class="player-timer" id="opp-timer">5:00</div>
           </div>
@@ -228,21 +229,66 @@ function executeMove(from, to, promotion) {
   removeHighlights();
   selectedSquare = null;
   board.position(chess.fen());
-  setTimeout(updateLastMoveHighlight, 250);
+  setTimeout(() => updateLastMoveHighlight(move.from, move.to), 250);
   
   addMoveToList(move.san);
   updatePlayerBar();
   
   if (mode === 'bot') {
-    if (chess.game_over()) { showResult(); return true; }
-    document.getElementById('bot-thinking').style.display = 'block';
-    setTimeout(makeBotMove, 1500);
+    if (chess.game_over()) { showResult(); saveBotMatch(); return true; }
+    const thinkingEl = document.getElementById('bot-thinking');
+    if (thinkingEl) thinkingEl.style.display = 'block';
+    setTimeout(makeBotMove, 1000 + Math.random() * 1000);
   } else {
     SocketActions.makeMove(matchId, { from: move.from, to: move.to, promotion }, user.id);
     if (chess.game_over()) showResult();
   }
-  updateLastMoveHighlight(move.from, move.to);
   return true;
+}
+
+function makeBotMove() {
+  const thinkingEl = document.getElementById('bot-thinking');
+  if (thinkingEl) thinkingEl.style.display = 'none';
+  if (!gameActive || chess.game_over()) return;
+
+  const moves = chess.moves();
+  if (moves.length === 0) return;
+
+  let selectedMove;
+  // Bot Intelligence based on IQ
+  if (botIQ >= 1000) {
+      // IQ 1000+: Prioritize captures and checks
+      const captureMoves = moves.filter(m => m.includes('x'));
+      const checkMoves = moves.filter(m => m.includes('+'));
+      if (captureMoves.length > 0 && Math.random() > 0.3) {
+          selectedMove = captureMoves[Math.floor(Math.random() * captureMoves.length)];
+      } else if (checkMoves.length > 0 && Math.random() > 0.5) {
+          selectedMove = checkMoves[Math.floor(Math.random() * checkMoves.length)];
+      } else {
+          selectedMove = moves[Math.floor(Math.random() * moves.length)];
+      }
+  } else {
+      // Basic Bot: Random move
+      selectedMove = moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  const move = chess.move(selectedMove);
+  board.position(chess.fen());
+  addMoveToList(move.san);
+  updatePlayerBar();
+  setTimeout(() => updateLastMoveHighlight(move.from, move.to), 250);
+
+  if (chess.game_over()) {
+    showResult();
+    saveBotMatch();
+  }
+}
+
+async function saveBotMatch() {
+    try {
+        const result = chess.in_checkmate() ? (chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
+        await GameAPI.saveBotMatch(result, chess.fen());
+    } catch (err) { console.error('Error saving bot match:', err); }
 }
 
 let pendingMove = null;

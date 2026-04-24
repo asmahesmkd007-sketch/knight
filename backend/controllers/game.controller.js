@@ -146,8 +146,13 @@ const processMatchResult = async (matchId, result, winnerId, finalFen = null) =>
       }).eq('id', userId);
     };
 
+    if (match.match_type === 'bot') {
+        console.log(`🤖 Bot match finished: ${matchId}. Skipping stats update.`);
+        return match;
+    }
+
     if (match.player1_id) await updatePlayer(match.player1_id, p1Win, p2Win, isDraw, iq1);
-    if (match.player2_id && match.match_type !== 'bot') await updatePlayer(match.player2_id, p2Win, p1Win, isDraw, iq2);
+    if (match.player2_id) await updatePlayer(match.player2_id, p2Win, p1Win, isDraw, iq2);
 
     // Update tournament player scores if tournament match
     if (match.tournament_id) {
