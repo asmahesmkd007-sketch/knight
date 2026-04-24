@@ -25,8 +25,8 @@ const createOrder = async ({ amount, userId, phone, email, orderId }) => {
       }
     };
 
-    // V5 use PGCreateOrder
-    const response = await cashfree.PGCreateOrder("2023-08-01", request);
+    // V5 use PGCreateOrder(request) - NO VERSION STRING as first arg
+    const response = await cashfree.PGCreateOrder(request);
     return response.data;
   } catch (error) {
     console.error('Cashfree Order Creation Error:', error.response?.data || error.message);
@@ -36,8 +36,9 @@ const createOrder = async ({ amount, userId, phone, email, orderId }) => {
 
 const verifyWebhookSignature = (signature, rawBody, timestamp) => {
   try {
-    // V5 use instance method
-    return cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+    // V5 use instance method. Note: it returns event on success, throws on fail.
+    const event = cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+    return !!event;
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return false;
