@@ -1,5 +1,5 @@
 const { supabase } = require('../config/supabase');
-const { createOrder, verifyPaymentSignature } = require('../config/razorpay');
+const { createOrder } = require('../config/cashfree');
 
 const getWallet = async (req, res) => {
   try {
@@ -17,15 +17,27 @@ const createDepositOrder = async (req, res) => {
     const amount = Number(req.body.amount);
     if (!amount || isNaN(amount) || amount < 10) return res.status(400).json({ success: false, message: 'Minimum deposit is ₹10.' });
 
-    const order = await createOrder(amount);
+    const order = await createOrder({ 
+      amount, 
+      userId: req.user.id,
+      phone: req.user.phone,
+      email: req.user.email
+    });
 
     // Save pending transaction
     await supabase.from('transactions').insert({
       user_id: req.user.id, type: 'deposit', amount,
-      status: 'pending', razorpay_order_id: order.id,
+      status: 'pending', cashfree_order_id: order.order_id,
     });
 
-    res.json({ success: true, order, key_id: process.env.RAZORPAY_KEY_ID });
+    res.json({ 
+      success: true, 
+      order: {
+        id: order.order_id,
+        payment_session_id: order.payment_session_id
+      }, 
+      app_id: process.env.CASHFREE_APP_ID 
+    });
   } catch (err) {
     console.error('Deposit order error:', err);
     res.status(500).json({ success: false, message: 'Failed to create payment order.' });
@@ -34,14 +46,20 @@ const createDepositOrder = async (req, res) => {
 
 const verifyDeposit = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    const isValid = verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
-    if (!isValid) return res.status(400).json({ success: false, message: 'Payment verification failed.' });
+    const { cashfree_order_id } = req.body;
+    // Note: Verification usually happens via webhook, but we check status here for immediate UI feedback
+    const { Cashfree } = require('cashfree-pg');
+    const response = await Cashfree.PGOrderFetch("2023-08-01", cashfree_order_id);
+    const order = response.data;
+
+    if (order.order_status !== 'PAID') {
+      return res.status(400).json({ success: false, message: `Payment status: ${order.order_status}` });
+    }
 
     // ATOMIC LOCK: Claim the pending transaction
     const { data: txn, error: lockErr } = await supabase.from('transactions')
-      .update({ status: 'processing', razorpay_payment_id })
-      .eq('razorpay_order_id', razorpay_order_id)
+      .update({ status: 'processing', cashfree_payment_id: order.order_id }) // Cashfree order_id is usually used as ref
+      .eq('cashfree_order_id', cashfree_order_id)
       .eq('status', 'pending')
       .select()
       .maybeSingle();

@@ -14,9 +14,11 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
-      - key: RAZORPAY_KEY_ID
+      - key: CASHFREE_APP_ID
         sync: false
-      - key: RAZORPAY_KEY_SECRET
+      - key: CASHFREE_SECRET_KEY
         sync: false
+      - key: CASHFREE_MODE
+        value: production
       - key: FRONTEND_URL
         value: https://phoenix-x-app.onrender.com # Change this if you use a custom domain

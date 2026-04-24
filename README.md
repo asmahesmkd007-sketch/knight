@@ -26,7 +26,7 @@ In Supabase dashboard → **Project Settings** → **API**:
 | `SUPABASE_ANON_KEY` | `anon` `public` key |
 | `SUPABASE_SERVICE_KEY` | `service_role` `secret` key ⚠️ Keep private! |
 
-Also get Razorpay keys from **https://dashboard.razorpay.com** → Settings → API Keys.
+Also get Cashfree keys from **https://merchant.cashfree.com** → Settings → API Keys.
 
 ### Step 4 — Configure .env
 ```bash
@@ -38,8 +38,9 @@ PORT=5000
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=eyJhbGci...your_anon_key
 SUPABASE_SERVICE_KEY=eyJhbGci...your_service_key
-RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
-RAZORPAY_KEY_SECRET=your_razorpay_secret
+CASHFREE_APP_ID=your_app_id
+CASHFREE_SECRET_KEY=your_secret_key
+CASHFREE_MODE=sandbox
 FRONTEND_URL=http://localhost:5000
 ```
 
@@ -76,7 +77,7 @@ phoenix-x/
 │   ├── server.js              ← Express + Socket.IO entry point
 │   ├── config/
 │   │   ├── supabase.js        ← Supabase client (service + anon)
-│   │   └── razorpay.js        ← Razorpay payment config
+│   │   └── cashfree.js        ← Cashfree payment config
 │   ├── controllers/
 │   │   ├── auth.controller.js       ← Supabase Auth register/login
 │   │   ├── user.controller.js       ← Profile, KYC, settings
@@ -103,7 +104,7 @@ phoenix-x/
     │   ├── dashboard.html      ← Main hub
     │   ├── play.html           ← 4 game modes
     │   ├── game.html           ← Live chess board
-    │   ├── wallet.html         ← Razorpay deposit + withdraw
+    │   ├── wallet.html         ← Cashfree deposit + withdraw
     │   ├── account.html        ← Profile + KYC (Aadhaar/PAN)
     │   ├── settings.html       ← Theme, chess, privacy
     │   ├── free-tournament.html
@@ -165,7 +166,7 @@ GET  /api/user/stats            → IQ, rank, win rate
 ### Wallet
 ```
 GET  /api/wallet/balance               → Current balance
-POST /api/wallet/deposit/create-order  → Create Razorpay order
+POST /api/wallet/deposit/create-order  → Create Cashfree order
 POST /api/wallet/deposit/verify        → Verify payment + credit coins
 POST /api/wallet/withdraw              → Request withdrawal
 GET  /api/wallet/transactions          → Transaction history
@@ -233,12 +234,12 @@ GET  /api/admin/transactions        → All transactions
 
 ---
 
-## 💳 Payment Flow (Razorpay)
+## 💳 Payment Flow (Cashfree)
 
 ```
 User clicks "Add Money" (₹100)
-  → POST /api/wallet/deposit/create-order  → Razorpay order created
-  → Razorpay popup opens in browser
+  → POST /api/wallet/deposit/create-order  → Cashfree order created
+  → Cashfree checkout overlay opens in browser
   → User pays via UPI / Card / NetBanking
   → POST /api/wallet/deposit/verify        → Signature verified
   → Supabase wallet.balance += 100
@@ -286,7 +287,7 @@ pm2 startup
 | Backend | Node.js + Express |
 | Real-time | Socket.IO |
 | Chess | chess.js + chessboard.js |
-| Payments | Razorpay |
+| Payments | Cashfree |
 | Frontend | HTML5 + CSS3 + Vanilla JS |
 | Fonts | Orbitron + Exo 2 |
 

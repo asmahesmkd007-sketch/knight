@@ -140,7 +140,7 @@
   <div class="modal-overlay" id="deposit-modal">
     <div class="modal">
       <div class="modal-title"><i class="fa-solid fa-credit-card"></i> Add Money</div>
-      <div class="modal-desc">Funds added via Razorpay. 1 Coin = ₹1</div>
+      <div class="modal-desc">Funds added via Cashfree. 1 Coin = ₹1</div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
         <button class="btn btn-secondary btn-sm" onclick="setAmount(50)">₹50</button>
         <button class="btn btn-secondary btn-sm" onclick="setAmount(100)">₹100</button>
@@ -155,7 +155,7 @@
           id="coins-preview">0</span> coins</div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
-        <button class="btn btn-primary" id="pay-btn" onclick="initiatePayment()">Pay via Razorpay</button>
+        <button class="btn btn-primary" id="pay-btn" onclick="initiatePayment()">Pay via Cashfree</button>
       </div>
     </div>
   </div>
@@ -222,6 +222,7 @@
   </div>
 
   <div id="toast-container" class="toast-container"></div>
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="/js/api.js?v=3"></script>
   <script src="/js/sidebar.js"></script>
@@ -428,32 +429,39 @@
       const btn = document.getElementById('pay-btn');
       btn.disabled = true; btn.textContent = 'Creating order...';
       const res = await WalletAPI.createDepositOrder(amount);
-      if (!res?.success) { Toast.error(res?.message || 'Failed to create order'); btn.disabled = false; btn.textContent = 'Pay via Razorpay'; return; }
+      if (!res?.success) { Toast.error(res?.message || 'Failed to create order'); btn.disabled = false; btn.textContent = 'Pay via Cashfree'; return; }
 
-      const options = {
-        key: res.key_id || 'rzp_test_placeholder',
-        amount: res.order.amount,
-        currency: 'INR',
-        order_id: res.order.id,
-        name: 'PHOENIX X',
-        description: 'Add Coins to Wallet',
-        handler: async (response) => {
-          const verifyRes = await WalletAPI.verifyDeposit(response);
-          if (verifyRes?.success) { Toast.success('Payment successful! Coins added.'); closeModal('deposit-modal'); loadWallet(); }
-          else Toast.error('Payment verification failed.');
-        },
-        theme: { color: '#5bc0eb' },
+      const cashfree = Cashfree({ mode: "sandbox" }); // TODO: Switch to "production" in prod
+      
+      const checkoutOptions = {
+        paymentSessionId: res.order.payment_session_id,
+        redirectTarget: "_modal", // Opens in an iframe/modal
       };
 
-      if (window.Razorpay) { const rzp = new Razorpay(options); rzp.open(); }
-      else {
-        // Load Razorpay script dynamically
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.onload = () => { const rzp = new Razorpay(options); rzp.open(); };
-        document.head.appendChild(script);
-      }
-      btn.disabled = false; btn.textContent = 'Pay via Razorpay';
+      cashfree.checkout(checkoutOptions).then((result) => {
+        if (result.error) {
+          console.error('Payment Error:', result.error);
+          Toast.error(result.error.message || 'Payment failed');
+          btn.disabled = false; btn.textContent = 'Pay via Cashfree';
+        }
+        if (result.redirect) {
+          console.log('Payment initiated, redirecting...');
+        }
+        if (result.paymentDetails) {
+          // Verify on backend
+          WalletAPI.verifyDeposit({ cashfree_order_id: res.order.id }).then(verifyRes => {
+            if (verifyRes?.success) { 
+              Toast.success('Payment successful! Coins added.'); 
+              closeModal('deposit-modal'); 
+              loadWallet(); 
+            } else {
+              Toast.error('Payment verification failed.');
+            }
+          });
+        }
+      });
+      
+      btn.disabled = false; btn.textContent = 'Pay via Cashfree';
     }
 
     // GST Calculation listener

@@ -1,7 +1,7 @@
 const { supabase } = require('./supabase');
-const razorpay = require('./razorpay');
+const cashfree = require('./cashfree');
 
 module.exports = {
   supabase,
-  ...razorpay
+  ...cashfree
 };

@@ -33,41 +33,54 @@ app.use(cors({
   credentials: true 
 }));
 
-// ─── RAZORPAY WEBHOOK ────────────────────────────────────
-app.post('/api/webhook/razorpay', express.raw({ type: 'application/json' }), async (req, res) => {
+// ─── CASHFREE WEBHOOK ────────────────────────────────────
+app.post('/api/webhook/cashfree', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const { verifyWebhookSignature, supabase } = require('./config');
-    const sig = req.headers['x-razorpay-signature'];
+    const sig = req.headers['x-webhook-signature'];
+    const timestamp = req.headers['x-webhook-timestamp'];
     const bodyString = req.body.toString('utf8');
     const body = JSON.parse(bodyString);
-    if (verifyWebhookSignature(bodyString, sig)) {
-      console.log('✅ Razorpay webhook verified:', body.event);
-      if (body.event === 'payment.captured' || body.event === 'payment.authorized') {
-         const entity = body.payload.payment.entity;
-         const depositId = entity.notes?.deposit_id;
-         if (depositId) {
-            // ATOMIC LOCK: Claim the pending transaction
-            const { data: txn } = await supabase.from('transactions')
-               .update({ status: 'processing', reference_id: entity.id })
-               .eq('id', depositId)
-               .eq('status', 'pending')
-               .select()
-               .maybeSingle();
 
-            if (txn) {
-               const { data: wallet } = await supabase.from('wallets').select('balance, total_deposited').eq('user_id', txn.user_id).single();
-               if (wallet) {
-                  const newBalance = Number(wallet.balance) + Number(txn.amount);
-                  await supabase.from('wallets').update({ balance: newBalance, total_deposited: (Number(wallet.total_deposited) || 0) + Number(txn.amount) }).eq('user_id', txn.user_id);
-                  await supabase.from('transactions').update({ status: 'success', balance_after: newBalance }).eq('id', depositId);
-               }
-            }
-         }
+    if (verifyWebhookSignature(sig, bodyString, timestamp)) {
+      console.log('✅ Cashfree webhook verified:', body.type);
+      
+      // Handle PAYMENT_SUCCESS
+      if (body.type === 'PAYMENT_SUCCESS_WEBHOOK') {
+        const orderData = body.data.order;
+        const paymentData = body.data.payment;
+        const orderId = orderData.order_id;
+
+        // ATOMIC LOCK: Claim the pending transaction
+        const { data: txn } = await supabase.from('transactions')
+          .update({ status: 'processing', cashfree_payment_id: paymentData.cf_payment_id })
+          .eq('cashfree_order_id', orderId)
+          .eq('status', 'pending')
+          .select()
+          .maybeSingle();
+
+        if (txn) {
+          const { data: wallet } = await supabase.from('wallets').select('balance, total_deposited').eq('user_id', txn.user_id).single();
+          if (wallet) {
+            const newBalance = Number(wallet.balance) + Number(txn.amount);
+            await supabase.from('wallets').update({ balance: newBalance, total_deposited: (Number(wallet.total_deposited) || 0) + Number(txn.amount) }).eq('user_id', txn.user_id);
+            await supabase.from('transactions').update({ status: 'success', balance_after: newBalance }).eq('id', txn.id);
+            
+            // Notification
+            const { sendNotification } = require('./services/notification.service');
+            await sendNotification({ 
+              user_id: txn.user_id, 
+              type: 'deposit', 
+              title: 'Deposit Successful ✅', 
+              message: `₹${txn.amount} credited to your wallet.` 
+            });
+          }
+        }
       }
     }
     res.json({ success: true });
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('Cashfree Webhook error:', err);
     res.status(400).json({ success: false });
   }
 });
@@ -121,7 +134,7 @@ server.listen(PORT, () => {
   console.log(`  🚀  Server   : http://localhost:${PORT}`);
   console.log(`  🗄  Database : Supabase (PostgreSQL)`);
   console.log(`  🔌  Socket   : Socket.IO ready`);
-  console.log(`  💳  Payment  : Razorpay configured`);
+  console.log(`  💳  Payment  : Cashfree configured`);
   console.log('');
 });
 
