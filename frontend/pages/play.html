@@ -215,9 +215,13 @@ function cancelSearch() {
   document.getElementById('search-overlay').classList.remove('active');
 }
 
+let isInviting = false;
 async function sendFriendInvite(friendId) {
+  if (isInviting) return;
+  isInviting = true;
   SocketActions.inviteFriend(friendId, user.id, user.username, selectedTimer);
   Toast.info('Challenge sent! Waiting for response...');
+  setTimeout(() => { isInviting = false; }, 3000); // 3s debounce
 }
 
 async function loadPlayFriends() {
