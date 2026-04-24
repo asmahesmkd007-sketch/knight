@@ -2,7 +2,7 @@
  * PHOENIX X - Sidebar Loader
  * Fetches and injects the centralized sidebar component
  */
-async function loadSidebar() {
+window.loadSidebar = window.loadSidebar || async function() {
     const container = document.getElementById('sidebar-container');
     if (!container) return;
 
@@ -44,7 +44,7 @@ async function loadSidebar() {
         container.innerHTML = '<div style="padding:20px;color:var(--error);font-size:12px">Failed to load sidebar. Please refresh.</div>';
         return false;
     }
-}
+};
 
 // Global helper to trigger sidebar updates from other scripts
 window.syncSidebar = function(userData) {
