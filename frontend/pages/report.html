@@ -151,15 +151,15 @@
           <input type="hidden" id="r-type" value="issue">
           
           <div class="grid-2">
-            <div><label class="input-label">Name (Optional)</label><input type="text" id="r-name" class="report-input" placeholder="Your Name"></div>
-            <div><label class="input-label">Email (Optional)</label><input type="email" id="r-email" class="report-input" placeholder="Email Address"></div>
+            <div><label for="r-name" class="input-label">Name (Optional)</label><input type="text" id="r-name" class="report-input" placeholder="Your Name" autocomplete="name"></div>
+            <div><label for="r-email" class="input-label">Email (Optional)</label><input type="email" id="r-email" class="report-input" placeholder="Email Address" autocomplete="email"></div>
           </div>
 
           <!-- Issue Section -->
           <div id="section-issue" class="dynamic-section active">
             <div class="grid-2">
               <div>
-                <label class="input-label">Issue Type</label>
+                <label for="r-issue-type" class="input-label">Issue Type</label>
                 <select id="r-issue-type" class="report-input">
                   <option value="Bug">Technical Bug</option>
                   <option value="Payment">Payment / Wallet</option>
@@ -168,7 +168,7 @@
                 </select>
               </div>
               <div>
-                <label class="input-label">Priority</label>
+                <label for="r-priority" class="input-label">Priority</label>
                 <select id="r-priority" class="report-input">
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -182,11 +182,11 @@
           <div id="section-player" class="dynamic-section">
             <div class="grid-2">
               <div>
-                <label class="input-label">Reported Username</label>
-                <input type="text" id="r-username" class="report-input" placeholder="(e.g., @cheater99)">
+                <label for="r-username" class="input-label">Reported Username</label>
+                <input type="text" id="r-username" class="report-input" placeholder="(e.g., @cheater99)" autocomplete="off">
               </div>
               <div>
-                <label class="input-label">Reason</label>
+                <label for="r-reason" class="input-label">Reason</label>
                 <select id="r-reason" class="report-input">
                   <option value="Cheating">Cheating / Engine Usage</option>
                   <option value="Abuse">Verbal Abuse / Harassment</option>
@@ -197,8 +197,8 @@
             </div>
           </div>
 
-          <label class="input-label">Description (Required)</label>
-          <textarea id="r-desc" class="report-input" placeholder="Please describe the issue or incident in detail..." required></textarea>
+          <label for="r-desc" class="input-label">Description (Required)</label>
+          <textarea id="r-desc" class="report-input" placeholder="Please describe the issue or incident in detail..." required autocomplete="off"></textarea>
           
           <div class="file-upload">
             <input type="file" id="r-file" accept="image/png, image/jpeg, image/jpg">

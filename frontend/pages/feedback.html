@@ -153,9 +153,14 @@
             <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star"><i class="fa-solid fa-star"></i></label>
           </div>
           
-          <input type="text" id="fb-name" name="name" class="feedback-input" placeholder="Your Name (Optional)">
-          <input type="email" id="fb-email" name="email" class="feedback-input" placeholder="Your Email Address" required>
-          <textarea id="fb-message" name="message" class="feedback-input" placeholder="Type your message here..." required></textarea>
+          <label for="fb-name" style="display:block; margin-bottom:8px; font-size:13px; color:var(--text-muted)">Your Name</label>
+          <input type="text" id="fb-name" name="name" class="feedback-input" placeholder="Your Name (Optional)" autocomplete="name">
+          
+          <label for="fb-email" style="display:block; margin-bottom:8px; font-size:13px; color:var(--text-muted)">Your Email</label>
+          <input type="email" id="fb-email" name="email" class="feedback-input" placeholder="Your Email Address" required autocomplete="email">
+          
+          <label for="fb-message" style="display:block; margin-bottom:8px; font-size:13px; color:var(--text-muted)">Message</label>
+          <textarea id="fb-message" name="message" class="feedback-input" placeholder="Type your message here..." required autocomplete="off"></textarea>
           
           <button type="submit" id="fb-submit" class="btn btn-primary btn-submit">
             <span>Send Feedback</span>

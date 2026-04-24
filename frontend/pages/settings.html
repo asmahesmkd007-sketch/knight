@@ -29,7 +29,7 @@
           <label class="toggle"><input type="checkbox" id="s-result-anim" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
         </div>
         <div class="input-group" style="margin-top:16px;margin-bottom:0">
-          <label class="input-label">Language</label>
+          <label for="s-language" class="input-label">Language</label>
           <select id="s-language" class="input" onchange="saveSetting()">
             <option value="en">🇬🇧 English</option>
             <option value="ta">🇮🇳 Tamil</option>
@@ -84,21 +84,21 @@
           <label class="toggle"><input type="checkbox" id="s-online-status" checked onchange="saveSetting()"><div class="toggle-slider"></div></label>
         </div>
         <div class="input-group" style="margin-top:8px">
-          <label class="input-label">Profile Visibility</label>
+          <label for="s-visibility" class="input-label">Profile Visibility</label>
           <select id="s-visibility" class="input" onchange="saveSetting()">
             <option value="public"><i class="fa-solid fa-globe"></i> Public</option>
             <option value="private"><i class="fa-solid fa-lock"></i> Private</option>
           </select>
         </div>
         <div class="input-group">
-          <label class="input-label">Allow Challenges From</label>
+          <label for="s-friend-req" class="input-label">Allow Challenges From</label>
           <select id="s-friend-req" class="input" onchange="saveSetting()">
             <option value="everyone"><i class="fa-solid fa-users"></i> Everyone</option>
             <option value="friends"><i class="fa-solid fa-handshake"></i> Friends Only</option>
           </select>
         </div>
         <div class="input-group" style="margin-bottom:0">
-          <label class="input-label">Incoming Challenge Behavior</label>
+          <label for="s-challenge" class="input-label">Incoming Challenge Behavior</label>
           <select id="s-challenge" class="input" onchange="saveSetting()">
             <option value="auto_accept"><i class="fa-solid fa-check-circle"></i> Auto Accept</option>
             <option value="auto_reject"><i class="fa-solid fa-circle-xmark"></i> Auto Reject</option>
