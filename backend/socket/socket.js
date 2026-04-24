@@ -296,6 +296,7 @@ module.exports = (io) => {
         fen: game.chess.fen(),
         turn: game.chess.turn(),
         pgn: game.chess.pgn(),
+        fromUserId: userId,
       };
 
       io.to(game.player1.socketId).emit('move_made', moveData);
