@@ -1146,17 +1146,23 @@
         });
 
         if (res.success) {
-          Toast.success('Password updated successfully');
-          document.getElementById('sec-current-pwd').value = '';
-          document.getElementById('sec-new-pwd').value = '';
-          document.getElementById('sec-confirm-pwd').value = '';
+          Toast.success('Password updated successfully! Redirecting...');
           
+          // Tokens are now auto-updated by api.js, but we'll do it here too for safety
+          if (res.token) {
+            setSession(res.token, res.refresh_token, getUser());
+          }
+
           const u = getUser();
           if (u) {
             u.hasPassword = true;
             localStorage.setItem('px_user', JSON.stringify(u));
           }
-          await loadProfileData();
+          
+          // Faster redirect as requested
+          setTimeout(() => {
+            window.location.href = '/pages/dashboard.html';
+          }, 800);
         } else {
           Toast.error(res.message || 'Failed to update password');
         }

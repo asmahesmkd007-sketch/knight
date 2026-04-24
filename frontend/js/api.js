@@ -60,18 +60,26 @@ const api = async (endpoint, options = {}, retry = true) => {
     });
 
     // Token expired → try refresh once
-    const isAuthRoute = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
+    const isAuthRoute = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register') || endpoint.startsWith('/user/change-password');
     if (res.status === 401 && retry && !_refreshing && !isAuthRoute) {
       _refreshing = true;
       const refreshed = await tryRefreshToken();
       _refreshing = false;
       if (refreshed) return api(endpoint, options, false);
+      
+      // Prevent redirect if we're about to update the session anyway
       clearSession();
       window.location.href = '/pages/login.html';
       return;
     }
 
     const data = await res.json();
+    
+    // Auto-update session if new tokens are returned in any successful response
+    if (data?.success && data?.token) {
+      setSession(data.token, data.refresh_token, data.user || getUser());
+    }
+
     return data;
   } catch (err) {
     console.error(`API Error [${endpoint}]:`, err);

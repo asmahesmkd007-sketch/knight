@@ -147,7 +147,28 @@ const changePassword = async (req, res) => {
       app_metadata: { ...adminUser.app_metadata, has_password: true }
     });
     if (error) return res.status(400).json({ success: false, message: error.message });
-    res.json({ success: true, message: hasPassword ? 'Password changed successfully.' : 'Password set successfully.' });
+
+    // Re-sign in to get fresh tokens so the user isn't logged out
+    let session = null;
+    try {
+      const { createClient } = require('@supabase/supabase-js');
+      const tempClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+      const { data: sessionData } = await tempClient.auth.signInWithPassword({ email: adminUser.email, password: new_password });
+      if (sessionData?.session) {
+        session = {
+          token: sessionData.session.access_token,
+          refresh_token: sessionData.session.refresh_token
+        };
+      }
+    } catch (e) {
+      console.error('Post-password-change sign-in failed:', e);
+    }
+
+    res.json({ 
+      success: true, 
+      message: hasPassword ? 'Password changed successfully.' : 'Password set successfully.',
+      ...session
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
