@@ -610,14 +610,17 @@ class TournamentManager {
         });
         processMatchResult(matchId, result, winnerId, match.fen).catch(() => {});
         
-        // MEMORY OPTIMIZATION: Purge match from memory after 10s grace
-        // (Grace is needed so frontend can detect match ended)
+        // MEMORY OPTIMIZATION: Slim match immediately
+        match.status = 'finished';
+        delete match.game; 
+
+        // Grace period for frontend sync (reduced to 5s for better memory)
         setTimeout(() => {
             activeTournamentMatches.delete(matchId);
             if (tState) {
                 tState.matches = tState.matches.filter(m => m.id !== matchId);
             }
-        }, 10000);
+        }, 5000);
     }
 
     static handleMove(userId, matchId, moveSan) {
