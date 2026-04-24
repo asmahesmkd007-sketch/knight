@@ -500,11 +500,12 @@
                 <th>Players</th>
                 <th>Status</th>
                 <th>Start Time</th>
+                <th>End Time</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="tournaments-table">
-              <tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1114,17 +1115,17 @@
     let allAdminTournaments = [];
     async function loadAdminTournaments() {
       const tbody = document.getElementById("tournaments-table");
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px"><div class="spinner"></div></td></tr>';
       
       const res = await AdminAPI.getAllTournaments();
       if (!res?.success) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--error)">Error loading tournaments</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--error)">Error loading tournaments</td></tr>';
         return;
       }
       
       allAdminTournaments = res.tournaments || [];
       if (allAdminTournaments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No tournaments found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted)">No tournaments found.</td></tr>';
         return;
       }
       
@@ -1139,7 +1140,7 @@
     function renderAdminTournaments(list) {
       const tbody = document.getElementById("tournaments-table");
       if(list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No matching tournaments found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted)">No matching tournaments found.</td></tr>';
         return;
       }
       const statusBadge = { "live": "badge-live", "upcoming": "badge-pending", "locked": "badge-pending", "starting": "badge-live", "playing": "badge-live", "completed": "badge-silver", "cancelled": "badge-rejected" };
@@ -1155,6 +1156,7 @@
           <td><span style="font-weight:700">${t.current_players || 0}</span> <span style="font-size:11px;color:var(--text-muted)">/ ${t.max_players}</span></td>
           <td><span class="badge ${statusBadge[t.status] || 'badge-pending'}">${t.status.toUpperCase()}</span></td>
           <td style="font-size:12px;color:var(--text-secondary)">${new Date(t.start_time).toLocaleString('en-IN')}</td>
+          <td style="font-size:12px;color:var(--gold)">${t.completed_at ? new Date(t.completed_at).toLocaleString('en-IN') : '-'}</td>
           <td>
             <div class="action-btns">
               <button class="btn-approve" onclick="viewTournamentDetails('${t.id}')">Details</button>
