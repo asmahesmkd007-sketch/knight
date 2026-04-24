@@ -224,10 +224,7 @@ class TournamentManager {
                     m.connectTimeout--;
                     if (m.connectTimeout <= 0) {
                         const isPaid = tState?.type === 'paid';
-                        const isHybrid = tState?.timer === 5;
-                        if (isPaid && !isHybrid) {
-                            // Standard Paid TRs (1min/3min) can be more lenient if needed
-                            // But for Hybrid 5min, we MUST enforce the 30s First Move rule.
+                        if (isPaid) {
                             m.status = 'live'; 
                             return;
                         }
@@ -258,15 +255,6 @@ class TournamentManager {
                 this.resolveMatch(matchId, result, winnerId, 'timeout');
             }
 
-            // ANTI-STALL (30s MOVE RULE) - Only for 5min Hybrid TR
-            if (match.status === 'live' && match.timer_type === 5 && match.disconnectGrace === null) {
-                match.moveTimeout--;
-                if (match.moveTimeout <= 0) {
-                    const result = match.turn === 'w' ? 'player2_win' : 'player1_win';
-                    const winnerId = match.turn === 'w' ? match.player2.userId : match.player1.userId;
-                    this.resolveMatch(matchId, result, winnerId, 'stall_timeout');
-                }
-            }
             if (match.disconnectGrace !== null) {
                 match.disconnectGrace--;
                 if (match.disconnectGrace <= 0) {

@@ -157,8 +157,7 @@ const autoCreatePaidTournaments = async () => {
     const entries = [5, 10, 15, 20, 30, 50, 80, 100, 200, 500];
     const types = [
       { timer: 1, max: 16, suffix: '1 Min Knockout TR' },
-      { timer: 3, max: 32, suffix: '3 Min Paid TR' },
-      { timer: 5, max: 100, suffix: '5 Min Hybrid TR' }
+      { timer: 3, max: 32, suffix: '3 Min Paid TR' }
     ];
     
     for (const tType of types) {
