@@ -109,7 +109,7 @@ const processMatchResult = async (matchId, result, winnerId, finalFen = null) =>
     const { data: match } = await supabase.from('matches').select('*').eq('id', matchId).single();
     if (!match || match.status === 'finished') return;
 
-    const IQ_WIN = 15, IQ_LOSS = -5, IQ_DRAW = 0;
+    const IQ_WIN = 9, IQ_LOSS = 0, IQ_DRAW = 5;
     const p1Win = result === 'player1_win';
     const p2Win = result === 'player2_win';
     const isDraw = result === 'draw';
