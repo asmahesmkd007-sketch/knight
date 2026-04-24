@@ -2,31 +2,59 @@ const { supabase } = require('../config/supabase');
 
 const getMatchHistory = async (req, res) => {
   try {
-    const { filter, page = 1, limit = 20 } = req.query;
+    const { filter, category = 'all', page = 1, limit = 20 } = req.query;
+    
+    let tournamentIds = null;
+    if (category === 'free_tr' || category === 'paid_tr') {
+      const type = category === 'free_tr' ? 'free' : 'paid';
+      const { data: tData } = await supabase.from('tournaments').select('id').eq('type', type);
+      tournamentIds = (tData || []).map(t => t.id);
+      if (tournamentIds.length === 0) return res.json({ success: true, matches: [], total: 0, pages: 0 });
+    }
+
     let query = supabase
       .from('matches')
-      .select('*, p1:player1_id(id, username, profile_image, iq_level), p2:player2_id(id, username, profile_image, iq_level), tournament:tournament_id(display_id)', { count: 'exact' })
+      .select('*, p1:player1_id(id, username, profile_image, iq_level), p2:player2_id(id, username, profile_image, iq_level)', { count: 'exact' })
       .or(`player1_id.eq.${req.user.id},player2_id.eq.${req.user.id}`)
-      .eq('status', 'finished')
-      .order('created_at', { ascending: false })
-      .range((page - 1) * limit, page * limit - 1);
+      .eq('status', 'finished');
 
+    // Category Filtering
+    if (category === 'free_tr' || category === 'paid_tr') {
+        query = query.eq('match_type', 'tournament').in('tournament_id', tournamentIds);
+    } else if (category === 'random_rooms') {
+        query = query.in('match_type', ['random', 'room']);
+    }
+
+    // Result Filtering
     if (filter === 'wins') query = query.eq('winner_id', req.user.id);
     else if (filter === 'draws') query = query.eq('result', 'draw');
     else if (filter === 'losses') query = query.neq('result', 'draw').neq('winner_id', req.user.id).not('winner_id', 'is', null).or(`player1_id.eq.${req.user.id},player2_id.eq.${req.user.id}`);
 
+    query = query.order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
+
     const { data, count } = await query;
 
-    // Rename for cleaner response
-    const matches = (data || []).map(m => ({
+    // Fetch tournament details for tournament matches
+    const matches = data || [];
+    const tIds = [...new Set(matches.filter(m => m.tournament_id).map(m => m.tournament_id))];
+    let tournamentDetails = {};
+    if (tIds.length > 0) {
+      const { data: tData } = await supabase.from('tournaments').select('id, type, display_id').in('id', tIds);
+      (tData || []).forEach(t => tournamentDetails[t.id] = t);
+    }
+
+    const finalMatches = matches.map(m => ({
       ...m,
       player1_id: m.p1,
       player2_id: m.p2,
+      tournament: m.tournament_id ? tournamentDetails[m.tournament_id] : null,
       p1: undefined, p2: undefined,
     }));
 
-    res.json({ success: true, matches, total: count, pages: Math.ceil((count || 0) / limit) });
+    res.json({ success: true, matches: finalMatches, total: count, pages: Math.ceil((count || 0) / limit) });
   } catch (err) {
+    console.error('getMatchHistory error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 };

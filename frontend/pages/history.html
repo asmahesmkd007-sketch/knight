@@ -4,6 +4,24 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Match History – PHOENIX X</title>
   <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .category-box { 
+      background: var(--bg-card); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius); 
+      padding: 20px; 
+      text-align: center; 
+      transition: all 0.2s ease; 
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .category-box:hover { transform: translateY(-3px); border-color: var(--text-muted); opacity: 1; }
+    .category-box.active { opacity: 1; border-color: var(--gold); background: rgba(255, 215, 0, 0.04); }
+    .cat-icon { font-size: 28px; margin-bottom: 8px; color: var(--text-secondary); }
+    .cat-name { font-weight: 700; font-size: 14px; }
+    @media (max-width: 768px) { .category-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
 <div class="app-layout">
@@ -25,9 +43,25 @@
         <div class="stat-card purple"><div class="stat-label">Win Rate</div><div class="stat-value" id="hs-wr">-%</div></div>
       </div>
 
+      <!-- Category Filters -->
+      <div class="category-grid mb-24">
+        <div class="category-box active" onclick="switchCategory('free_tr', this)">
+          <div class="cat-icon"><i class="fa-solid fa-gift"></i></div>
+          <div class="cat-name">Free TR</div>
+        </div>
+        <div class="category-box" onclick="switchCategory('paid_tr', this)">
+          <div class="cat-icon" style="color:var(--gold)"><i class="fa-solid fa-trophy"></i></div>
+          <div class="cat-name">Paid TR</div>
+        </div>
+        <div class="category-box" onclick="switchCategory('random_rooms', this)">
+          <div class="cat-icon"><i class="fa-solid fa-dice"></i></div>
+          <div class="cat-name">Random & Rooms</div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="flex-between mb-20">
-          <div class="card-title" style="margin-bottom:0">All Matches</div>
+          <div class="card-title" style="margin-bottom:0" id="current-category-label">Free TR</div>
           <div class="tabs" style="margin-bottom:0">
             <button class="tab-btn active" onclick="filterMatches('all', this)">All</button>
             <button class="tab-btn" onclick="filterMatches('wins', this)"><i class="fa-solid fa-check"></i> Wins</button>
@@ -65,6 +99,7 @@ if (user.profile_image) {
 }
 
 let currentFilter = 'all';
+let currentCategory = 'free_tr';
 let page = 1;
 
 async function loadStats() {
@@ -78,11 +113,11 @@ async function loadStats() {
 }
 
 async function loadMatches(append = false) {
-  const res = await GameAPI.getHistory(currentFilter, page);
+  const res = await GameAPI.getHistory(currentFilter, currentCategory, page);
   if (!res?.success) return;
   if (!append) document.getElementById('matches-list').innerHTML = '';
   if (!res.matches?.length && !append) {
-    document.getElementById('matches-list').innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-chess-pawn"></i></div><div>No matches found</div></div>';
+    document.getElementById('matches-list').innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-chess-pawn"></i></div><div>No matches found in this category</div></div>`;
     return;
   }
 
@@ -132,6 +167,15 @@ function filterMatches(filter, btn) {
   loadMatches();
 }
 
+function switchCategory(cat, el) {
+  currentCategory = cat; page = 1;
+  document.querySelectorAll('.category-box').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('current-category-label').textContent = el.querySelector('.cat-name').textContent;
+  document.getElementById('matches-list').innerHTML = '<div class="flex-center" style="padding:32px"><div class="spinner"></div></div>';
+  loadMatches();
+}
+
 function loadMore() { page++; loadMatches(true); }
 
 loadStats();
@@ -139,4 +183,3 @@ loadMatches();
 </script>
 </body>
 </html>
-

@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS matches (
   player2_id      UUID REFERENCES profiles(id),
   match_type      TEXT NOT NULL CHECK (match_type IN ('random','friend','room','bot','tournament')),
   timer_type      INTEGER CHECK (timer_type IN (1,3,5,10)),
-  tournament_id   UUID,
+  tournament_id   UUID REFERENCES tournaments(id) ON DELETE SET NULL,
   round           INTEGER DEFAULT 1,
   result          TEXT DEFAULT 'ongoing' CHECK (result IN ('player1_win','player2_win','draw','ongoing','cancelled')),
   winner_id       UUID REFERENCES profiles(id),

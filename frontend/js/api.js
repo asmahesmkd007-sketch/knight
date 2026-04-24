@@ -146,7 +146,7 @@ const WalletAPI = {
 
 // ─── GAME API ────────────────────────────────────────────
 const GameAPI = {
-  getHistory    : (filter='all', page=1) => api(`/game/history?filter=${filter}&page=${page}`),
+  getHistory    : (filter='all', category='all', page=1) => api(`/game/history?filter=${filter}&category=${category}&page=${page}`),
   getLeaderboard: (page=1)               => api(`/game/leaderboard?page=${page}`),
   getMatch      : (id)                   => api(`/game/match/${id}`),
   saveBotMatch  : (result, fen)          => api('/game/bot-match', { method: 'POST', body: { result, fen } }),
