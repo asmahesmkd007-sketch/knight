@@ -183,7 +183,9 @@ async function loadMatch() {
   
   const tempChess = new Chess();
   rawMoves.forEach((move, i) => {
-    const mResult = tempChess.move(move);
+    const moveStr = typeof move === 'string' ? move : (move.move || move.san);
+    if (!moveStr) return;
+    const mResult = tempChess.move(moveStr);
     if (mResult) {
       historyPositions.push(tempChess.fen());
       historyMoves.push({ from: mResult.from, to: mResult.to });
@@ -218,7 +220,8 @@ function renderMoveHistory() {
     const whiteMove = document.createElement('div');
     whiteMove.className = 'move-item';
     whiteMove.id = `move-${i + 1}`;
-    whiteMove.textContent = typeof moves[i] === 'string' ? moves[i] : moves[i].san;
+    const m1 = moves[i];
+    whiteMove.textContent = typeof m1 === 'string' ? m1 : (m1.move || m1.san || '?');
     whiteMove.onclick = () => goToMove(i + 1);
     container.appendChild(whiteMove);
     
@@ -227,7 +230,8 @@ function renderMoveHistory() {
       const blackMove = document.createElement('div');
       blackMove.className = 'move-item';
       blackMove.id = `move-${i + 2}`;
-      blackMove.textContent = typeof moves[i+1] === 'string' ? moves[i+1] : moves[i+1].san;
+      const m2 = moves[i+1];
+      blackMove.textContent = typeof m2 === 'string' ? m2 : (m2.move || m2.san || '?');
       blackMove.onclick = () => goToMove(i + 2);
       container.appendChild(blackMove);
     }

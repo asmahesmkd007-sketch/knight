@@ -119,7 +119,8 @@ const processMatchResult = async (matchId, result, winnerId, finalFen = null) =>
     // Update match
     const { error: matchErr } = await supabase.from('matches').update({
       result, winner_id: winnerId || null, status: 'finished',
-      iq_change_p1: iq1, iq_change_p2: iq2, end_time: new Date().toISOString()
+      iq_change_p1: iq1, iq_change_p2: iq2, end_time: new Date().toISOString(),
+      fen: finalFen
     }).eq('id', matchId);
     
     if (matchErr) console.error('Match Update Error:', matchErr);

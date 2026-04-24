@@ -516,6 +516,14 @@ class TournamentManager {
             match.turn = match.chess.turn(); match.fen = match.chess.fen();
             match.moveTimeout = 30; // Reset anti-stall
             this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.fen, turn: match.turn });
+            
+            // Persist move to Supabase
+            supabase.from('matches').select('moves').eq('id', matchId).single().then(({ data: m }) => {
+                const moves = Array.isArray(m?.moves) ? m.moves : [];
+                moves.push({ move: moveData.san, timestamp: new Date().toISOString(), player: userId });
+                supabase.from('matches').update({ moves, fen: match.fen }).eq('id', matchId).then(() => {});
+            });
+
             if (match.chess.isGameOver()) {
                 const r = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
                 const w = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? match.player2.userId : match.player1.userId) : null;
