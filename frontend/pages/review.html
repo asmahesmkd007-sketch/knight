@@ -59,6 +59,8 @@
     .player-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .player-row:last-child { margin-bottom: 0; }
     
+    .highlight-last-move { background: rgba(255, 255, 0, 0.4) !important; }
+
     @media (max-width: 900px) {
       .review-layout { flex-direction: column; align-items: center; }
       .side-panel { width: 100%; max-width: 500px; }
@@ -145,6 +147,7 @@ let chess = new Chess();
 let board = null;
 let currentMoveIndex = 0;
 let historyPositions = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'];
+let historyMoves = [null];
 let moves = [];
 let isPlaying = false;
 let playInterval = null;
@@ -175,7 +178,6 @@ async function loadMatch() {
   }
 
   // Process moves
-  // Moves are stored in m.moves as an array of SAN strings or objects
   const rawMoves = Array.isArray(m.moves) ? m.moves : [];
   moves = rawMoves;
   
@@ -184,6 +186,7 @@ async function loadMatch() {
     const mResult = tempChess.move(move);
     if (mResult) {
       historyPositions.push(tempChess.fen());
+      historyMoves.push({ from: mResult.from, to: mResult.to });
     }
   });
 
@@ -234,7 +237,11 @@ function renderMoveHistory() {
 function goToMove(index) {
   if (index < 0 || index >= historyPositions.length) return;
   currentMoveIndex = index;
-  board.position(historyPositions[currentMoveIndex]);
+  
+  // Use animation for better UX
+  board.position(historyPositions[currentMoveIndex], true);
+  
+  updateHighlights(index);
   
   // Highlight in list
   document.querySelectorAll('.move-item').forEach(el => el.classList.remove('current'));
@@ -248,6 +255,15 @@ function goToMove(index) {
   
   if (index === historyPositions.length - 1 && isPlaying) {
     stopPlay();
+  }
+}
+
+function updateHighlights(index) {
+  $('#board .square-55d63').removeClass('highlight-last-move');
+  const move = historyMoves[index];
+  if (move) {
+    $('.square-' + move.from).addClass('highlight-last-move');
+    $('.square-' + move.to).addClass('highlight-last-move');
   }
 }
 
