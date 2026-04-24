@@ -1158,7 +1158,7 @@
           <td>
             <div class="action-btns">
               <button class="btn-approve" onclick="viewTournamentDetails('${t.id}')">Details</button>
-              ${t.status === 'upcoming' || t.status === 'locked' ? `<button class="btn-reject" onclick="cancelTournamentAdmin('${t.id}')">Cancel</button>` : ''}
+              ${t.status !== 'completed' && t.status !== 'cancelled' ? `<button class="btn-reject" onclick="cancelTournamentAdmin('${t.id}')">Cancel</button>` : ''}
             </div>
           </td>
         </tr>

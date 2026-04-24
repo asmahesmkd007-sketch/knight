@@ -254,16 +254,20 @@ const cancelTournament = async (req, res) => {
     const { id } = req.params;
     const { data: tourney } = await supabase.from('tournaments').select('*').eq('id', id).single();
     if (!tourney) return res.status(404).json({ success: false, message: 'Not found.' });
-    if (['completed', 'cancelled', 'live'].includes(tourney.status)) 
-      return res.status(400).json({ success: false, message: 'Cannot cancel a completed, cancelled, or live tournament.' });
+    if (['completed', 'cancelled'].includes(tourney.status)) 
+      return res.status(400).json({ success: false, message: 'Cannot cancel a finished tournament.' });
 
     await supabase.from('tournaments').update({ status: 'cancelled' }).eq('id', id);
 
     if (tourney.type === 'paid') {
       const { data: players } = await supabase.from('tournament_players').select('user_id').eq('tournament_id', id);
       if (players && players.length > 0) {
-        for (const p of players) {
-          const { data: wallet } = await supabase.from('wallets').select('balance, total_spent').eq('user_id', p.user_id).single();
+        // PERF: Fetch all wallets at once
+        const userIds = players.map(p => p.user_id);
+        const { data: wallets } = await supabase.from('wallets').select('user_id, balance, total_spent').in('user_id', userIds);
+        
+        const refundTasks = players.map(async (p) => {
+          const wallet = wallets.find(w => w.user_id === p.user_id);
           if (wallet) {
               const newBalance = Number(wallet.balance) + tourney.entry_fee;
               const newTotalSpent = Math.max(0, Number(wallet.total_spent || 0) - tourney.entry_fee);
@@ -275,12 +279,26 @@ const cancelTournament = async (req, res) => {
               });
               await supabase.from('notifications').insert({
                 user_id: p.user_id, type: 'system', title: 'Tournament Cancelled',
-                message: `${tourney.name} was cancelled. ${tourney.entry_fee} entry refunded.`
+                message: `${tourney.name} was cancelled by Admin. ${tourney.entry_fee} entry refunded.`
               });
           }
+        });
+
+        // Run in parallel chunks
+        for (let i = 0; i < refundTasks.length; i += 10) {
+          await Promise.all(refundTasks.slice(i, i + 10));
         }
       }
     }
+
+    // MEMORY: Clear from active tournaments if live
+    const TournamentManager = require('../services/tournament.manager');
+    const io = req.app.get('io');
+    if (io) {
+        io.to(`tournament_${id}`).emit('tournament_msg', { message: 'This tournament was cancelled by admin.' });
+        io.to(`tournament_${id}`).emit('tournament_sync_' + id, { status: 'cancelled' });
+    }
+    TournamentManager.finishTournament(id, { status: 'cancelled' }).catch(() => {});
     res.json({ success: true, message: 'Tournament cancelled.' });
   } catch (e) {
     res.status(500).json({ success: false, message: 'Server error.' });
