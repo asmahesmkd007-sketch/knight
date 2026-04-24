@@ -76,8 +76,17 @@ const joinTournament = async (req, res) => {
     const { data: tournament } = await supabase.from('tournaments').select('*').eq('id', req.params.id).single();
     if (!tournament) return res.status(404).json({ success: false, message: 'Tournament not found.' });
     
-    // Only allow joining in UPCOMING status
-    if (tournament.status !== 'upcoming') return res.status(400).json({ success: false, message: 'Tournament is no longer accepting joins.' });
+    // Join Logic: Free TR allows joining during 'live'. Paid TR only during 'upcoming'.
+    if (tournament.type === 'free') {
+        if (!['upcoming', 'live'].includes(tournament.status)) {
+            return res.status(400).json({ success: false, message: 'Tournament is closed.' });
+        }
+    } else {
+        if (tournament.status !== 'upcoming') {
+            return res.status(400).json({ success: false, message: 'Paid tournaments lock once live. Registration closed.' });
+        }
+    }
+
     if (tournament.current_players >= tournament.max_players) return res.status(400).json({ success: false, message: 'Tournament is full.' });
 
     // Prevent duplicate join

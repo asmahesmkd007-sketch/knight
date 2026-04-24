@@ -241,25 +241,4 @@ const Toast = {
 const requireAuth  = () => { if (!isLoggedIn()) { window.location.href = '/pages/login.html'; return false; } return true; };
 const requireGuest = () => { if (isLoggedIn())  { window.location.href = '/pages/dashboard.html'; return false; } return true; };
 
-// ─── SIDEBAR LOADER ──────────────────────────────────────
-const loadSidebar = async () => {
-  const container = document.getElementById('sidebar-container');
-  if (!container) return;
-  try {
-    let res = await fetch('/components/sidebar.html');
-    if (!res.ok) res = await fetch('../components/sidebar.html');
-    const html = await res.text();
-    container.innerHTML = html;
-    
-    // Manually execute scripts in injected HTML
-    const scripts = container.querySelectorAll('script');
-    scripts.forEach(oldScript => {
-      const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-      oldScript.parentNode.replaceChild(newScript, oldScript);
-    });
-  } catch (err) {
-    console.error('loadSidebar error:', err);
-  }
-};
+// Sidebar loader moved to sidebar.js to prevent duplicate declarations.
