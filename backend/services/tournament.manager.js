@@ -95,8 +95,7 @@ class TournamentManager {
         
         // Force 1 minute lobby max for all paid tournaments
         if (tData.type === 'paid') {
-            countdown = Math.min(60, countdown);
-            if (countdown === 0) countdown = 60; // Ensure at least some lobby time if just pickup
+            countdown = 60; // Always 1 minute lobby
         }
 
         const tState = {
@@ -136,7 +135,7 @@ class TournamentManager {
                     
                     if (tState.countdown <= 0 && !tState.nextRoundPending) {
                         tState.phase = 'starting';
-                        tState.countdown = 60; // 1 min process time
+                        tState.countdown = 60; // 1 min round process time
                         this.broadcastState(tId);
                     }
                 }
