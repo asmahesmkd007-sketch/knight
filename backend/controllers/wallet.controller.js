@@ -48,8 +48,8 @@ const verifyDeposit = async (req, res) => {
   try {
     const { cashfree_order_id } = req.body;
     // Note: Verification usually happens via webhook, but we check status here for immediate UI feedback
-    const { Cashfree } = require('cashfree-pg');
-    const response = await Cashfree.PGOrderFetch("2023-08-01", cashfree_order_id);
+    const { cashfree } = require('../config/cashfree');
+    const response = await cashfree.PGOrderFetch("2023-08-01", cashfree_order_id);
     const order = response.data;
 
     if (order.order_status !== 'PAID') {

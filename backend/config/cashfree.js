@@ -1,11 +1,10 @@
-const { Cashfree } = require('cashfree-pg');
-const crypto = require('crypto');
+const { Cashfree, CFEnvironment } = require('cashfree-pg');
 
-Cashfree.XClientId = process.env.CASHFREE_APP_ID || 'TEST_APP_ID';
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY || 'TEST_SECRET_KEY';
-Cashfree.XEnvironment = (process.env.CASHFREE_MODE === 'production') 
-  ? Cashfree.Environment.PRODUCTION 
-  : Cashfree.Environment.SANDBOX;
+const cashfree = new Cashfree(
+  (process.env.CASHFREE_MODE === 'production') ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+  process.env.CASHFREE_APP_ID || 'TEST_APP_ID',
+  process.env.CASHFREE_SECRET_KEY || 'TEST_SECRET_KEY'
+);
 
 const createOrder = async ({ amount, userId, phone, email, orderId }) => {
   try {
@@ -23,7 +22,8 @@ const createOrder = async ({ amount, userId, phone, email, orderId }) => {
       }
     };
 
-    const response = await Cashfree.PGOrderCreate("2023-08-01", request);
+    // V5 use PGCreateOrder
+    const response = await cashfree.PGCreateOrder("2023-08-01", request);
     return response.data;
   } catch (error) {
     console.error('Cashfree Order Creation Error:', error.response?.data || error.message);
@@ -33,13 +33,12 @@ const createOrder = async ({ amount, userId, phone, email, orderId }) => {
 
 const verifyWebhookSignature = (signature, rawBody, timestamp) => {
   try {
-    // Cashfree SDK has a built-in method for this
-    Cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
-    return true;
+    // V5 use instance method
+    return cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return false;
   }
 };
 
-module.exports = { createOrder, verifyWebhookSignature };
+module.exports = { cashfree, createOrder, verifyWebhookSignature };
