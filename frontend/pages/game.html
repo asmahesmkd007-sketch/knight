@@ -42,6 +42,11 @@
     .chat-input-wrap button:active { transform: scale(0.95); }
     @media (max-width: 900px) { .game-layout { flex-direction: column; } .side-panel { width: 100%; } }
     .highlight-last-move { background: rgba(255, 255, 0, 0.4) !important; }
+    .highlight-check { animation: blink-red 0.8s infinite; background: rgba(255, 0, 0, 0.6) !important; box-shadow: inset 0 0 15px rgba(255,0,0,0.8); }
+    @keyframes blink-red {
+      0%, 100% { background: rgba(255, 0, 0, 0.6) !important; }
+      50% { background: rgba(255, 0, 0, 0.2) !important; }
+    }
     .promotion-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
     .promotion-content { background: var(--bg-secondary); padding: 20px; border-radius: 12px; text-align: center; }
     .promotion-options { display: flex; gap: 10px; margin-top: 15px; }
@@ -204,7 +209,9 @@ function removeHighlights() {
 }
 
 function updateLastMoveHighlight(from, to) {
-  $('#board .square-55d63').removeClass('highlight-last-move');
+  $('#board .square-55d63').removeClass('highlight-last-move highlight-check');
+  
+  // Highlight last move
   if (from && to) {
     $('.square-' + from).addClass('highlight-last-move');
     $('.square-' + to).addClass('highlight-last-move');
@@ -215,6 +222,20 @@ function updateLastMoveHighlight(from, to) {
       $('.square-' + last.from).addClass('highlight-last-move');
       $('.square-' + last.to).addClass('highlight-last-move');
     }
+  }
+
+  // Highlight King if in check
+  if (chess.in_check()) {
+    const kingColor = chess.turn(); 
+    let kingSquare = null;
+    chess.board().forEach((row, rowIndex) => {
+      row.forEach((piece, colIndex) => {
+        if (piece && piece.type === 'k' && piece.color === kingColor) {
+          kingSquare = String.fromCharCode(97 + colIndex) + (8 - rowIndex);
+        }
+      });
+    });
+    if (kingSquare) $('.square-' + kingSquare).addClass('highlight-check');
   }
 }
 
