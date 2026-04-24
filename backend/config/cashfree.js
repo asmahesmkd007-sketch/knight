@@ -1,9 +1,12 @@
 const { Cashfree, CFEnvironment } = require('cashfree-pg');
 
+const mode = (process.env.CASHFREE_MODE === 'production') ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
+console.log(`💳 Cashfree: Initializing in ${process.env.CASHFREE_MODE === 'production' ? 'PRODUCTION' : 'SANDBOX'} mode`);
+
 const cashfree = new Cashfree(
-  (process.env.CASHFREE_MODE === 'production') ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
-  process.env.CASHFREE_APP_ID || 'TEST_APP_ID',
-  process.env.CASHFREE_SECRET_KEY || 'TEST_SECRET_KEY'
+  mode,
+  (process.env.CASHFREE_APP_ID || '').trim() || 'TEST_APP_ID',
+  (process.env.CASHFREE_SECRET_KEY || '').trim() || 'TEST_SECRET_KEY'
 );
 
 const createOrder = async ({ amount, userId, phone, email, orderId }) => {
