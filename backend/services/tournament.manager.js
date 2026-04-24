@@ -147,48 +147,16 @@ class TournamentManager {
                     if (tState.countdown <= 0 && !tState.nextRoundPending) {
                         tState.nextRoundPending = true;
                         tState.round = 1;
-                        if (tState.timer === 5) {
-                            tState.phase = 'main_round';
-                            tState.countdown = 600; // 10 min qualification
-                            this.startMainRound(tState).finally(() => tState.nextRoundPending = false);
-                        } else {
-                            tState.phase = 'round_1';
-                            tState.countdown = tState.timer === 3 ? 1800 : 600; 
-                            this.nextRound(tState).finally(() => tState.nextRoundPending = false);
-                        }
+                        tState.phase = 'round_1';
+                        // 1min: 10m, 3min: 30m, 5min: 50m max
+                        if (tState.timer === 1) tState.countdown = 600;
+                        else if (tState.timer === 3) tState.countdown = 1800;
+                        else tState.countdown = 3000;
+
+                        this.nextRound(tState).finally(() => tState.nextRoundPending = false);
                     }
                     if (tState.countdown % 10 === 0) this.broadcastState(tId);
                 } 
-                else if (tState.phase === 'main_round') {
-                    tState.countdown--;
-                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
-                    
-                    // Auto-pairing logic during main round (Stop pairing in last 30s)
-                    if (tState.countdown > 30) {
-                        this.pairMainRound(tState);
-                    } else if (tState.countdown === 30) {
-                        this.io.to(`tournament_${tId}`).emit('tournament_msg', { message: 'Main Round ending soon. No more pairings!' });
-                    }
-                    
-                    if (tState.countdown <= 0) {
-                        // Main Round Finished -> Qualification Leaderboard
-                        tState.phase = 'qualification_leaderboard';
-                        tState.countdown = 20; // 20s pause
-                        this.broadcastState(tId);
-                    }
-                }
-                else if (tState.phase === 'qualification_leaderboard') {
-                    tState.countdown--;
-                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
-                    if (tState.countdown <= 0 && !tState.nextRoundPending) {
-                        tState.nextRoundPending = true;
-                        this.processQualification(tState).then(() => {
-                            tState.round = 2; // Knockout starts at Round 2
-                            tState.countdown = 600;
-                            return this.nextRound(tState);
-                        }).finally(() => tState.nextRoundPending = false);
-                    }
-                }
                 else {
                     tState.countdown--;
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
@@ -284,71 +252,8 @@ class TournamentManager {
         });
     }
 
-    static async startMainRound(tState) {
-        tState.status = 'live';
-        tState.matches = [];
-        await supabase.from('tournaments').update({ phase: 'main_round', status: 'live', round: 1 }).eq('id', tState.id);
-        this.pairMainRound(tState);
-        this.broadcastState(tState.id);
-    }
-
-    static pairMainRound(tState) {
-        // Find all players not currently in an active match
-        const activeUserIds = new Set();
-        tState.matches.forEach(m => {
-            if (m.status !== 'finished') {
-                activeUserIds.add(m.player1.userId);
-                activeUserIds.add(m.player2.userId);
-            }
-        });
-
-        const available = tState.players.filter(p => p.status === 'alive' && !activeUserIds.has(p.user_id));
-        
-        // Randomize available players for pairing
-        for (let i = available.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [available[i], available[j]] = [available[j], available[i]];
-        }
-
-        while (available.length >= 2) {
-            const p1 = available.shift();
-            const p2 = available.shift();
-            this.setupMatch(p1, p2, tState).catch(err => console.error('Main Round Pairing Error:', err));
-        }
-    }
-
-    static async processQualification(tState) {
-        console.log(`📊 Processing Qualification for TR-${tState.tr_id}`);
-        // Sort players by score
-        tState.players.sort((a, b) => (b.score || 0) - (a.score || 0));
-        
-        // Mark Top 16 as alive, others as eliminated
-        tState.players.forEach((p, i) => {
-            if (i < 16) {
-                p.status = 'alive';
-                p.rank = i + 1;
-            } else {
-                p.status = 'eliminated';
-                p.rank = i + 1;
-            }
-        });
-
-        // Persist statuses to DB efficiently
-        const updates = tState.players.map(p => 
-            supabase.from('tournament_players')
-                .update({ status: p.status, rank: p.rank })
-                .eq('tournament_id', tState.id)
-                .eq('user_id', (p.user_id?.id || p.user_id))
-        );
-        // Run in parallel chunks to avoid overloading connection pool
-        for (let i = 0; i < updates.length; i += 10) {
-            await Promise.all(updates.slice(i, i + 10));
-        }
-        this.broadcastState(tState.id);
-    }
 
     static async nextRound(tState) {
-        // 100-player 5min TR specialized check
         const alivePlayers = tState.players.filter(p => p.status === 'alive');
         if (alivePlayers.length <= 1) return this.finishTournament(tState.id, tState);
 
