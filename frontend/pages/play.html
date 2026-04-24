@@ -301,7 +301,7 @@ sock.on('room_created', () => Toast.success('Room created! Share the ID.'));
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('challenge')) {
    selectMode('friend', document.querySelectorAll('.mode-card')[1]);
-   setTimeout(() => sendFriendInvite(urlParams.get('challenge')), 500);
+   // Automatic challenge removed per user request. User must click challenge manually.
 }
 
 if (urlParams.get('acceptChallenge')) {
