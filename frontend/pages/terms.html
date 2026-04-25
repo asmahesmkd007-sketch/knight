@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service & Refund Policy | Phoenix-X</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: rgba(255, 179, 71, 0.1);
+            --section-spacing: 60px;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .terms-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .terms-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(255, 179, 71, 0.05) 0%, rgba(255, 179, 71, 0) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .terms-header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .last-updated {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .toc-box {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 60px;
+            position: sticky;
+            top: 20px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .toc-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .toc-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toc-link:hover {
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .terms-section {
+            margin-bottom: var(--section-spacing);
+            scroll-margin-top: 150px;
+        }
+
+        .terms-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .terms-section h2::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--glass-border), transparent);
+        }
+
+        .terms-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .terms-content {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+
+        .terms-content p {
+            margin-bottom: 20px;
+        }
+
+        .terms-content ul, .terms-content ol {
+            margin-bottom: 25px;
+            padding-left: 20px;
+        }
+
+        .terms-content li {
+            margin-bottom: 12px;
+        }
+
+        .policy-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--glass-border);
+            margin: 20px 0;
+        }
+
+        .highlight-box {
+            border-left: 4px solid var(--primary);
+            background: rgba(255, 179, 71, 0.05);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin: 25px 0;
+        }
+
+        .alert-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-cta {
+            text-align: center;
+            padding: 80px 20px;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .terms-header h1 { font-size: 2.2rem; }
+            .toc-box { position: static; margin-bottom: 40px; }
+            .terms-section h2 { font-size: 1.6rem; }
+        }
+
+        /* Length Extender Classes */
+        .legal-definitions { display: grid; gap: 20px; }
+        .def-item { border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; }
+        .def-term { font-weight: 700; color: var(--primary); display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="page-title">TERMS & POLICIES</div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-player-id" id="tb-pid">...</div>
+                    <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <div class="terms-container">
+                    
+                    <header class="terms-header">
+                        <div class="last-updated">Last Updated: April 25, 2026</div>
+                        <h1>Agreement of Excellence</h1>
+                        <p>Welcome to Phoenix-X. By accessing or using our platform, you agree to be bound by these comprehensive Terms and Conditions. Please read them carefully as they govern your legal relationship with the platform.</p>
+                    </header>
+
+                    <nav class="toc-box">
+                        <div class="toc-title">TABLE OF CONTENTS</div>
+                        <div class="toc-grid">
+                            <a href="#introduction" class="toc-link"><i class="fa-solid fa-angle-right"></i> 1. Introduction</a>
+                            <a href="#eligibility" class="toc-link"><i class="fa-solid fa-angle-right"></i> 2. Eligibility</a>
+                            <a href="#accounts" class="toc-link"><i class="fa-solid fa-angle-right"></i> 3. User Accounts</a>
+                            <a href="#kyc" class="toc-link"><i class="fa-solid fa-angle-right"></i> 4. KYC Verification</a>
+                            <a href="#wallet" class="toc-link"><i class="fa-solid fa-angle-right"></i> 5. Wallet & Payments</a>
+                            <a href="#tournaments" class="toc-link"><i class="fa-solid fa-angle-right"></i> 6. Tournament Rules</a>
+                            <a href="#fairplay" class="toc-link"><i class="fa-solid fa-angle-right"></i> 7. Fair Play Policy</a>
+                            <a href="#refund" class="toc-link"><i class="fa-solid fa-angle-right"></i> 8. Refund Policy</a>
+                            <a href="#conduct" class="toc-link"><i class="fa-solid fa-angle-right"></i> 9. Code of Conduct</a>
+                            <a href="#liability" class="toc-link"><i class="fa-solid fa-angle-right"></i> 10. Liability</a>
+                            <a href="#appendices" class="toc-link"><i class="fa-solid fa-angle-right"></i> 11. Appendices</a>
+                        </div>
+                    </nav>
+
+                    <section id="introduction" class="terms-section">
+                        <h2>1. INTRODUCTION & COMPREHENSIVE DEFINITIONS</h2>
+                        <div class="terms-content">
+                            <p>This document constitutes a legally binding agreement between you (the "User", "Player", or "You") and Phoenix-X (the "Platform", "Company", "We", "Us", or "Our"). By registering an account, making a deposit, participating in any tournament, or simply accessing the Platform, you signify your irrevocable and unconditional acceptance of these Terms and Conditions in their entirety, along with our Privacy Policy, Fair Play Policy, and any other guidelines posted on the Platform.</p>
+                            
+                            <div class="legal-definitions">
+                                <div class="def-item">
+                                    <span class="def-term">1.1 Platform</span>
+                                    The Phoenix-X website (www.phoenix-x.com), all subdomains, mobile applications (iOS and Android), and all associated services, including but not limited to the game engine, matchmaking system, wallet infrastructure, communication tools, and API interfaces.
+                                </div>
+                                <div class="def-item">
+                                    <span class="def-term">1.2 Coins</span>
+                                    The virtual in-game currency used exclusively on the platform. Coins are a closed-loop virtual asset. 1 Coin is equivalent to 1 Indian Rupee (INR) for internal accounting purposes. Coins do not constitute "money" or "currency" in the legal sense outside the Phoenix-X ecosystem.
+                                </div>
+                                <div class="def-item">
+                                    <span class="def-term">1.3 Tournament</span>
+                                    Any organized competitive event facilitated by the Platform, including but not limited to Free Entry Tournaments, Paid Entry Knockout Arenas, Swiss System Events, and Clan Wars.
+                                </div>
+                                <div class="def-item">
+                                    <span class="def-term">1.4 KYC (Know Your Customer)</span>
+                                    The mandatory process of verifying a user's identity, age, and residency through government-issued identification and potentially supplemental documents as required by law.
+                                </div>
+                                <div class="def-item">
+                                    <span class="def-term">1.5 Net Winnings</span>
+                                    The amount calculated as the difference between the total prize money won and the total entry fees paid, adjusted for any bonuses or promotional credits, used for the calculation of TDS.
+                                </div>
+                                <div class="def-item">
+                                    <span class="def-term">1.6 Intellectual Property</span>
+                                    All content, logos, source code, game logic, animations, sounds, and designs used on the platform, which are the exclusive property of Phoenix-X or its licensors.
+                                </div>
+                            </div>
+
+                            <p>We reserve the right to modify, update, or replace any part of these Terms at any time without prior individual notice. Such modifications become effective immediately upon being posted on the Platform. It is your sole responsibility to check this page periodically for changes. Your continued use of the platform following the posting of any changes constitutes absolute acceptance of those changes. If you do not agree with any part of these terms, you must immediately cease all use of the Platform and close your account.</p>
+                        </div>
+                    </section>
+
+                    <section id="eligibility" class="terms-section">
+                        <h2>2. USER ELIGIBILITY & JURISDICTIONAL COMPLIANCE</h2>
+                        <div class="terms-content">
+                            <p>Access to Phoenix-X is strictly governed by age and geographic location to ensure compliance with the Public Gambling Act, 1867, and various state-level regulations governing "games of skill".</p>
+                            
+                            <h3>2.1 Age Requirements</h3>
+                            <p>You must be at least <strong>18 years of age</strong> to create an account, participate in paid tournaments, or perform any financial transactions on Phoenix-X. Users under 18 are strictly prohibited from using the Platform. We reserve the right to request proof of age at any time. Any account found to be operated by a minor will be terminated immediately, and any funds therein will be frozen until legal guardians are contacted, or forfeited as per law.</p>
+
+                            <h3>2.2 Jurisdictional Restrictions (The "Restricted States")</h3>
+                            <p>Participation in paid tournaments (Pay-to-Play) is restricted to users residing in jurisdictions where such participation is legal. Chess is recognized as a game of skill by the Supreme Court of India. However, specific states have passed legislation that restricts or prohibits paid participation in online games of skill. Users from the following states are strictly prohibited from participating in paid tournaments:</p>
+                            <ul>
+                                <li><strong>Assam:</strong> Participation in paid games of skill is restricted under state law.</li>
+                                <li><strong>Odisha:</strong> Participation is restricted under the Odisha Games of Chance and Games of Skill Act.</li>
+                                <li><strong>Nagaland:</strong> Restricted to licensed operators only.</li>
+                                <li><strong>Sikkim:</strong> Restricted to licensed physical gaming houses and specific online regulations.</li>
+                                <li><strong>Andhra Pradesh:</strong> Participation in online gaming for prizes is restricted.</li>
+                                <li><strong>Telangana:</strong> Participation in online gaming for prizes is restricted.</li>
+                            </ul>
+                            
+                            <div class="alert-box">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <strong>WARNING:</strong> If you use a VPN, proxy, or provide false address information to bypass these restrictions, you are in direct violation of these Terms. Such actions will result in a permanent ban and the forfeiture of all wallet balances.
+                            </div>
+
+                            <h3>2.3 Global Users</h3>
+                            <p>Users outside of India are responsible for ensuring that their participation complies with their local laws. Phoenix-X does not warrant that the Platform is legal for use in all countries.</p>
+                        </div>
+                    </section>
+
+                    <section id="accounts" class="terms-section">
+                        <h2>3. USER ACCOUNTS & SECURITY</h2>
+                        <div class="terms-content">
+                            <p>To access the full suite of Phoenix-X services, you must create a User Account. This account is personal, non-transferable, and subject to the following rules:</p>
+                            
+                            <h3>3.1 Registration Information</h3>
+                            <p>You agree to provide true, accurate, current, and complete information about yourself during the registration process. If any information changes (e.g., your phone number or email), you must update your profile immediately.</p>
+
+                            <h3>3.2 One Account Policy (Anti-Sybil)</h3>
+                            <p>Each individual user is permitted to maintain only <strong>ONE</strong> account. "Multi-accounting" to gain unfair advantages in tournaments, bypass limits, or abuse promotional offers is strictly prohibited. Our systems actively monitor device fingerprints, IP addresses, and behavior patterns to detect duplicate accounts. If multiple accounts are linked to a single individual, all accounts will be suspended, and any winnings will be voided.</p>
+
+                            <h3>3.3 Account Security & OTP</h3>
+                            <p>Phoenix-X uses a passwordless login system via One-Time Passwords (OTP). You are solely responsible for the security of your mobile device and your phone number. Any action taken through your account (including but not limited to joining tournaments, making deposits, or withdrawing funds) will be deemed as having been performed by you. You must notify us immediately of any unauthorized use of your account.</p>
+
+                            <h3>3.4 Account Inactivity</h3>
+                            <p>Accounts that have not been accessed for more than 12 consecutive months may be deemed "Inactive". We reserve the right to charge a nominal maintenance fee of 10 Coins per month for inactive accounts with balances, or to close such accounts after providing 30 days' notice via email/SMS.</p>
+                        </div>
+                    </section>
+
+                    <section id="kyc" class="terms-section">
+                        <h2>4. KYC (KNOW YOUR CUSTOMER) PROCEDURES</h2>
+                        <div class="terms-content">
+                            <p>KYC is a critical component of our commitment to safety and regulatory compliance. It is mandatory for all users who wish to participate in paid tournaments or withdraw funds.</p>
+                            
+                            <div class="policy-card">
+                                <h4>4.1 Verification Requirements</h4>
+                                <p>To complete KYC, you must upload clear, legible copies of:</p>
+                                <ul>
+                                    <li><strong>Proof of Identity:</strong> Aadhaar Card, PAN Card, Voter ID, or Passport.</li>
+                                    <li><strong>PAN Card:</strong> Mandatory for TDS calculations and high-value transactions.</li>
+                                    <li><strong>Proof of Address:</strong> If different from the identity document.</li>
+                                </ul>
+                            </div>
+
+                            <h3>4.2 Validation Process</h3>
+                            <p>Our verification team, along with automated AI systems, will review your documents. We may, at our discretion, require a "Selfie with ID" or a short video verification if documents are unclear or suspicious. The verification process generally takes 24 to 48 hours.</p>
+
+                            <h3>4.3 Rejection of Documents</h3>
+                            <p>We may reject documents if they are expired, blurred, edited, or if the name does not match the bank/UPI account linked for withdrawals. Providing fraudulent documents is a criminal offense and will be reported to relevant authorities.</p>
+
+                            <div class="highlight-box">
+                                <strong>Status:</strong> Your withdrawal requests will remain in "Pending" status until your KYC is fully "Verified".
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="wallet" class="terms-section">
+                        <h2>5. WALLET, PAYMENTS & FINANCIAL POLICIES</h2>
+                        <div class="terms-content">
+                            <p>The Phoenix-X Wallet system facilitates all financial interactions on the Platform. By using the Wallet, you agree to the following financial terms:</p>
+
+                            <h3>5.1 Deposit Rules</h3>
+                            <ul>
+                                <li><strong>Methods:</strong> We accept UPI, Net Banking, and Credit/Debit Cards via our secure payment gateway partners (e.g., Cashfree).</li>
+                                <li><strong>Limits:</strong> Minimum deposit is ₹10. Maximum daily deposit is ₹1,00,000 unless higher limits are pre-approved for high-stakes players.</li>
+                                <li><strong>Non-Refundable Deposits:</strong> Deposited funds are intended for gameplay. They cannot be withdrawn immediately without being used for tournament participation. This is to prevent the Platform from being used as a simple money transfer service.</li>
+                            </ul>
+
+                            <h3>5.2 Withdrawal Rules</h3>
+                            <ul>
+                                <li><strong>Minimum Withdrawal:</strong> 30 Coins.</li>
+                                <li><strong>Maximum Withdrawal:</strong> ₹50,000 per day (subject to KYC and rank).</li>
+                                <li><strong>Maintenance Buffer:</strong> You must maintain a minimum of 10 Coins in your wallet. The system will not allow you to withdraw these final 10 Coins to ensure your account remains active.</li>
+                                <li><strong>Verification:</strong> Withdrawals are only sent to UPI IDs or Bank Accounts that belong to the verified KYC holder. Third-party withdrawals are strictly prohibited.</li>
+                            </ul>
+
+                            <h3>5.3 TDS (Tax Deducted at Source)</h3>
+                            <p>As per the Finance Act, 2023, and Section 194BA of the Income Tax Act, 1961, TDS at the rate of 30% shall be deducted from the "Net Winnings" of a user at the time of withdrawal or at the end of the financial year. Phoenix-X will provide a TDS certificate on a quarterly basis, which can be used for filing your tax returns.</p>
+
+                            <h3>5.4 Transaction Fees</h3>
+                            <p>While Phoenix-X does not charge for deposits, we reserve the right to charge a nominal "Payout Processing Fee" of up to ₹1 per withdrawal request to cover banking and gateway costs.</p>
+                        </div>
+                    </section>
+
+                    <section id="tournaments" class="terms-section">
+                        <h2>6. TOURNAMENT MECHANICS & RULES</h2>
+                        <div class="terms-content">
+                            <p>Phoenix-X is a skill-based platform where users compete in chess. The following rules govern all competitive events:</p>
+
+                            <h3>6.1 Tournament Formats</h3>
+                            <ol>
+                                <li><strong>Knockout (Single Elimination):</strong> Players are paired in rounds. The winner advances, and the loser is eliminated.</li>
+                                <li><strong>Swiss System:</strong> Players are paired against opponents with similar scores. No one is eliminated until the final round.</li>
+                                <li><strong>Arena:</strong> A fast-paced format where players can play as many games as possible within a time limit.</li>
+                            </ol>
+
+                            <h3>6.2 Match Timing (The Clock)</h3>
+                            <p>Every match is played with a countdown timer (e.g., 1 min, 3 min, 5 min). If your clock reaches zero, you lose the game immediately, regardless of the board position (unless the opponent has insufficient material to mate, in which case it is a draw).</p>
+
+                            <h3>6.3 Disconnection Policy</h3>
+                            <p>Stable internet is a prerequisite for online chess. Phoenix-X is not responsible for losses caused by your local network failures, device battery issues, or ISP outages.</p>
+                            <ul>
+                                <li><strong>Reconnect Window:</strong> If you disconnect, the game remains active. You should try to reconnect as quickly as possible. Your clock will continue to run while you are disconnected.</li>
+                                <li><strong>Abandonment:</strong> If a player fails to make a move within the first 15 seconds of a match, the game may be automatically cancelled and the player penalized.</li>
+                            </ul>
+
+                            <h3>6.4 Fair Pairing</h3>
+                            <p>Our matchmaking algorithm pairs players based on their IQ Level and historical performance. We strive to provide a balanced competitive environment.</p>
+
+                            <h3>6.5 Prize Pool Calculation</h3>
+                            <p>For Paid Tournaments, the prize pool is generated from user entry fees. Phoenix-X deducts a Platform Service Fee (Commission) of approximately 15.1% to cover operational costs, prize management, and tax compliance. The remaining 84.9% is distributed among the winners.</p>
+                        </div>
+                    </section>
+
+                    <section id="fairplay" class="terms-section">
+                        <h2>7. FAIR PLAY & ANTI-CHEAT STANDARDS</h2>
+                        <div class="terms-content">
+                            <p>The integrity of chess is paramount. We employ a multi-layered detection system to ensure a level playing field.</p>
+
+                            <h3>7.1 Definition of Cheating</h3>
+                            <p>Cheating includes, but is not limited to:</p>
+                            <ul>
+                                <li>Using chess engines like Stockfish, Komodo, or AlphaZero.</li>
+                                <li>Using "opening books" or move databases during a live match.</li>
+                                <li>Receiving move suggestions from another person (coaching).</li>
+                                <li>Using automated scripts to move pieces (bots).</li>
+                                <li>"Sandbagging" (losing intentionally to play against weaker opponents).</li>
+                            </ul>
+
+                            <h3>7.2 Detection Methods</h3>
+                            <p>Our Anti-Cheat system analyzes every move made on the Platform. We check for:</p>
+                            <ul>
+                                <li><strong>Move Accuracy:</strong> Correlation with top engine choices.</li>
+                                <li><strong>Time Consistency:</strong> Uniform delays between moves (suggesting engine input).</li>
+                                <li><strong>Browser Behavior:</strong> Toggling tabs or losing focus during a match.</li>
+                                <li><strong>Performance Spikes:</strong> Sudden, unexplained increases in playing strength.</li>
+                            </ul>
+
+                            <h3>7.3 Consequences of Violation</h3>
+                            <p>If our system or moderation team identifies a player as a cheater:</p>
+                            <ol>
+                                <li>The account will be permanently banned.</li>
+                                <li>All remaining wallet balances (Deposits and Winnings) will be forfeited.</li>
+                                <li>The user's IP and device ID will be blacklisted.</li>
+                                <li>In severe cases, legal action may be initiated for fraudulent gain.</li>
+                            </ol>
+                        </div>
+                    </section>
+
+                    <section id="refund" class="terms-section">
+                        <h2>8. REFUND, CANCELLATION & DISPUTES</h2>
+                        <div class="terms-content">
+                            <p>We aim to be transparent about when and how refunds are issued.</p>
+
+                            <h3>8.1 Automated Refunds</h3>
+                            <p>The Platform will automatically refund 100% of the entry fee if:</p>
+                            <ul>
+                                <li>A tournament is cancelled by the Admin.</li>
+                                <li>A tournament fails to reach the minimum number of players.</li>
+                                <li>The Platform experiences a global server crash affecting all users.</li>
+                            </ul>
+
+                            <h3>8.2 Manual Refund Requests</h3>
+                            <p>Users may request a refund through the "Feedback" section within 24 hours if they believe a technical bug specifically affected their match. Our technical team will review the game logs (PGN) and server logs. If the bug is verified, a refund or credit will be issued.</p>
+
+                            <h3>8.3 Disputed Match Results</h3>
+                            <p>All match results generated by the game engine are final. We do not reconsider results based on claims of "misclicks", "mouse slips", or "temporary lag". The move registered on the server is the definitive move.</p>
+
+                            <div class="policy-card" style="border-color: #ef4444;">
+                                <h4>8.4 No Refund Situations</h4>
+                                <p>No refunds will be issued for:</p>
+                                <ul>
+                                    <li>Losses due to player's internet connection.</li>
+                                    <li>Losses due to player's device failure.</li>
+                                    <li>Intentional resignation or match abandonment.</li>
+                                    <li>Accounts banned for violating Terms or Fair Play.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="conduct" class="terms-section">
+                        <h2>9. USER CODE OF CONDUCT</h2>
+                        <div class="terms-content">
+                            <p>By using Phoenix-X, you agree to behave in a sportsmanlike and respectful manner.</p>
+                            
+                            <h3>9.1 Respectful Communication</h3>
+                            <p>You must not use abusive, obscene, or threatening language in chat, feedback, or support tickets. Hate speech, racism, and sexism are strictly prohibited.</p>
+
+                            <h3>9.2 Impersonation</h3>
+                            <p>Impersonating other players, celebrities, or Phoenix-X staff is a violation of these terms.</p>
+
+                            <h3>9.3 Spamming</h3>
+                            <p>Sending repetitive messages or advertising third-party services is prohibited.</p>
+                        </div>
+                    </section>
+
+                    <section id="legal" class="terms-section">
+                        <h2>10. LEGAL DISCLAIMERS & LIMITATION OF LIABILITY</h2>
+                        <div class="terms-content">
+                            <h3>10.1 "As Is" Service</h3>
+                            <p>The Platform is provided on an "AS IS" and "AS AVAILABLE" basis. Phoenix-X makes no warranties, expressed or implied, regarding the reliability or accuracy of the service.</p>
+
+                            <h3>10.2 Limitation of Liability</h3>
+                            <p>To the maximum extent permitted by law, Phoenix-X, its directors, employees, and partners shall not be liable for any indirect, incidental, special, or consequential damages resulting from your use of the platform, even if advised of the possibility of such damages.</p>
+
+                            <h3>10.3 Indemnification</h3>
+                            <p>You agree to indemnify and hold harmless Phoenix-X from any claims, losses, or damages (including legal fees) arising from your breach of these Terms or your violation of any law or third-party rights.</p>
+
+                            <h3>10.4 Governing Law & Jurisdiction</h3>
+                            <p>These Terms shall be governed by and construed in accordance with the laws of India. Any disputes arising from these Terms shall be subject to the exclusive jurisdiction of the courts in Chennai, Tamil Nadu.</p>
+                        </div>
+                    </section>
+
+                    <!-- ADDITIONAL SECTIONS TO ENSURE MAXIMUM DETAIL AND LENGTH -->
+
+                    <section id="privacy-highlights" class="terms-section">
+                        <h2>11. PRIVACY & DATA USAGE HIGHLIGHTS</h2>
+                        <div class="terms-content">
+                            <p>While our full Privacy Policy is available separately, the following highlights how we handle your data:</p>
+                            <ul>
+                                <li><strong>Data Collection:</strong> We collect your phone number, name, and KYC documents for account verification and legal compliance.</li>
+                                <li><strong>Data Usage:</strong> Your data is used for matchmaking, prize distribution, and communication regarding your account.</li>
+                                <li><strong>No Third-Party Sale:</strong> We do not sell your personal data to third-party advertisers.</li>
+                                <li><strong>Security:</strong> We use industry-standard encryption to protect your information and transaction history.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="intellectual-property" class="terms-section">
+                        <h2>12. INTELLECTUAL PROPERTY RIGHTS</h2>
+                        <div class="terms-content">
+                            <p>The entire content of the Phoenix-X Platform, including the "PHOENIX X" name, logos, game designs, UI/UX elements, graphics, and proprietary matchmaking algorithms, are the exclusive intellectual property of the Company. You are granted a limited, non-exclusive, non-transferable license to access the Platform for personal, non-commercial use only. Any reproduction, distribution, or reverse engineering of the Platform without express written consent is strictly prohibited and will be prosecuted under intellectual property laws.</p>
+                        </div>
+                    </section>
+
+                    <section id="anti-money-laundering" class="terms-section">
+                        <h2>13. ANTI-MONEY LAUNDERING (AML) POLICY</h2>
+                        <div class="terms-content">
+                            <p>Phoenix-X is committed to preventing money laundering and terrorist financing. To this end, we implement strict monitoring of all financial transactions. We reserve the right to:</p>
+                            <ul>
+                                <li>Freeze any account suspected of suspicious financial activity.</li>
+                                <li>Report suspicious transactions to the Financial Intelligence Unit (FIU) or other relevant authorities.</li>
+                                <li>Request additional source-of-funds documentation for large deposits.</li>
+                                <li>Block accounts that attempt to use stolen cards or unauthorized payment methods.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="cookie-policy" class="terms-section">
+                        <h2>14. COOKIE & TRACKING POLICY</h2>
+                        <div class="terms-content">
+                            <p>We use cookies and similar tracking technologies (like local storage) to enhance your experience. These technologies help us remember your login session, track your tournament progress, and analyze Platform performance. By using Phoenix-X, you consent to our use of these technologies. You can disable cookies in your browser settings, but this may cause certain features of the Platform to malfunction.</p>
+                        </div>
+                    </section>
+
+                    <section id="social-rules" class="terms-section">
+                        <h2>15. SOCIAL MEDIA & PUBLIC INTERACTION</h2>
+                        <div class="terms-content">
+                            <p>When interacting with Phoenix-X on social media platforms (WhatsApp, Telegram, YouTube, etc.), you agree to maintain professional conduct. Spreading false rumors (FUD), creating fake accounts to disparage the Platform, or leaking private support communications is grounds for account termination on the Platform itself.</p>
+                        </div>
+                    </section>
+
+                    <section id="force-majeure" class="terms-section">
+                        <h2>16. FORCE MAJEURE</h2>
+                        <div class="terms-content">
+                            <p>Phoenix-X shall not be liable for any delay or failure to perform its obligations under these Terms resulting from causes outside its reasonable control, including but not limited to acts of God, war, terrorism, riots, embargos, acts of civil or military authorities, fire, floods, accidents, strikes, or shortages of transportation facilities, fuel, energy, labor, or materials.</p>
+                        </div>
+                    </section>
+
+                    <section id="modifications" class="terms-section">
+                        <h2>17. MODIFICATIONS TO THE SERVICE</h2>
+                        <div class="terms-content">
+                            <p>We reserve the right to withdraw or amend the Platform, and any service or material we provide on the Platform, in our sole discretion without notice. We will not be liable if for any reason all or any part of the Platform is unavailable at any time or for any period. From time to time, we may restrict access to some parts of the Platform, or the entire Platform, to users, including registered users.</p>
+                        </div>
+                    </section>
+
+                    <section id="entire-agreement" class="terms-section">
+                        <h2>18. ENTIRE AGREEMENT</h2>
+                        <div class="terms-content">
+                            <p>The Terms and Conditions, our Privacy Policy, and any other legal notices published by us on the Platform shall constitute the entire agreement between you and Phoenix-X concerning the Platform. If any provision of these Terms is deemed invalid by a court of competent jurisdiction, the invalidity of such provision shall not affect the validity of the remaining provisions of these Terms, which shall remain in full force and effect.</p>
+                        </div>
+                    </section>
+
+                    <section id="contact-info" class="terms-section">
+                        <h2>19. CONTACT INFORMATION</h2>
+                        <div class="terms-content">
+                            <p>For any queries, complaints, or legal notices, please contact us via the following channels:</p>
+                            <ul>
+                                <li><strong>Email:</strong> legal@phoenix-x.com</li>
+                                <li><strong>In-App Support:</strong> Feedback & Report Sections</li>
+                                <li><strong>Registered Office:</strong> Phoenix-X Gaming Pvt Ltd, Chennai, Tamil Nadu, India.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="appendices" class="terms-section">
+                        <h2>APPENDICES - DETAILED PROCEDURES</h2>
+                        <div class="terms-content">
+                            
+                            <h3 id="appendix-a">APPENDIX A: DETAILED CHESS RULES & STANDARDS</h3>
+                            <p>Phoenix-X follows the FIDE (International Chess Federation) Laws of Chess, with specific adaptations for the digital environment.</p>
+                            <ul>
+                                <li><strong>The Board:</strong> 64 squares, 8x8 grid. White on right.</li>
+                                <li><strong>The Pieces:</strong> 16 pieces per player. Standard starting position.</li>
+                                <li><strong>The King:</strong> Moves 1 square. Subject to check and checkmate.</li>
+                                <li><strong>The Queen:</strong> Moves any distance in any straight line.</li>
+                                <li><strong>The Rook:</strong> Moves any distance horizontally or vertically.</li>
+                                <li><strong>The Bishop:</strong> Moves any distance diagonally.</li>
+                                <li><strong>The Knight:</strong> Moves in an "L" shape. Only piece that jumps.</li>
+                                <li><strong>The Pawn:</strong> Moves 1 forward (2 on first move). Captures diagonally.</li>
+                                <li><strong>Castling:</strong> Special move involving King and Rook. Subject to "King safety" rules.</li>
+                                <li><strong>En Passant:</strong> Special pawn capture immediately after a 2-square move.</li>
+                                <li><strong>Promotion:</strong> Pawn reaching the last rank becomes a Queen, Rook, Bishop, or Knight.</li>
+                                <li><strong>Draws:</strong> Stalemate, Threefold Repetition, 50-Move Rule, Insufficient Material.</li>
+                            </ul>
+
+                            <h3 id="appendix-b">APPENDIX B: TOURNAMENT PAIRING & MECHANICS</h3>
+                            <p>Our pairing system is designed to be transparent and fair. We use a modified Elo-based system adjusted for Blitz and Bullet speeds.</p>
+                            <ul>
+                                <li><strong>Initial Seeding:</strong> Players are seeded based on their current IQ Level.</li>
+                                <li><strong>Round 1 Pairing:</strong> In Knockouts, Top Seed plays Bottom Seed (1 vs 32, 2 vs 31, etc.).</li>
+                                <li><strong>Tie-Breaking:</strong> In non-knockout formats, ties are broken using Buchholz, Sonneborn-Berger, or cumulative scores.</li>
+                                <li><strong>Bye Points:</strong> If an odd number of players remain, one player may receive a "Bye" (1 point or advancement).</li>
+                            </ul>
+
+                            <h3 id="appendix-c">APPENDIX C: WALLET & TRANSACTION FLOWS</h3>
+                            <p>Detailed steps for all financial operations on the Platform:</p>
+                            <h4>C.1 Deposit Flow</h4>
+                            <ol>
+                                <li>User enters amount (Min ₹10).</li>
+                                <li>User selects payment method (UPI/Card).</li>
+                                <li>Payment Gateway (Cashfree) processes the transaction.</li>
+                                <li>Upon "SUCCESS" callback, Platform credits Coins to Wallet.</li>
+                                <li>Notification is sent to User.</li>
+                            </ol>
+                            <h4>C.2 Withdrawal Flow</h4>
+                            <ol>
+                                <li>User enters withdrawal amount (Min 30 Coins).</li>
+                                <li>System checks KYC status (must be Verified).</li>
+                                <li>System checks Wallet buffer (must keep 10 Coins).</li>
+                                <li>Request is placed in the Queue (Queue Position shown).</li>
+                                <li>Admin/Automated System reviews request for fraud/fair play.</li>
+                                <li>Payout is initiated to linked UPI/Bank.</li>
+                                <li>TDS is deducted if applicable.</li>
+                            </ol>
+
+                            <h3 id="appendix-d">APPENDIX D: KYC DOCUMENTATION STANDARDS</h3>
+                            <p>To avoid rejection, documents must meet these exhaustive criteria:</p>
+                            <ul>
+                                <li><strong>Format:</strong> JPEG, PNG, or PDF.</li>
+                                <li><strong>Size:</strong> Minimum 500KB, Maximum 5MB.</li>
+                                <li><strong>Clarity:</strong> Text must be readable without zooming. Corners of the card must be visible.</li>
+                                <li><strong>Validity:</strong> Document must not be expired. PAN Card must be clearly visible for TDS tax filing.</li>
+                                <li><strong>Discrepancies:</strong> If the name on ID is "John Doe" and name on Bank is "John S Doe", the request may be flagged for manual review.</li>
+                            </ul>
+
+                            <h3 id="appendix-e">APPENDIX E: ANTI-CHEAT SCENARIOS & EXAMPLES</h3>
+                            <p>To help players understand our system, here are examples of prohibited behavior:</p>
+                            <div class="policy-card">
+                                <strong>Scenario 1: Engine Usage</strong>
+                                <p>A player plays a series of 20 moves, all of which are the #1 choice of Stockfish 16.1, with a consistent 2.5-second delay per move. This is a 100% match for engine assistance and will result in a ban.</p>
+                            </div>
+                            <div class="policy-card">
+                                <strong>Scenario 2: Sandbagging</strong>
+                                <p>A player with an IQ of 1800 intentionally loses 5 games in a row against 800-rated players to join a "Low Stakes" tournament. This is sandbagging and will result in a suspension.</p>
+                            </div>
+
+                            <h3 id="appendix-f">APPENDIX F: PLATFORM FEE & TAXATION TABLES</h3>
+                            <table class="chess-table" style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="background: rgba(255,179,71,0.1);">
+                                        <th style="padding: 12px; border: 1px solid var(--glass-border);">Entry Fee</th>
+                                        <th style="padding: 12px; border: 1px solid var(--glass-border);">Players</th>
+                                        <th style="padding: 12px; border: 1px solid var(--glass-border);">Total Pool</th>
+                                        <th style="padding: 12px; border: 1px solid var(--glass-border);">Platform Fee (15.1%)</th>
+                                        <th style="padding: 12px; border: 1px solid var(--glass-border);">Prize Pool</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">10 Coins</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">16</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">160</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">24.16</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">135.84</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">50 Coins</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">16</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">800</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">120.8</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">679.2</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">100 Coins</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">32</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">3200</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">483.2</td>
+                                        <td style="padding: 12px; border: 1px solid var(--glass-border);">2716.8</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3 id="appendix-g">APPENDIX G: FREQUENTLY ASKED QUESTIONS (FAQ)</h3>
+                            <div class="def-item">
+                                <span class="def-term">Can I change my UPI ID?</span>
+                                Yes, through the Account section, but only if you haven't initiated a withdrawal. For security, once a withdrawal is pending, the UPI ID is locked.
+                            </div>
+                            <div class="def-item">
+                                <span class="def-term">What if the app crashes during my move?</span>
+                                Please refresh immediately. Most matches allow reconnection within seconds. If the crash is server-side, we will refund the entry.
+                            </div>
+                            <div class="def-item">
+                                <span class="def-term">How do I report a cheater?</span>
+                                Click the "Report" button on the player's profile or during the match. Include the game ID for faster review.
+                            </div>
+
+                            <h3 id="appendix-h">APPENDIX H: GLOSSARY OF CHESS TERMS</h3>
+                            <ul>
+                                <li><strong>Blunder:</strong> A very bad move that loses material or the game.</li>
+                                <li><strong>Fianchetto:</strong> Developing a bishop to the longest diagonal.</li>
+                                <li><strong>Gambit:</strong> Sacrificing material (usually a pawn) for an advantage.</li>
+                                <li><strong>Middlegame:</strong> The part of the game between opening and endgame.</li>
+                                <li><strong>Notation (Algebraic):</strong> The standard method for recording chess moves (e.g., e4, Nf3).</li>
+                            </ul>
+
+                            <h3 id="appendix-i">APPENDIX I: WITHDRAWAL TIMELINE & QUEUE DYNAMICS</h3>
+                            <p>To manage user expectations, the following timeline is standard for all withdrawal requests:</p>
+                            <ul>
+                                <li><strong>Phase 1: Submission (0-5 mins):</strong> Request is logged in our database and a unique Withdrawal ID is generated.</li>
+                                <li><strong>Phase 2: Automated Audit (5-30 mins):</strong> Systems check for recent fair play flags, multiple device logins, and bank account consistency.</li>
+                                <li><strong>Phase 3: Queue Management (30 mins - 2 hours):</strong> Requests are processed in the order they were received. Queue position is visible in the Wallet section.</li>
+                                <li><strong>Phase 4: Manual Review (For High Amounts):</strong> Requests over ₹10,000 undergo a manual check by our finance team to ensure compliance with AML policies.</li>
+                                <li><strong>Phase 5: Payout Initiation (2-4 hours):</strong> Funds are sent to the payment aggregator.</li>
+                                <li><strong>Phase 6: Banking Settlement:</strong> While Payout is usually instant via IMPS/UPI, banks may sometimes take up to 48 hours to reflect the balance in your statement.</li>
+                            </ul>
+
+                            <h3 id="appendix-j">APPENDIX J: DEVICE COMPATIBILITY & OPTIMIZATION</h3>
+                            <p>For the best experience on Phoenix-X, we recommend the following technical specifications:</p>
+                            <ul>
+                                <li><strong>Browsers:</strong> Latest versions of Chrome, Safari, or Firefox. Edge is supported but not recommended for high-speed bullet chess.</li>
+                                <li><strong>Mobile OS:</strong> Android 10 or higher; iOS 14 or higher.</li>
+                                <li><strong>Hardware:</strong> Minimum 4GB RAM and a processor with a clock speed of at least 2.0 GHz.</li>
+                                <li><strong>Display:</strong> A screen with a minimum resolution of 360x640. Disable "Low Power Mode" to ensure smooth animations.</li>
+                            </ul>
+
+                            <h3 id="appendix-k">APPENDIX K: NETWORK LATENCY & SYNC GUIDELINES</h3>
+                            <p>Phoenix-X uses a WebSocket-based real-time synchronization engine. To minimize "lag" and ensure your moves are registered accurately:</p>
+                            <ul>
+                                <li><strong>Ping:</strong> Aim for a ping of under 100ms to our servers. You can check your connection status in the Game Settings.</li>
+                                <li><strong>WiFi vs 4G/5G:</strong> High-speed 5G or stable Fiber WiFi is recommended. Avoid public WiFi networks which may have high packet loss.</li>
+                                <li><strong>Background Apps:</strong> Close memory-intensive apps like YouTube or heavy games while playing, as they may cause "frame drops" during critical moments.</li>
+                            </ul>
+
+                            <h3 id="appendix-l">APPENDIX L: MULTI-ACCOUNTING DETECTION</h3>
+                            <p>Our "Sybil Defense" system uses the following parameters to ensure every player has only one account:</p>
+                            <ul>
+                                <li><strong>Device ID:</strong> Unique hardware identifiers that persist even after app reinstallation.</li>
+                                <li><strong>Network Fingerprint:</strong> Analysis of IP ranges and ISP patterns.</li>
+                                <li><strong>Banking Linkage:</strong> Two accounts cannot share the same UPI ID or Bank Account for withdrawals.</li>
+                                <li><strong>Biometric Flags:</strong> If KYC documents for two different accounts show the same individual, both are immediately flagged.</li>
+                            </ul>
+
+                            <h3 id="appendix-m">APPENDIX M: COMMUNITY & SOCIAL INTERACTION RULES</h3>
+                            <p>In addition to the basic code of conduct, the following specific rules apply to community interactions:</p>
+                            <ol>
+                                <li><strong>No Solicitation:</strong> You may not ask other players for money, coins, or personal contact information.</li>
+                                <li><strong>No Self-Promotion:</strong> Advertising your own YouTube channel, Telegram group, or referral links in game chat is prohibited.</li>
+                                <li><strong>Respect the Mods:</strong> Moderators are here to help. Disrespecting a mod or ignoring their warnings will lead to a temporary chat ban.</li>
+                                <li><strong>No False Reporting:</strong> Abusing the "Report" feature to harass a player you simply lost to is a violation of our terms.</li>
+                            </ol>
+
+                            <h3 id="appendix-n">APPENDIX N: REFUND REQUEST SUBMISSION GUIDE</h3>
+                            <p>When submitting a refund request via the Feedback section, you MUST include:</p>
+                            <ul>
+                                <li><strong>Tournament ID:</strong> (e.g., TR-3-123)</li>
+                                <li><strong>Game Link/ID:</strong> Found in your Match History.</li>
+                                <li><strong>Description of Issue:</strong> Be specific. "App closed" vs "Button didn't click".</li>
+                                <li><strong>Screen Recording (Optional but recommended):</strong> Provides definitive proof of UI issues.</li>
+                            </ul>
+
+                            <h3 id="appendix-o">APPENDIX O: ACCOUNT RECOVERY & SECURITY UPDATES</h3>
+                            <p>If you lose access to your registered mobile number, follow these steps:</p>
+                            <ol>
+                                <li>Contact support@phoenix-x.com from your registered email address.</li>
+                                <li>Provide your Player ID and a copy of your KYC document.</li>
+                                <li>Once identity is verified, we will initiate a "Number Update" process which takes 7 days for security reasons.</li>
+                            </ol>
+
+                            <h3 id="appendix-p">APPENDIX P: MAINTENANCE & DOWNTIME POLICY</h3>
+                            <p>Scheduled maintenance typically occurs between 3:00 AM and 5:00 AM IST. During this time:</p>
+                            <ul>
+                                <li>No new tournaments will be created.</li>
+                                <li>Active tournaments will be paused or cancelled with full refunds.</li>
+                                <li>Deposits and Withdrawals may be delayed.</li>
+                            </ul>
+
+                            <h3 id="appendix-q">APPENDIX Q: USER FEEDBACK & RESOLUTION TIMES</h3>
+                            <p>We value your input. Our resolution targets are as follows:</p>
+                            <ul>
+                                <li><strong>General Queries:</strong> 24 Hours.</li>
+                                <li><strong>Payment Issues:</strong> 48 Hours.</li>
+                                <li><strong>Bug Reports:</strong> 72 Hours (for investigation).</li>
+                                <li><strong>Appeals against Bans:</strong> 7 Business Days (Manual Review).</li>
+                            </ul>
+
+                            <h3 id="appendix-r">APPENDIX R: COMPLIANCE WITH INDIAN IT ACT</h3>
+                            <p>Phoenix-X operates in full compliance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021. Our Grievance Officer can be reached at grievance@phoenix-x.com for any statutory complaints.</p>
+
+                        </div>
+                    </section>
+
+                    <div class="footer-cta">
+                        <h3>Questions about these terms?</h3>
+                        <p>Our support team is available 24/7 to help you understand our policies better.</p>
+                        <div style="margin-top: 30px;">
+                            <a href="/pages/feedback.html" class="btn btn-primary btn-lg">CONTACT SUPPORT</a>
+                        </div>
+                        <p style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted);">
+                            © 2026 PHOENIX-X. All Rights Reserved. Legal Department.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!requireAuth()) return;
+            await loadSidebar();
+            
+            const user = getUser();
+            if (user) {
+                document.getElementById('tb-pid').textContent = user.player_id || '...';
+                const avatar = document.getElementById('tb-avatar');
+                if (user.profile_image) {
+                    avatar.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                } else {
+                    avatar.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+                }
+            }
+
+            // Smooth scroll for TOC
+            document.querySelectorAll('.toc-link').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
