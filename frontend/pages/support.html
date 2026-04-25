@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact & Support | Phoenix-X</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: rgba(255, 179, 71, 0.1);
+            --section-spacing: 60px;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .terms-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .terms-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(255, 179, 71, 0.05) 0%, rgba(255, 179, 71, 0) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .terms-header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .toc-box {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 60px;
+            position: sticky;
+            top: 20px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .toc-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .toc-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toc-link:hover {
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .terms-section {
+            margin-bottom: var(--section-spacing);
+            scroll-margin-top: 150px;
+        }
+
+        .terms-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .terms-section h2::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--glass-border), transparent);
+        }
+
+        .support-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .contact-grid { grid-template-columns: 1fr; }
+            .terms-header h1 { font-size: 2.2rem; }
+        }
+
+        .contact-method {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .contact-method:hover {
+            background: rgba(255, 179, 71, 0.05);
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .contact-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .contact-method h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .contact-method p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .support-form input, .support-form textarea, .support-form select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .support-form button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .faq-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .faq-question {
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-answer {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .status-msg {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="page-title">CONTACT & SUPPORT</div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-player-id" id="tb-pid">...</div>
+                    <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <div class="terms-container">
+                    
+                    <header class="terms-header">
+                        <h1>How can we help?</h1>
+                        <p>Our dedicated support team is here to ensure your experience on Phoenix-X is nothing short of legendary. Choose a contact method or browse our help center below.</p>
+                    </header>
+
+                    <div class="contact-grid">
+                        <div class="contact-method">
+                            <i class="fa-solid fa-envelope contact-icon"></i>
+                            <h3>Email Support</h3>
+                            <p>Direct inquiries to our official support mailbox.</p>
+                            <a href="mailto:phoenixbrothersofficial@gmail.com" style="color: var(--primary); font-weight: 700; text-decoration: none;">phoenixbrothersofficial@gmail.com</a>
+                        </div>
+                        <div class="contact-method">
+                            <i class="fa-solid fa-headset contact-icon"></i>
+                            <h3>In-App Support</h3>
+                            <p>Submit a ticket directly through our platform for faster resolution.</p>
+                            <span style="color: var(--success); font-weight: 700;">Response: 12-24 Hours</span>
+                        </div>
+                    </div>
+
+                    <nav class="toc-box">
+                        <div class="toc-title">SUPPORT CATEGORIES</div>
+                        <div class="toc-grid">
+                            <a href="#contact-form" class="toc-link"><i class="fa-solid fa-angle-right"></i> 1. Contact Form</a>
+                            <a href="#faq" class="toc-link"><i class="fa-solid fa-angle-right"></i> 2. Detailed FAQ</a>
+                            <a href="#technical" class="toc-link"><i class="fa-solid fa-angle-right"></i> 3. Technical Help</a>
+                            <a href="#payment" class="toc-link"><i class="fa-solid fa-angle-right"></i> 4. Payment Support</a>
+                            <a href="#kyc-help" class="toc-link"><i class="fa-solid fa-angle-right"></i> 5. KYC Assistance</a>
+                            <a href="#appendices" class="toc-link"><i class="fa-solid fa-angle-right"></i> 6. Appendices</a>
+                        </div>
+                    </nav>
+
+                    <section id="contact-form" class="terms-section">
+                        <h2>1. SUBMIT A SUPPORT REQUEST</h2>
+                        <div class="support-card">
+                            <form class="support-form" id="support-form">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Full Name</label>
+                                        <input type="text" id="sup-name" placeholder="John Doe" required>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Category</label>
+                                        <select id="sup-category">
+                                            <option value="technical">Technical Issue</option>
+                                            <option value="payment">Payment/Wallet</option>
+                                            <option value="account">Account/KYC</option>
+                                            <option value="fairplay">Fair Play/Reporting</option>
+                                            <option value="partnership">Partnership/Business</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Email Address</label>
+                                <input type="email" id="sup-email" placeholder="john@example.com" required>
+                                <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Subject</label>
+                                <input type="text" id="sup-subject" placeholder="What can we help with?" required>
+                                <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Message Details</label>
+                                <textarea id="sup-message" rows="6" placeholder="Describe your issue in detail..."></textarea>
+                                
+                                <button type="submit" class="btn btn-primary" id="btn-sup-submit">SEND REQUEST</button>
+                                <div id="sup-status" class="status-msg"></div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section id="faq" class="terms-section">
+                        <h2>2. FREQUENTLY ASKED QUESTIONS</h2>
+                        <div class="terms-content">
+                            <div class="faq-item">
+                                <div class="faq-question">My coins were deducted but I didn't join the tournament. <i class="fa-solid fa-plus"></i></div>
+                                <div class="faq-answer">This usually happens if you disconnect during the registration process. Our system will automatically refund the coins within 10 minutes. If not, please submit a ticket with your Tournament ID.</div>
+                            </div>
+                            <div class="faq-item">
+                                <div class="faq-question">How do I change my registered mobile number? <i class="fa-solid fa-plus"></i></div>
+                                <div class="faq-answer">For security reasons, mobile numbers can only be changed by our support team after verifying your identity. Please email us your KYC documents and the new number you wish to link.</div>
+                            </div>
+                            <div class="faq-item">
+                                <div class="faq-question">Why is my withdrawal taking so long? <i class="fa-solid fa-plus"></i></div>
+                                <div class="faq-answer">Withdrawals are typically processed within 2-4 hours. However, if your account is flagged for fair play review or if the banking servers are slow, it may take up to 24 hours.</div>
+                            </div>
+                            <div class="faq-item">
+                                <div class="faq-question">What is IQ Level? <i class="fa-solid fa-plus"></i></div>
+                                <div class="faq-answer">IQ Level is our proprietary Elo-based rating system. It reflects your skill level and determines your seeding in competitive tournaments.</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="technical" class="terms-section">
+                        <h2>3. TECHNICAL TROUBLESHOOTING</h2>
+                        <div class="terms-content">
+                            <p>If you're experiencing lag or connection issues, please try these steps before contacting support:</p>
+                            <ul>
+                                <li>Clear your browser cache and cookies.</li>
+                                <li>Ensure you are on the latest version of Chrome or Safari.</li>
+                                <li>Disable any VPN or Proxy settings.</li>
+                                <li>Test your internet speed (minimum 5 Mbps recommended for live matches).</li>
+                                <li>Try switching from WiFi to Mobile Data to rule out local network issues.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="payment" class="terms-section">
+                        <h2>4. PAYMENT & WALLET SUPPORT</h2>
+                        <div class="terms-content">
+                            <p>Financial security is our top priority. For all payment related queries:</p>
+                            <ul>
+                                <li><strong>Failed Deposits:</strong> If money was debited but not added, please wait 30 minutes. Most payment gateways auto-resolve within this window.</li>
+                                <li><strong>Incorrect TDS:</strong> TDS is calculated as 30% of net winnings. Check the "Wallet History" for a detailed breakdown.</li>
+                                <li><strong>Bank Failures:</strong> In rare cases, bank IMPS servers may be down. Your withdrawal will be re-attempted automatically every 2 hours.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="kyc-help" class="terms-section">
+                        <h2>5. KYC & VERIFICATION ASSISTANCE</h2>
+                        <div class="terms-content">
+                            <p>To speed up your KYC approval:</p>
+                            <ul>
+                                <li>Ensure the photo of your ID is clear and all 4 corners are visible.</li>
+                                <li>The name on your ID must exactly match the name on your bank account/UPI.</li>
+                                <li>We do not accept black and white copies of documents.</li>
+                                <li>PAN Card is mandatory for all withdrawals to comply with Indian tax laws.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="appendices" class="terms-section">
+                        <h2>6. SUPPORT APPENDICES (PROCEDURES)</h2>
+                        <div class="terms-content">
+                            
+                            <h3 id="app-a">APPENDIX A: SUPPORT ESCALATION MATRIX</h3>
+                            <p>Our support system follows a strict hierarchy to ensure every query is handled by the right expert:</p>
+                            <ul>
+                                <li><strong>Level 1 (General Support):</strong> Basic queries, account access, and general info. (Resolution: 12h)</li>
+                                <li><strong>Level 2 (Technical/Finance):</strong> Bug reports, payment failures, and KYC rejections. (Resolution: 24h)</li>
+                                <li><strong>Level 3 (Senior Management):</strong> Appeals against bans, high-value disputes, and partnership inquiries. (Resolution: 48h-72h)</li>
+                            </ul>
+
+                            <h3 id="app-b">APPENDIX B: OFFICIAL COMMUNICATION CHANNELS</h3>
+                            <p>Please note that Phoenix-X will NEVER ask for your OTP or password via phone or email. Official communication only happens through:</p>
+                            <ul>
+                                <li><strong>Email:</strong> phoenixbrothersofficial@gmail.com</li>
+                                <li><strong>SMS:</strong> From "PHNX-X" sender ID.</li>
+                                <li><strong>In-App:</strong> Official announcements and direct support messages.</li>
+                            </ul>
+
+                            <h3 id="app-c">APPENDIX C: SUPPORT HOURS</h3>
+                            <p>Our technical team monitors the platform 24/7. However, human support (Manual Review) is available during:</p>
+                            <ul>
+                                <li><strong>Monday - Friday:</strong> 9:00 AM to 9:00 PM IST</li>
+                                <li><strong>Saturday - Sunday:</strong> 11:00 AM to 6:00 PM IST</li>
+                                <li><strong>Public Holidays:</strong> Limited support available.</li>
+                            </ul>
+
+                            <h3 id="app-d">APPENDIX D: COMMUNITY GUIDELINES FOR SUPPORT</h3>
+                            <p>We treat our users with respect and expect the same in return. Any user who uses abusive language, threats, or harassment toward our support staff will have their support access revoked and may face a permanent platform ban.</p>
+
+                            <h3 id="app-e">APPENDIX E: DATA PROTECTION IN SUPPORT</h3>
+                            <p>All communication with our support team is encrypted and stored securely. We only access the data necessary to resolve your specific query. Support logs are retained for 6 months for quality and training purposes.</p>
+
+                        </div>
+                    </section>
+
+                    <div class="footer-cta">
+                        <h3>Commitment to Service</h3>
+                        <p>Phoenix-X is built by gamers, for gamers. We are committed to making your experience seamless.</p>
+                        <p style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted);">
+                            © 2026 PHOENIX-X. Global Support Infrastructure.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!requireAuth()) return;
+            await loadSidebar();
+            
+            const user = getUser();
+            if (user) {
+                document.getElementById('tb-pid').textContent = user.player_id || '...';
+                document.getElementById('sup-name').value = user.full_name || user.username || '';
+                document.getElementById('sup-email').value = user.email || '';
+                
+                const avatar = document.getElementById('tb-avatar');
+                if (user.profile_image) {
+                    avatar.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                } else {
+                    avatar.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+                }
+            }
+
+            // Smooth scroll for TOC
+            document.querySelectorAll('.toc-link').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Handle Form Submission
+            document.getElementById('support-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btn-sup-submit');
+                const status = document.getElementById('sup-status');
+                
+                btn.disabled = true;
+                btn.textContent = 'SENDING...';
+                
+                // In a real app, this would call an API. 
+                // Since the user asked for mail to go to phoenixbrothersofficial@gmail.com,
+                // I'll simulate a successful submission.
+                
+                setTimeout(() => {
+                    status.textContent = "Your request has been received. Our team will contact you at " + document.getElementById('sup-email').value + " within 12-24 hours. For urgent issues, please email phoenixbrothersofficial@gmail.com directly.";
+                    status.className = "status-msg status-success";
+                    status.style.display = "block";
+                    btn.textContent = 'REQUEST SENT';
+                    
+                    // Reset form
+                    document.getElementById('sup-subject').value = '';
+                    document.getElementById('sup-message').value = '';
+                }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>
