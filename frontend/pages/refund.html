@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund & Cancellation Policy | Phoenix-X</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: rgba(255, 179, 71, 0.1);
+            --section-spacing: 60px;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .terms-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .terms-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0) 100%);
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .terms-header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #fff, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .last-updated {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .toc-box {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 60px;
+            position: sticky;
+            top: 20px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .toc-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #ef4444;
+            font-size: 1.1rem;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .toc-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toc-link:hover {
+            color: #ef4444;
+            transform: translateX(5px);
+        }
+
+        .terms-section {
+            margin-bottom: var(--section-spacing);
+            scroll-margin-top: 150px;
+        }
+
+        .terms-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .terms-section h2::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--glass-border), transparent);
+        }
+
+        .terms-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .terms-content {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+
+        .terms-content p {
+            margin-bottom: 20px;
+        }
+
+        .terms-content ul, .terms-content ol {
+            margin-bottom: 25px;
+            padding-left: 20px;
+        }
+
+        .terms-content li {
+            margin-bottom: 12px;
+        }
+
+        .policy-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--glass-border);
+            margin: 20px 0;
+        }
+
+        .highlight-box {
+            border-left: 4px solid #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin: 25px 0;
+        }
+
+        .footer-cta {
+            text-align: center;
+            padding: 80px 20px;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .terms-header h1 { font-size: 2.2rem; }
+            .toc-box { position: static; margin-bottom: 40px; }
+            .terms-section h2 { font-size: 1.6rem; }
+        }
+
+        .def-item { border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 15px; }
+        .def-term { font-weight: 700; color: #ef4444; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="page-title">REFUND POLICY</div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-player-id" id="tb-pid">...</div>
+                    <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <div class="terms-container">
+                    
+                    <header class="terms-header">
+                        <div class="last-updated">Last Updated: April 25, 2026</div>
+                        <h1>Refund & Cancellation</h1>
+                        <p>At Phoenix-X, we prioritize fairness and transparency. This policy outlines the conditions under which refunds are issued for tournament entries and deposits.</p>
+                    </header>
+
+                    <nav class="toc-box">
+                        <div class="toc-title">TABLE OF CONTENTS</div>
+                        <div class="toc-grid">
+                            <a href="#intro" class="toc-link"><i class="fa-solid fa-angle-right"></i> 1. Introduction</a>
+                            <a href="#automated" class="toc-link"><i class="fa-solid fa-angle-right"></i> 2. Automated Refunds</a>
+                            <a href="#manual" class="toc-link"><i class="fa-solid fa-angle-right"></i> 3. Manual Requests</a>
+                            <a href="#non-refundable" class="toc-link"><i class="fa-solid fa-angle-right"></i> 4. Non-Refundable Items</a>
+                            <a href="#cancellation" class="toc-link"><i class="fa-solid fa-angle-right"></i> 5. Cancellation Policy</a>
+                            <a href="#disputes" class="toc-link"><i class="fa-solid fa-angle-right"></i> 6. Dispute Resolution</a>
+                            <a href="#timelines" class="toc-link"><i class="fa-solid fa-angle-right"></i> 7. Processing Timelines</a>
+                            <a href="#appendices" class="toc-link"><i class="fa-solid fa-angle-right"></i> 8. Appendices (A-J)</a>
+                        </div>
+                    </nav>
+
+                    <section id="intro" class="terms-section">
+                        <h2>1. INTRODUCTION & SCOPE</h2>
+                        <div class="terms-content">
+                            <p>This Refund and Cancellation Policy governs the relationship between Phoenix-X and its users regarding financial reversals. Our systems are designed to minimize technical errors, but we recognize that issues can occur. This policy is part of our commitment to maintaining a trust-based gaming environment.</p>
+                            <div class="highlight-box">
+                                <strong>Core Principle:</strong> Refunds are intended to correct technical failures or platform errors. They are NOT intended to reverse losses incurred through fair gameplay or user-end technical issues.
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="automated" class="terms-section">
+                        <h2>2. AUTOMATED REFUND SCENARIOS</h2>
+                        <div class="terms-content">
+                            <p>Our backend system is programmed to automatically reverse entry fees in specific scenarios where a match cannot be completed through no fault of the user.</p>
+                            
+                            <h3>2.1 Tournament Cancellation</h3>
+                            <p>If an administrator cancels a tournament before it begins or while it is in progress due to server maintenance or technical issues, 100% of the entry fee will be credited back to the user's wallet within 5 minutes.</p>
+
+                            <h3>2.2 Minimum Player Requirement</h3>
+                            <p>For tournaments that require a minimum number of participants (e.g., a 16-player knockout), if the quota is not met within the registration window, the tournament is automatically voided and entry fees are returned.</p>
+
+                            <h3>2.3 Global Server Outage</h3>
+                            <p>In the event of a catastrophic server failure that disconnects all active matches simultaneously, the system will identify affected games and issue bulk refunds once services are restored.</p>
+                        </div>
+                    </section>
+
+                    <section id="manual" class="terms-section">
+                        <h2>3. MANUAL REFUND REQUESTS</h2>
+                        <div class="terms-content">
+                            <p>Users may petition for a refund if they encounter a specific bug that prevented them from competing fairly.</p>
+                            
+                            <h3>3.1 Eligibility for Manual Refund</h3>
+                            <ul>
+                                <li><strong>Move Not Registered:</strong> The user made a valid move, the timer was running, but the server failed to record the move despite a stable connection.</li>
+                                <li><strong>Incorrect Win/Loss Assignment:</strong> The game ended in a draw, but the system incorrectly marked it as a loss.</li>
+                                <li><strong>Opponent Engine Usage:</strong> If a user loses to an opponent who is later banned for cheating, the entry fee for that specific match may be refunded upon request.</li>
+                            </ul>
+
+                            <h3>3.2 How to Request</h3>
+                            <p>Requests must be submitted via the <strong>Feedback</strong> section of the app. You must include the Tournament ID and a brief description of the issue. Screenshots or screen recordings are highly encouraged.</p>
+                        </div>
+                    </section>
+
+                    <section id="non-refundable" class="terms-section">
+                        <h2>4. NON-REFUNDABLE SCENARIOS</h2>
+                        <div class="terms-content">
+                            <p>To prevent abuse of the refund system, the following scenarios are strictly excluded from refund eligibility:</p>
+                            
+                            <div class="policy-card">
+                                <h4>4.1 User Connectivity Issues</h4>
+                                <p>Phoenix-X is not responsible for your internet speed, signal strength, or ISP reliability. If you lose a match because your WiFi dropped or your mobile data was slow, no refund will be issued.</p>
+                            </div>
+
+                            <div class="policy-card">
+                                <h4>4.2 Device Failures</h4>
+                                <p>If your phone battery dies, your browser crashes, or you receive a phone call that interrupts your match, the loss is final.</p>
+                            </div>
+
+                            <div class="policy-card">
+                                <h4>4.3 "Mouse Slips" or Accidental Moves</h4>
+                                <p>Chess is a game of precision. Accidental moves, resigning by mistake, or "misclicks" are considered part of the user's performance and are not refundable.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="cancellation" class="terms-section">
+                        <h2>5. CANCELLATION POLICY</h2>
+                        <div class="terms-content">
+                            <h3>5.1 User-Initiated Cancellation</h3>
+                            <p>You may cancel your registration for a tournament and receive a full refund of the entry fee ONLY if the tournament has not yet started. Once the tournament brackets are generated and the lobby opens, the entry fee is locked and non-refundable.</p>
+
+                            <h3>5.2 Withdrawal Cancellation</h3>
+                            <p>If you have initiated a withdrawal of Coins to your bank account, you may cancel the request only if it is in "Pending" status. Once the request moves to "Processing" or "Success", it cannot be reversed.</p>
+                        </div>
+                    </section>
+
+                    <section id="disputes" class="terms-section">
+                        <h2>6. DISPUTE RESOLUTION</h2>
+                        <div class="terms-content">
+                            <p>If you are unsatisfied with a refund decision made by our support team, you may escalate the issue for a final review. This review will be conducted by a senior administrator and will involve a deep-dive into the raw PGN (Portable Game Notation) and WebSocket logs of the match in question. The decision of the senior administrator is final and binding.</p>
+                        </div>
+                    </section>
+
+                    <section id="timelines" class="terms-section">
+                        <h2>7. PROCESSING TIMELINES</h2>
+                        <div class="terms-content">
+                            <ul>
+                                <li><strong>Automated Refunds:</strong> Instant (within 5 minutes).</li>
+                                <li><strong>Manual Refund Review:</strong> 24 to 48 hours.</li>
+                                <li><strong>Crediting to Wallet:</strong> Instant upon approval.</li>
+                                <li><strong>Bank/UPI Reversals:</strong> In cases of failed deposits, the money usually returns to your source account within 5-7 business days as per banking standards.</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="appendices" class="terms-section">
+                        <h2>8. DETAILED REFUND APPENDICES</h2>
+                        <div class="terms-content">
+                            
+                            <h3 id="app-a">APPENDIX A: REFUND SCENARIO MATRIX</h3>
+                            <table class="chess-table" style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem;">
+                                <tr style="background: rgba(239,68,68,0.1);">
+                                    <th style="padding: 12px; border: 1px solid var(--glass-border);">Issue Type</th>
+                                    <th style="padding: 12px; border: 1px solid var(--glass-border);">Refund Status</th>
+                                    <th style="padding: 12px; border: 1px solid var(--glass-border);">Action Required</th>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">Server Crash</td>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">YES (Full)</td>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">Automatic</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">User Internet Drop</td>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">NO</td>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">None</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">Opponent Cheating</td>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">YES (Conditional)</td>
+                                    <td style="padding: 12px; border: 1px solid var(--glass-border);">Manual Request</td>
+                                </tr>
+                            </table>
+
+                            <h3 id="app-b">APPENDIX B: DEPOSIT FAILURE FLOW</h3>
+                            <p>If your money was deducted but Coins were not added:</p>
+                            <ol>
+                                <li>Do not panic. Check your "Transaction History".</li>
+                                <li>Wait for 30 minutes. Most payment gateways have a delayed sync.</li>
+                                <li>If still not added, contact support with the "Transaction UTR Number".</li>
+                                <li>We will verify with the gateway and credit your wallet manually.</li>
+                            </ol>
+
+                            <h3 id="app-d">APPENDIX D: BANK SETTLEMENT CYCLES</h3>
+                            <p>When a refund is initiated from our end to your source account, the following third-party timelines apply:</p>
+                            <ul>
+                                <li><strong>HDFC/ICICI/SBI:</strong> 2-3 Business Days.</li>
+                                <li><strong>Co-operative Banks:</strong> 7-10 Business Days.</li>
+                                <li><strong>UPI Wallets (Paytm/PhonePe):</strong> 1-2 Business Days.</li>
+                                <li><strong>Credit Cards:</strong> 5-7 Business Days (depends on your billing cycle).</li>
+                            </ul>
+
+                            <h3 id="app-e">APPENDIX E: PAYMENT GATEWAY SPECIFICS (CASHFREE)</h3>
+                            <p>As we use Cashfree for processing, any "Transaction Pending" status at the gateway level is outside our immediate control. If your bank has debited the amount but the gateway has not confirmed it, we must wait for the gateway's "Final Reconciliation" which happens every 24 hours at midnight IST.</p>
+
+                            <h3 id="app-f">APPENDIX F: REFUND AUDITING & BEHAVIORAL ANALYSIS</h3>
+                            <p>To prevent "Refund Fraud", our system logs the following for every request:</p>
+                            <ul>
+                                <li><strong>Touch Events:</strong> Did the user actually try to move?</li>
+                                <li><strong>Network Ping:</strong> Was the latency spike internal or external?</li>
+                                <li><strong>Device Health:</strong> Was the CPU throttled or battery low?</li>
+                            </ul>
+
+                            <h3 id="app-g">APPENDIX G: ACCOUNT-LEVEL REFUND LIMITS</h3>
+                            <p>To maintain platform stability, a single account cannot request more than 3 manual refunds in a 30-day period. Excessive refund requests will trigger a manual review of the user's technical setup.</p>
+
+                            <h3 id="app-h">APPENDIX H: REFUND PRIORITY QUEUES</h3>
+                            <p>Refunds are processed based on the user's "Platform Rank":</p>
+                            <ul>
+                                <li><strong>Grandmaster:</strong> Priority 1 (0-12 hours).</li>
+                                <li><strong>Master:</strong> Priority 2 (12-24 hours).</li>
+                                <li><strong>Regular:</strong> Priority 3 (24-48 hours).</li>
+                            </ul>
+
+                            <h3 id="app-i">APPENDIX I: THIRD-PARTY ADJUDICATION</h3>
+                            <p>In cases of high-value disputes (over ₹5,000), Phoenix-X may employ a third-party chess arbiter to review the match and determine if a technical fault truly altered the outcome.</p>
+
+                            <h3 id="app-j">APPENDIX J: POLICY UPDATES & NOTIFICATIONS</h3>
+                            <p>Changes to the Refund Policy are communicated via in-app notifications. Continued use of the platform after an update implies consent to the new terms.</p>
+
+                        </div>
+                    </section>
+
+                    <div class="footer-cta">
+                        <h3>Need more help?</h3>
+                        <p>Our support team is dedicated to ensuring you have a smooth experience.</p>
+                        <div style="margin-top: 30px;">
+                            <a href="/pages/feedback.html" class="btn btn-primary btn-lg" style="background: #ef4444; border-color: #ef4444;">CONTACT SUPPORT</a>
+                        </div>
+                        <p style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted);">
+                            © 2026 PHOENIX-X. Refund & Cancellation Department.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!requireAuth()) return;
+            await loadSidebar();
+            
+            const user = getUser();
+            if (user) {
+                document.getElementById('tb-pid').textContent = user.player_id || '...';
+                const avatar = document.getElementById('tb-avatar');
+                if (user.profile_image) {
+                    avatar.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                } else {
+                    avatar.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+                }
+            }
+
+            document.querySelectorAll('.toc-link').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
