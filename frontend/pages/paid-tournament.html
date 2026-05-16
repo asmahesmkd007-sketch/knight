@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elite Arena – CHESS OX</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --premium-gold: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --glass: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-banner {
+      background: linear-gradient(to right, rgba(0,0,0,0.6), transparent), url('/assets/images/tournament-bg.jpg');
+      background-size: cover;
+      background-position: center;
+      padding: 40px 30px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      border: 1px solid var(--glass-border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.15), transparent);
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 900;
+      background: var(--premium-gold);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .hero-desc {
+      color: var(--text-secondary);
+      max-width: 450px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .nav-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .tabs-group {
+      display: flex;
+      background: var(--bg-tertiary);
+      padding: 4px;
+      border-radius: 14px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .tab-btn {
+      padding: 8px 20px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      background: var(--premium-gold);
+      color: white;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+    }
+
+    .tr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .tr-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .tr-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(212,168,67,0.3);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .tr-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .badge-status {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .badge-status.upcoming { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-status.live { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+    .tr-prize-box {
+      margin-bottom: 16px;
+    }
+
+    .tr-prize-label { font-size: 9px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 2px; }
+    .tr-prize-value { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: var(--gold); }
+
+    .tr-progress {
+      height: 4px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .tr-progress-fill {
+      height: 100%;
+      background: var(--premium-gold);
+      border-radius: 10px;
+      transition: width 0.8s ease;
+    }
+
+    .tr-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .meta-item .label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+    .meta-item .value { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+    .btn-join {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-join.primary { background: var(--gold); color: #000; }
+    .btn-join.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--glass-border); }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-tertiary) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-wave 1.5s infinite;
+    }
+
+    @keyframes skeleton-wave {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+    
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">PAID TOURNAMENTS</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-player-id">
+            <i class="fa-solid fa-coins"></i> <span id="header-balance">0</span>
+          </div>
+          <div class="topbar-avatar" id="header-avatar" onclick="window.location='/pages/account.html'">P</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div class="hero-banner">
+          <h1 class="hero-title">Elite Arena</h1>
+          <p class="hero-desc">The ultimate proving ground for grandmasters. Compete for massive coin pools and rise through the ranks of CHESS OX.</p>
+        </div>
+
+        <div class="nav-header">
+          <div class="tabs-group" id="timer-tabs">
+            <button class="tab-btn active" onclick="setTimer(1)">1 MIN</button>
+            <button class="tab-btn" onclick="setTimer(3)">3 MIN</button>
+            <button class="tab-btn" onclick="setTimer(5)">5 MIN</button>
+          </div>
+          
+          <div class="tabs-group" id="status-tabs">
+            <button class="tab-btn active" onclick="setStatus('upcoming')">UPCOMING</button>
+            <button class="tab-btn" onclick="setStatus('live')">LIVE ARENA</button>
+          </div>
+        </div>
+
+        <div id="tr-display" class="tr-grid">
+          <!-- Skeletons -->
+          <div class="tr-card skeleton" style="height:350px"></div>
+          <div class="tr-card skeleton" style="height:350px"></div>
+          <div class="tr-card skeleton" style="height:350px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry Modal -->
+  <div class="modal-overlay" id="entry-modal">
+    <div class="modal" style="max-width:480px; padding:32px; border-radius:28px">
+      <div class="flex-between mb-24">
+        <h2 id="modal-title" style="font-size:24px">Tournament</h2>
+        <button class="btn-icon" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div style="background:var(--bg-sunken); border:1px solid var(--glass-border); border-radius:20px; padding:24px; text-align:center; margin-bottom:24px">
+        <div style="font-size:11px; color:var(--text-muted); letter-spacing:2px; margin-bottom:8px">TOTAL PRIZE POOL</div>
+        <div id="modal-pool" style="font-family:var(--font-display); font-size:42px; font-weight:900; color:var(--gold)">0</div>
+      </div>
+
+      <div class="mb-24">
+        <div style="font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:12px; border-bottom:1px solid var(--glass-border); padding-bottom:8px">PRIZE BREAKDOWN</div>
+        <div class="flex-between mb-8">
+          <span style="font-size:13px; color:var(--text-muted)">1st Place (35%)</span>
+          <span id="modal-p1" style="font-weight:700; color:var(--gold)">0</span>
+        </div>
+        <div class="flex-between mb-8">
+          <span style="font-size:13px; color:var(--text-muted)">2nd Place (30%)</span>
+          <span id="modal-p2" style="font-weight:700; color:var(--text-primary)">0</span>
+        </div>
+        <div class="flex-between mb-16">
+          <span style="font-size:13px; color:var(--text-muted)">3rd Place (20%)</span>
+          <span id="modal-p3" style="font-weight:700; color:var(--text-primary)">0</span>
+        </div>
+
+        <div class="flex-between mb-8" style="border-top:1px solid var(--glass-border); padding-top:12px">
+          <span style="color:var(--text-muted)">Entry Fee</span>
+          <span id="modal-fee" style="font-weight:700; color:var(--gold)">0 Coins</span>
+        </div>
+        <div class="flex-between">
+          <span style="color:var(--text-muted)">Your Balance</span>
+          <span id="modal-balance" style="font-weight:700">0 Coins</span>
+        </div>
+      </div>
+
+      <div id="modal-error" style="color:var(--error); font-size:13px; text-align:center; margin-bottom:16px"></div>
+      
+      <button id="modal-action" class="btn btn-primary btn-full" style="height:56px">JOIN TOURNAMENT</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
+
+  <script>
+    // State
+    let allTournaments = [];
+    let currentTimer = 1;
+    let currentStatus = 'upcoming';
+    let userBalance = 0;
+    let user = null;
+    let socket = null;
+
+    async function init() {
+      console.log('🚀 Initializing Lobby...');
+      
+      // 1. Sidebar
+      if (window.loadSidebar) loadSidebar();
+
+      // 2. Auth
+      if (window.requireAuth && !requireAuth()) return;
+      user = window.getUser ? getUser() : null;
+      if (!user) { window.location.href='/pages/login.html'; return; }
+
+      // 3. UI Sync
+      syncProfile();
+
+      // 4. Socket
+      initSocket();
+
+      // 5. Load Data
+      await loadData();
+      
+      // 6. Polling
+      setInterval(loadData, 20000);
+    }
+
+    function syncProfile() {
+      const av = document.getElementById('header-avatar');
+      if (user.profile_image && av) {
+        av.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } else if (av) {
+        av.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+      }
+    }
+
+    async function loadData() {
+      try {
+        // Balance
+        WalletAPI.getBalance().then(res => {
+          if (res?.success) {
+            userBalance = res.wallet.balance;
+            document.getElementById('header-balance').textContent = userBalance.toLocaleString();
+          }
+        });
+
+        // Tournaments
+        const res = await TournamentAPI.getAll('paid', 'all');
+        if (res?.success) {
+          allTournaments = res.tournaments || [];
+          render();
+        }
+      } catch (err) {
+        console.error('Data Load Error:', err);
+      }
+    }
+
+    function render() {
+      const container = document.getElementById('tr-display');
+      const filtered = allTournaments.filter(t => {
+        const matchesTimer = t.timer_type === currentTimer;
+        const matchesStatus = currentStatus === 'upcoming' 
+          ? (t.status === 'upcoming' || t.status === 'full' || t.status === 'locked')
+          : (t.status === 'live' || t.status === 'starting');
+        return matchesTimer && matchesStatus;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:80px 0; color:var(--text-muted)">
+          <i class="fa-solid fa-chess-board" style="font-size:48px; opacity:0.2; margin-bottom:16px"></i>
+          <p>No ${currentStatus} ${currentTimer}min tournaments found.</p>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(t => {
+        const pct = (t.current_players / t.max_players) * 100;
+        const isJoined = t.is_joined;
+        const isLive = t.status === 'live' || t.status === 'starting';
+
+        return `
+          <div class="tr-card" onclick="${isJoined ? `enterArena('${t.id}')` : `openEntry('${t.id}')`}">
+            <div class="tr-header">
+              <div class="badge-status ${isLive ? 'live' : 'upcoming'}">${isLive ? 'Live Now' : 'Join Open'}</div>
+              <div style="color:var(--gold); font-weight:800; font-size:12px"><i class="fa-solid fa-bolt"></i> ${t.timer_type}M</div>
+            </div>
+            
+            <div style="font-size:16px; font-weight:700; margin-bottom:4px">${t.name}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px">ID: ${t.tr_id || '---'}</div>
+
+            <div class="tr-prize-box">
+              <div class="tr-prize-label">PRIZE POOL</div>
+              <div class="tr-prize-value">${(t.prize_pool || 0).toLocaleString()}</div>
+            </div>
+
+            <div class="tr-progress">
+              <div class="tr-progress-fill" style="width:${pct}%"></div>
+            </div>
+
+            <div class="tr-meta">
+              <div class="meta-item">
+                <div class="label">Players</div>
+                <div class="value">${t.current_players}/${t.max_players}</div>
+              </div>
+              <div class="meta-item">
+                <div class="label">Entry Fee</div>
+                <div class="value">${t.entry_fee}</div>
+              </div>
+            </div>
+
+            <button class="btn-join ${isJoined ? 'secondary' : 'primary'}" onclick="event.stopPropagation(); ${isJoined ? `enterArena('${t.id}')` : `openEntry('${t.id}')`}">
+              ${isJoined ? 'ENTER ARENA' : 'JOIN NOW'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setTimer(val) {
+      currentTimer = val;
+      document.querySelectorAll('#timer-tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', [1,3,5][i] === val));
+      render();
+    }
+
+    function setStatus(val) {
+      currentStatus = val;
+      document.querySelectorAll('#status-tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', ['upcoming','live'][i] === val));
+      render();
+    }
+
+    function openEntry(id) {
+      const t = allTournaments.find(x => x.id === id);
+      if (!t) return;
+
+      document.getElementById('modal-title').textContent = t.name;
+      const pool = t.prize_pool || 0;
+      document.getElementById('modal-pool').textContent = pool.toLocaleString();
+      
+      // Calculate breakdown
+      document.getElementById('modal-p1').textContent = Math.floor(pool * 0.35).toLocaleString();
+      document.getElementById('modal-p2').textContent = Math.floor(pool * 0.30).toLocaleString();
+      document.getElementById('modal-p3').textContent = Math.floor(pool * 0.20).toLocaleString();
+
+      document.getElementById('modal-fee').textContent = `${t.entry_fee} Coins`;
+      document.getElementById('modal-balance').textContent = `${userBalance.toLocaleString()} Coins`;
+      
+      const err = document.getElementById('modal-error');
+      const btn = document.getElementById('modal-action');
+      
+      err.textContent = '';
+      btn.disabled = false;
+      btn.innerHTML = 'JOIN TOURNAMENT';
+
+      if (userBalance < t.entry_fee) {
+        err.textContent = 'Insufficient balance.';
+        btn.disabled = true;
+      } else if (user.kyc_status !== 'verified') {
+        err.textContent = 'KYC verification required.';
+        btn.disabled = true;
+      }
+
+      btn.onclick = () => confirmJoin(id);
+      document.getElementById('entry-modal').classList.add('active');
+    }
+
+    async function confirmJoin(id) {
+      const btn = document.getElementById('modal-action');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+
+      const res = await TournamentAPI.join(id);
+      if (res?.success) {
+        window.Toast?.success(res.message || 'Joined successfully!');
+        closeModal();
+        if (res.message?.toLowerCase().includes('already') || res.already_joined) {
+          enterArena(id);
+        } else {
+          loadData();
+        }
+      } else {
+        window.Toast?.error(res?.message || 'Join failed');
+        btn.disabled = false;
+        btn.innerHTML = 'JOIN TOURNAMENT';
+      }
+    }
+
+    function enterArena(id) {
+      window.location.href = `/pages/tournament-live.html?id=${id}`;
+    }
+
+    function closeModal() {
+      document.getElementById('entry-modal').classList.remove('active');
+    }
+
+    function initSocket() {
+      if (typeof io === 'undefined') return;
+      socket = io(undefined, { auth: { token: getToken(), userId: user.id } });
+      
+      socket.on('tr_count_update', (data) => {
+        const t = allTournaments.find(x => x.id === data.tournamentId);
+        if (t) {
+          t.current_players = data.current_players;
+          render();
+        }
+      });
+
+      socket.on('tournament_update', (data) => {
+        const idx = allTournaments.findIndex(t => t.id === data.id);
+        if (idx !== -1) {
+          allTournaments[idx] = { ...allTournaments[idx], ...data };
+          render();
+        }
+      });
+    }
+
+    // Start
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

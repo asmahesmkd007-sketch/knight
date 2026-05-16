@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Ultimate Chess Guide | CHESS OX</title>
+
+  <!-- Critical CSS first -->
+  <link rel="stylesheet" href="/css/global.css">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1642778632018672"
+     crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="/css/about.css">
+
+  <!-- Font Awesome — deferred to avoid render-blocking -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+
+  <!-- Google Fonts — display=swap prevents FOIT -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    html { scroll-behavior: smooth; }
+    .main-content { padding-top: 0; }
+
+    /* AdSense Container Styling */
+    .ads-container {
+      margin: 24px 0;
+      min-height: 90px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">ABOUT CHESS</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-player-id" id="tb-pid">...</div>
+          <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div class="about-container">
+
+          <!-- 1. HERO -->
+          <section id="intro" class="about-hero">
+            <img
+              data-src="https://fbadrybijiwkgdfomjhp.supabase.co/storage/v1/object/public/kyc-documents/chess_hero_premium.png"
+              alt="Royal Chess board — premium photography"
+              loading="lazy"
+              decoding="async"
+              width="1200" height="400">
+            <div class="about-hero-content">
+              <h1>THE ROYAL GAME</h1>
+              <p>Welcome to the fascinating world of chess—a game of strategy, intellect, and infinite possibilities. Whether you are a curious beginner or an aspiring master, there is always something new to discover.</p>
+            </div>
+          </section>
+
+          <!-- 2. HISTORY -->
+          <section id="history" class="about-section">
+            <h2 class="section-title">CHESS HISTORY</h2>
+            <p>Chess originated in India during the 6th century as <strong>Chaturanga</strong>, representing military divisions. It traveled through Persia (where the term "Checkmate" was coined) before evolving in Europe into the game we know today.</p>
+            <ul class="highlights-list">
+              <li><strong>Global Journey:</strong> After India, it spread to the Arab world and then to Latin Europe.</li>
+              <li><strong>Standardization:</strong> Modern rules emerged in the late 15th century and gained universal acceptance by the late 19th century.</li>
+              <li><strong>Governance:</strong> <strong>FIDE</strong> (founded in 1924) governs all international competition.</li>
+            </ul>
+          </section>
+
+          <!-- 3. EQUIPMENT & STANDARDS -->
+          <section id="equipment" class="about-section">
+            <h2 class="section-title">BOARD &amp; STANDARDS</h2>
+            <div class="feature-box">
+              <h4>The Staunton Standard</h4>
+              <p>The <strong>Staunton pattern</strong>, registered in 1849 by Nathaniel Cooke and endorsed by Howard Staunton, is the global standard for all professional tournaments due to its clarity and functionality.</p>
+            </div>
+            <h3 class="section-subtitle">The Grid</h3>
+            <p>Played on an 8x8 board of 64 squares alternating in light and dark colors. <strong>Orientation:</strong> Always ensure the light square is at the bottom-right corner ("White on the right").</p>
+          </section>
+
+          <!-- 4. PIECES & VALUES -->
+          <section id="pieces" class="about-section">
+            <h2 class="section-title">PIECES &amp; RELATIVE VALUES</h2>
+            <p>While every game's goal is to protect the King, knowing the relative point values of your pieces helps you make better trades.</p>
+            <table class="chess-table">
+              <thead>
+                <tr>
+                  <th>Piece</th>
+                  <th>Symbol</th>
+                  <th>Point Value</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Pawn</td>
+                  <td><i class="fa-solid fa-chess-pawn" aria-hidden="true"></i></td>
+                  <td>1 pt</td>
+                  <td>The "soul of chess." Used for structure and promotion.</td>
+                </tr>
+                <tr>
+                  <td>Knight</td>
+                  <td><i class="fa-solid fa-chess-knight" aria-hidden="true"></i></td>
+                  <td>3 pts</td>
+                  <td>The trickster. Jumps over pieces. Deadly in forks.</td>
+                </tr>
+                <tr>
+                  <td>Bishop</td>
+                  <td><i class="fa-solid fa-chess-bishop" aria-hidden="true"></i></td>
+                  <td>3 pts</td>
+                  <td>Long-range diagonal power. Strong in open positions.</td>
+                </tr>
+                <tr>
+                  <td>Rook</td>
+                  <td><i class="fa-solid fa-chess-rook" aria-hidden="true"></i></td>
+                  <td>5 pts</td>
+                  <td>Heavy artillery. Dominates horizontal/vertical lines.</td>
+                </tr>
+                <tr>
+                  <td>Queen</td>
+                  <td><i class="fa-solid fa-chess-queen" aria-hidden="true"></i></td>
+                  <td>9 pts</td>
+                  <td>Most powerful piece. Combines Rook and Bishop.</td>
+                </tr>
+                <tr>
+                  <td>King</td>
+                  <td><i class="fa-solid fa-chess-king" aria-hidden="true"></i></td>
+                  <td>&#8734;</td>
+                  <td>The objective. Must be kept safe at all costs.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- AdSense Unit: After Pieces -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+
+          <!-- 5. HOW TO PLAY -->
+          <section id="howtoplay" class="about-section">
+            <h2 class="section-title">HOW TO PLAY CHESS</h2>
+            <p>White moves first, after which players alternate turns. One piece is moved per turn.</p>
+            <ul class="highlights-list">
+              <li><strong>Capture:</strong> Pieces are removed by moving your piece to their square (except En Passant).</li>
+              <li><strong>Leaping:</strong> The Knight is the <strong>only</strong> piece that can jump over other pieces.</li>
+              <li><strong>Pawn Capture:</strong> Pawns move forward but capture diagonally.</li>
+            </ul>
+            <div class="grid-2">
+              <div class="card">
+                <h3>Game Phases</h3>
+                <p><strong>Opening:</strong> Developing pieces and controlling the center.<br><strong>Middlegame:</strong> Strategy and planning.<br><strong>Endgame:</strong> Pawn promotion and King activity.</p>
+              </div>
+              <div class="card">
+                <h3>Game Types</h3>
+                <p><strong>Classical:</strong> Slow/Strategic.<br><strong>Rapid:</strong> 10-60 mins.<br><strong>Blitz:</strong> 3-5 mins.<br><strong>Bullet:</strong> Under 3 mins.<br><strong>Chess960:</strong> Random starting positions.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 6. SPECIAL MOVES -->
+          <section id="special" class="about-section">
+            <h2 class="section-title">SPECIAL RULES</h2>
+            <div class="grid-3">
+              <div class="card">
+                <h4>Castling</h4>
+                <p>Moves King 2 squares toward a Rook to secure safety. Both pieces must be unmoved.</p>
+              </div>
+              <div class="card">
+                <h4>En Passant</h4>
+                <p>Capturing a pawn "in passing" right after it makes a 2-square initial move.</p>
+              </div>
+              <div class="card">
+                <h4>Promotion</h4>
+                <p>Pawn reaching the 8th rank transforms into any major piece (usually a Queen).</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- AdSense Unit: After Special Rules -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+
+          <!-- 7. OPENINGS -->
+          <section id="openings" class="about-section">
+            <h2 class="section-title">FAMOUS OPENINGS</h2>
+            <div class="champions-grid">
+              <div class="champion-card">
+                <div class="champion-name">Sicilian Defense</div>
+                <div class="champion-bio">1. e4 c5. The most high-scoring and complex response for Black against White's King Pawn Opening.</div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-name">Ruy Lopez</div>
+                <div class="champion-bio">1. e4 e5 2. Nf3 Nc6 3. Bb5. Named after a Spanish priest, it is one of the oldest and most studied.</div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-name">Queen's Gambit</div>
+                <div class="champion-bio">1. d4 d5 2. c4. White offers a pawn to control the center. Popularized globally by recent media.</div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-name">King's Indian</div>
+                <div class="champion-bio">A "hypermodern" defense where Black lets White take the center to launch a later counterattack.</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 8. TACTICS -->
+          <section id="tactics" class="about-section">
+            <h2 class="section-title">TACTICAL GLOSSARY</h2>
+            <p>Tactics are short-term maneuvers to gain material or checkmate.</p>
+            <ul class="highlights-list">
+              <li><strong>The Fork:</strong> Attacking two or more enemy pieces simultaneously with one piece.</li>
+              <li><strong>The Pin:</strong> Restricting a piece from moving because it would expose a more valuable piece behind it.</li>
+              <li><strong>The Skewer:</strong> Attacking a valuable piece, forcing it to move and expose a piece behind it.</li>
+              <li><strong>Discovered Attack:</strong> Moving a piece to reveal an attack from a different piece behind it.</li>
+            </ul>
+          </section>
+
+          <!-- 9. OUTCOMES -->
+          <section id="outcomes" class="about-section">
+            <h2 class="section-title">WINS &amp; DRAWS</h2>
+            <div class="grid-2">
+              <div class="card">
+                <h3 style="color:var(--about-primary)">Winning</h3>
+                <p><strong>Checkmate:</strong> King trapped in check.<br><strong>Resignation:</strong> Opponent concedes.<br><strong>Time Win:</strong> Opponent's clock runs out.<br><strong>Forfeit:</strong> Violation of rules.</p>
+              </div>
+              <div class="card">
+                <h3 style="color:var(--about-primary)">Drawing</h3>
+                <p><strong>Stalemate:</strong> No legal moves, not in check.<br><strong>Threefold Repetition:</strong> Same position occurs 3 times.<br><strong>50-Move Rule:</strong> No capture/pawn move in 50 turns.<br><strong>Dead Position:</strong> Impossible to deliver mate.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 10. ETIQUETTE -->
+          <section id="etiquette" class="about-section">
+            <h2 class="section-title">CHESS ETIQUETTE</h2>
+            <p>Good sportsmanship is essential in the Royal Game.</p>
+            <ul class="highlights-list">
+              <li><strong>Handshake:</strong> Standard practice to shake hands before and after a match.</li>
+              <li><strong>Touch-Move:</strong> If you touch a piece, you must move it (if legal).</li>
+              <li><strong>"J'adoube" (I Adjust):</strong> Say this *before* touching a piece to adjust its position on the square.</li>
+              <li><strong>Silence:</strong> Maintain absolute quiet to respect the opponent's concentration.</li>
+            </ul>
+          </section>
+
+          <!-- AdSense Unit: After Etiquette -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+
+          <!-- 11. CHAMPIONS -->
+          <section id="champions" class="about-section">
+            <h2 class="section-title">WORLD CHESS CHAMPIONS</h2>
+            <div class="champions-grid">
+              <div class="champion-card">
+                <div class="champion-avatar">
+                  <img
+                    data-src="../assets/images/steinitz.jpg"
+                    alt="Wilhelm Steinitz"
+                    loading="lazy" decoding="async" width="64" height="64">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Wilhelm Steinitz</div>
+                  <div class="champion-bio">The first official champion (1886). Pioneer of scientific positional play.</div>
+                </div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-avatar">
+                  <img
+                    data-src="../assets/images/fischer.jpg"
+                    alt="Bobby Fischer"
+                    loading="lazy" decoding="async" width="64" height="64">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Bobby Fischer</div>
+                  <div class="champion-bio">American genius who broke decades of Soviet dominance in 1972.</div>
+                </div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-avatar">
+                  <img
+                    data-src="../assets/images/kasparov.jpg"
+                    alt="Garry Kasparov"
+                    loading="lazy" decoding="async" width="64" height="64">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Garry Kasparov</div>
+                  <div class="champion-bio">Held the #1 spot for 255 months. Defeated by IBM's Deep Blue in 1997.</div>
+                </div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-avatar">
+                  <img
+                    data-src="../assets/images/anand.jpg"
+                    alt="Viswanathan Anand"
+                    loading="lazy" decoding="async" width="64" height="64">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Viswanathan Anand</div>
+                  <div class="champion-bio">The "Tiger of Madras." Transformed India into a global chess powerhouse.</div>
+                </div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-avatar">
+                  <img
+                    data-src="../assets/images/carlsen.jpg"
+                    alt="Magnus Carlsen"
+                    loading="lazy" decoding="async" width="64" height="64">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Magnus Carlsen</div>
+                  <div class="champion-bio">Current world #1 known for unmatched endgame precision and technical skill.</div>
+                </div>
+              </div>
+              <div class="champion-card">
+                <div class="champion-avatar">
+                  <img
+                    data-src="../assets/images/gukesh.jpg"
+                    alt="Gukesh Dommaraju"
+                    loading="lazy" decoding="async" width="64" height="64">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Gukesh Dommaraju</div>
+                  <div class="champion-bio">The current World Champion (2024), representing the next generation of masters.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Featured Highlight -->
+            <div class="champion-featured">
+              <div class="featured-content">
+                <div class="champion-avatar featured-avatar">
+                  <img
+                    data-src="../assets/images/goofygen.png"
+                    alt="Goofygen (Sudhershun Asokan)"
+                    loading="lazy" decoding="async" width="100" height="100">
+                </div>
+                <div class="champion-info">
+                  <div class="champion-name">Goofygen (Sudhershun Asokan)</div>
+                  <div class="champion-bio">India's fastest-growing chess influencer. Known for blending humor and memes to make chess accessible to millions, proving that chess is for everyone.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- AdSense Unit: After Goofygen -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+
+          <!-- 12. IMMORTAL GAME -->
+          <section id="immortal" class="about-section">
+            <h2 class="section-title">THE IMMORTAL GAME (1851)</h2>
+            <p>Played between Adolf Anderssen and Lionel Kieseritzky, this game is the summit of "Romantic Era" chess.</p>
+            <div class="feature-box" style="border-color:var(--about-primary)">
+              <p>Anderssen sacrificed his <strong>Queen, both Rooks, and a Bishop</strong> to force a stunning checkmate with just three minor pieces. It remains the ultimate example of tactical beauty over material count.</p>
+            </div>
+          </section>
+
+          <!-- 13. MODERN ERA -->
+          <section id="modern" class="about-section">
+            <h2 class="section-title">MODERN CHESS &amp; AI</h2>
+            <img
+              data-src="https://fbadrybijiwkgdfomjhp.supabase.co/storage/v1/object/public/kyc-documents/modern_chess_tech.png"
+              alt="Modern chess technology and AI"
+              loading="lazy" decoding="async"
+              width="900" height="506"
+              style="border-radius:14px; margin:20px 0; width:100%; display:block;">
+            <p>Chess has moved from quiet libraries to the digital age. In 1997, <strong>Deep Blue</strong> became the first computer to beat a reigning World Champion. Today, advanced AI like <strong>Stockfish</strong> and <strong>AlphaZero</strong> have revolutionized training, while streaming on platforms like Twitch has turned chess into a massive global spectator sport.</p>
+          </section>
+
+          <!-- AdSense Unit: After Modern Chess -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+
+          <!-- 14. BENEFITS -->
+          <section id="benefits" class="about-section">
+            <h2 class="section-title">BENEFITS OF CHESS</h2>
+            <div class="grid-3">
+              <div class="card" style="text-align:center">
+                <i class="fa-solid fa-brain" style="font-size:28px; color:var(--about-primary); margin-bottom:12px; display:block;" aria-hidden="true"></i>
+                <h4>Brain Power</h4>
+                <p>Improves memory, focus, and critical thinking skills.</p>
+              </div>
+              <div class="card" style="text-align:center">
+                <i class="fa-solid fa-chess" style="font-size:28px; color:var(--about-primary); margin-bottom:12px; display:block;" aria-hidden="true"></i>
+                <h4>Strategy</h4>
+                <p>Teaches long-term planning and foresight.</p>
+              </div>
+              <div class="card" style="text-align:center">
+                <i class="fa-solid fa-shield" style="font-size:28px; color:var(--about-primary); margin-bottom:12px; display:block;" aria-hidden="true"></i>
+                <h4>Discipline</h4>
+                <p>Builds patience and handles pressure effectively.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 15. CHESS OX -->
+          <section id="phoenix" class="about-section phoenix-section">
+            <h2 class="section-title">WHY PLAY ON CHESS OX?</h2>
+            <p>CHESS OX is a premium ecosystem for the modern player. We combine deep strategy with fast-paced competition.</p>
+            <div class="grid-3">
+              <div class="card" style="text-align:center">
+                <i class="fa-solid fa-bolt" style="font-size:28px; color:var(--about-primary); margin-bottom:12px; display:block;" aria-hidden="true"></i>
+                <h4>Fast Play</h4>
+                <p>Instant matchmaking for Blitz and Bullet enthusiasts.</p>
+              </div>
+              <div class="card" style="text-align:center">
+                <i class="fa-solid fa-trophy" style="font-size:28px; color:var(--about-primary); margin-bottom:12px; display:block;" aria-hidden="true"></i>
+                <h4>Pro Tournaments</h4>
+                <p>Enter paid knockout arenas and win massive prizes.</p>
+              </div>
+              <div class="card" style="text-align:center">
+                <i class="fa-solid fa-user-shield" style="font-size:28px; color:var(--about-primary); margin-bottom:12px; display:block;" aria-hidden="true"></i>
+                <h4>Fair Play</h4>
+                <p>Advanced anti-cheat systems for a secure gaming experience.</p>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:36px;">
+              <a href="/pages/play.html" class="btn btn-primary btn-lg">START PLAYING NOW</a>
+            </div>
+          </section>
+
+          <!-- AdSense Unit: Final CTA -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="horizontal"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+
+          <footer class="about-footer">
+            <p>&#169; 2026 CHESS OX. The evolution of strategy.</p>
+          </footer>
+
+        </div><!-- /.about-container -->
+      </div><!-- /.page-content -->
+    </main>
+  </div><!-- /.app-layout -->
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    /* ── Auth + Topbar ─────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!requireAuth()) return;
+      await fetchConfig(); // Get dynamic Supabase URL
+      await loadSidebar();
+      const user = getUser();
+      if (user) {
+        document.getElementById('tb-pid').textContent = user.player_id || '...';
+        const av = document.getElementById('tb-avatar');
+        if (user.profile_image) {
+          av.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="avatar">`;
+        } else {
+          av.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+        }
+        if (typeof updateSidebarUI === 'function') updateSidebarUI(user);
+      }
+      
+      // Initialize lazy loading after config is fetched
+      initLazyLoading();
+    });
+
+    /* ── Lazy Image Loading ─────────────────────────────────── */
+    function initLazyLoading() {
+      const imgObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          const img = entry.target;
+          let src = img.dataset.src;
+          if (!src) return;
+          
+          // Replace hardcoded old project URL if present
+          if (src.includes('supabase.co') && CONFIG.supabase.url) {
+             const parts = src.split('/storage/v1/object/public/');
+             if (parts.length > 1) {
+                src = `${CONFIG.supabase.url}/storage/v1/object/public/${parts[1]}`;
+             }
+          } else if (src.startsWith('../assets')) {
+             // Leave local assets alone
+          }
+          
+          img.src = src;
+          img.onload  = () => img.classList.add('loaded');
+          img.onerror = () => img.classList.add('loaded'); // fail gracefully
+          obs.unobserve(img);
+        });
+      }, { rootMargin: '200px 0px', threshold: 0 });
+
+      document.querySelectorAll('img[data-src]').forEach(img => {
+        imgObserver.observe(img);
+      });
+    }
+
+    /* ── Section Fade-in on Scroll ──────────────────────────── */
+    (function () {
+      // Respect prefers-reduced-motion
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        document.querySelectorAll('.about-section').forEach(s => s.classList.add('visible'));
+        return;
+      }
+
+      const sectionObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        });
+      }, { rootMargin: '0px 0px -60px 0px', threshold: 0.06 });
+
+      document.querySelectorAll('.about-section').forEach(s => {
+        sectionObserver.observe(s);
+      });
+    })();
+  </script>
+</body>
+</html>

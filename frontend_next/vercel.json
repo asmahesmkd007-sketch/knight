@@ -1,0 +1,7 @@
+{
+  "_comment": "Triggering new Vercel build",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install"
+}

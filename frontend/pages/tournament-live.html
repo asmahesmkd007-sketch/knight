@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Tournament Arena – CHESS OX</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    .arena-layout {
+      display: flex;
+      gap: 24px;
+      align-items: stretch;
+      height: 100%;
+      min-height: 80vh;
+    }
+
+    .arena-side-panel {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .leaderboard-panel {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      max-height: 60vh;
+    }
+
+    .leaderboard-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+
+    .leaderboard-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .leaderboard-row.me {
+      background: rgba(232,197,71,0.06);
+      border-radius: 8px;
+      padding: 9px 8px;
+    }
+
+    .rank-num {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      width: 22px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .game-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+      min-height: 400px;
+    }
+
+    .arena-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .status-badge.active {
+      color: var(--gold);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .countdown-timer {
+      font-family: var(--font-display);
+      font-size: 36px;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .player-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .player-bar.active {
+      border-color: var(--gold);
+      background: rgba(232,197,71,0.06);
+    }
+
+    .player-timer {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--gold);
+      margin-left: auto;
+    }
+
+    .player-timer.low {
+      color: var(--error);
+      animation: pulse-red 1s infinite;
+    }
+
+    #board {
+      width: min(500px, 100%);
+      margin: 16px 0;
+      border: 4px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Premium Board Theme (Lichess/Chess.com Green) */
+    .paid-tr-arena .white-1e1d7 {
+      background-color: #ebecd0 !important;
+      color: #779556 !important;
+    }
+
+    .paid-tr-arena .black-3c85d {
+      background-color: #779556 !important;
+      color: #ebecd0 !important;
+    }
+
+    .highlight-selected {
+      background-color: rgba(255, 255, 0, 0.5) !important;
+    }
+
+    .highlight-move {
+      position: relative;
+    }
+
+    /* The Dot from the user's image - Dark Oval Ring */
+    .highlight-move::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 25%;
+      height: 25%;
+      background: rgba(0, 0, 0, 0.25) !important;
+      border-radius: 50%;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    /* Promotion Dialog Styles */
+    .promotion-dialog {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      z-index: 2000;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .promotion-dialog.hidden {
+      display: none;
+    }
+
+    .promotion-pieces {
+      display: flex;
+      gap: 20px;
+    }
+
+    .promotion-piece {
+      font-size: 44px;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .promotion-piece:hover {
+      transform: scale(1.3);
+      color: var(--gold);
+    }
+
+    .promotion-title {
+      font-size: 14px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Capture Indicator (Ring) */
+    .highlight-capture {
+      position: relative;
+    }
+
+    .highlight-capture::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 85%;
+      height: 85%;
+      border: 5px solid rgba(0, 0, 0, 0.45) !important;
+      border-radius: 50%;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    /* Mobile Optimization */
+    @media (max-width: 900px) {
+      .arena-layout {
+        flex-direction: column-reverse;
+        /* Put Game Panel (Board) on top, Leaderboard below */
+        gap: 16px;
+      }
+
+      .arena-side-panel {
+        width: 100%;
+      }
+
+      .leaderboard-panel {
+        width: 100%;
+        max-height: 300px;
+        /* Limit height on mobile */
+      }
+
+      .game-panel {
+        width: 100%;
+      }
+
+      #board {
+        width: 100%;
+      }
+
+      .player-bar {
+        padding: 8px 12px;
+      }
+
+      .countdown-timer {
+        font-size: 28px;
+      }
+    }
+
+    /* AdSense Container Styling */
+    .ads-container {
+      margin-top: 16px;
+      margin-bottom: 16px;
+      min-height: 90px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title" id="tournament-name">TOURNAMENT ARENA</div>
+          <div class="live-badge">
+            <div class="live-dot"></div> LIVE
+          </div>
+        </div>
+        <div class="topbar-right" style="gap:12px">
+          <div class="topbar-player-id" id="tb-pid">...</div>
+          <button class="btn btn-secondary btn-sm" onclick="leaveArena()" style="background:rgba(255,255,255,0.05); border-color:var(--border);"><i class="fa-solid fa-arrow-left"></i> Leave Arena</button>
+        </div>
+      </div>
+
+      <div class="page-content" id="arena-content" style="height: calc(100vh - 100px); padding-bottom: 20px;">
+        <div class="arena-layout">
+        <div class="arena-side-panel">
+          <div class="leaderboard-panel">
+            <div style="text-align: center; margin-bottom: 16px;">
+              <div style="font-size: 11px; letter-spacing: 1px; color: var(--text-muted);">TIME REMAINING</div>
+              <div class="countdown-timer" id="global-timer">--:--</div>
+            </div>
+            <div style="font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-ranking-star" style="color:var(--gold)"></i> Live Leaderboard
+            </div>
+            <div class="leaderboard-list" id="leaderboard">
+              <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Loading...</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- MAIN GAME AREA -->
+        <div class="game-panel" style="display: flex; flex-direction: column; align-items: center;">
+          <!-- Top Controls Bar -->
+          <div class="arena-controls">
+            <div class="status-badge" id="arena-status">
+              <div class="live-dot" id="status-dot" style="display:none"></div>
+              <span id="status-text" style="font-weight: 600; color: var(--text-secondary);">Ready to Play</span>
+            </div>
+            <div class="matchmaking-actions">
+              <button id="action-btn" class="btn btn-gold btn-sm" onclick="startSearching()">
+                Find Match
+              </button>
+            </div>
+          </div>
+
+              <div class="player-bar" id="opponent-bar" style="opacity: 0.5;">
+                <div class="avatar-initial" id="opp-avatar">?</div>
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="font-weight:600" id="opp-name">Opponent</div>
+                    <div style="font-size:11px;color:var(--text-muted)" id="opp-rating">Waiting...</div>
+                    <div id="opp-piece-points" style="font-size:11px; color:var(--gold); font-weight:700; margin-left:auto;">0 Pts</div>
+                  </div>
+                  <div id="opp-captured"
+                    style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px">
+                  </div>
+                </div>
+                <div class="player-timer" id="opp-timer">0:00</div>
+              </div>
+
+              <!-- BOARD -->
+              <div id="board" style="width: 100%; aspect-ratio: 1/1; margin: 15px 0; border-radius: 8px; overflow: hidden; border: 4px solid var(--border-subtle); box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></div>
+
+              <!-- Promotion Dialog -->
+              <div id="promotion-dialog" class="promotion-dialog hidden">
+                <div class="promotion-title">Select Promotion</div>
+                <div class="promotion-pieces">
+                  <div class="promotion-piece" data-piece="q">♛</div>
+                  <div class="promotion-piece" data-piece="r">♜</div>
+                  <div class="promotion-piece" data-piece="b">♝</div>
+                  <div class="promotion-piece" data-piece="n">♞</div>
+                </div>
+              </div>
+
+              <div class="player-bar" id="my-bar" style="opacity: 0.5;">
+                <div class="avatar-initial" id="my-avatar" style="background: var(--gold); color: #000;">P</div>
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="font-weight:600" id="my-name">You</div>
+                    <div style="font-size:11px;color:var(--text-muted)" id="my-rating">...</div>
+                    <div id="my-piece-points" style="font-size:11px; color:var(--gold); font-weight:700; margin-left:auto;">0 Pts</div>
+                  </div>
+                  <div id="my-captured"
+                    style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px">
+                  </div>
+                </div>
+                <div class="player-timer" id="my-timer">0:00</div>
+              </div>
+
+              <button class="btn btn-danger btn-sm" id="resign-btn"
+                style="margin-top:20px; align-self:flex-start; display:none;" onclick="resignGame()"><i
+                  class="fa-solid fa-flag"></i> Resign Match</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/socket.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error();
+    const user = getUser();
+    loadSidebar();
+
+    document.getElementById('tb-pid').textContent = user.player_id;
+    document.getElementById('my-name').textContent = fmt.username(user.username);
+    document.getElementById('my-avatar').textContent = user.username.replace('@', '')[0].toUpperCase();
+
+    const params = new URLSearchParams(window.location.search);
+    const tournamentId = params.get('id');
+    if (!tournamentId) window.location.href = '/pages/free-tournament.html';
+
+    let tournamentConfig = null;
+    let globalCountdownInterval = null;
+    let state = null; // Global tournament state for sync
+
+    function leaveArena() {
+      if (gameActive) {
+        if (!confirm('You are in an active match. Leaving will forfeit the game. Continue?')) return;
+      }
+      cancelSearch();
+      window.location.href = '/pages/free-tournament.html';
+    }
+
+    window.addEventListener('beforeunload', () => {
+      cancelSearch();
+    });
+
+    let chess = new Chess();
+    let board = null;
+    let gameActive = false;
+    let matchId = null;
+    let myColor = 'white';
+    let matchTimerType = 5;
+    let myTime = 5 * 60;
+    let oppTime = 5 * 60;
+    let timerInterval = null;
+    let selectedSquare = null;
+
+    const sock = initSocket();
+
+    async function initTournament() {
+      const res = await TournamentAPI.getById(tournamentId);
+      if (!res?.success) return window.location.href = '/pages/free-tournament.html';
+
+      sock.emit('join_tournament', { tournamentId });
+
+      tournamentConfig = res.tournament;
+
+      // Initialize Empty Board immediately
+      if (!board) {
+        if (tournamentConfig.type === 'paid') {
+          document.getElementById('arena-content').classList.add('paid-tr-arena');
+        }
+
+        board = Chessboard('board', {
+          draggable: true,
+          position: 'start',
+          pieceTheme: function (piece) { return 'https://www.chess.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png'; },
+          onDragStart: onDragStart,
+          onDrop: onDrop,
+          onMouseoverSquare: onMouseoverSquare,
+          onMouseoutSquare: onMouseoutSquare,
+          onSnapEnd: () => {
+            board.position(chess.fen());
+            removeGreySquares();
+          }
+        });
+
+        // Click handler for move dots
+        $('#board').on('click', '.square-55d63', function () {
+          const square = $(this).attr('data-square');
+          const p = chess.get(square);
+          onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
+        });
+      }
+      document.getElementById('tournament-name').textContent = tournamentConfig.name.toUpperCase();
+      matchTimerType = tournamentConfig.timer_type;
+
+      if (tournamentConfig.status === 'completed' || tournamentConfig.status === 'cancelled') {
+        refreshLeaderboard();
+        return;
+      }
+
+      if (tournamentConfig.status === 'upcoming') {
+        startGlobalTimer();
+      } else if (tournamentConfig.status === 'live') {
+        startGlobalTimer();
+      }
+      refreshLeaderboard();
+
+      if (tournamentConfig.type === 'paid') {
+        setupPaidTournamentLobby();
+      } else {
+        startSearching();
+        // Periodic leaderboard refresh for Free TR
+        setInterval(refreshLeaderboard, 30000);
+      }
+    }
+
+    // Auto-rejoin / queue on start
+    setTimeout(() => {
+        if (!gameActive && tournamentConfig?.status === 'live' && tournamentConfig?.type === 'free') {
+            startSearching();
+        }
+    }, 2000);
+
+    function setupPaidTournamentLobby() {
+      const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
+      if (storedMatch) {
+        sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
+      } else {
+        showLobby('Lobby Waiting Area', 'Tournament starts automatically when full.', false, false);
+      }
+
+      sock.on(`tournament_sync_${tournamentId}`, (data) => {
+        state = data; // Update global state
+
+        // Update Global Panel Timer
+        document.getElementById('global-timer').textContent = fmt.countdown(state.countdown);
+
+        // Update Leaderboard
+        renderLeaderboard(state.players);
+
+        if (state.status === 'full') {
+          showLobby('Tournament Locked', 'All players joined. Starting soon!', true, false);
+          document.getElementById('status-title').innerHTML = `STARTING IN: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
+        } else if (state.status === 'starting') {
+          showLobby('Generating Brackets', 'Round 1 starting...', true, false);
+          document.getElementById('status-title').innerHTML = `STARTING: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
+        } else if (state.status === 'live') {
+          const myP = state.players.find(p => (p.user_id?.id || p.user_id) === user.id);
+          const isEliminated = myP && myP.status === 'eliminated';
+
+          if (isEliminated) {
+            showLobby('Eliminated 😔', 'You were knocked out of this tournament.', false, false);
+          } else {
+            let label = `ROUND ${state.round}`;
+            let sub = 'Tournament is live!';
+            if (state.phase === 'main_round') {
+              label = 'In Progress';
+              sub = 'Competing in the arena...';
+            } else if (state.phase === 'qualification_leaderboard') {
+              label = 'Finalizing Results';
+              sub = 'Processing final scores...';
+            }
+            if (!gameActive) showLobby(label, sub, true, false);
+          }
+
+          // Match Detection
+          if (state.matches && state.matches.length > 0) {
+            const myMatch = state.matches.find(m => m.player1.userId === user.id || m.player2.userId === user.id);
+            if (myMatch) {
+              if ((myMatch.status === 'live' || myMatch.status === 'waiting_connect') && !gameActive) {
+                const color = myMatch.player1.userId === user.id ? 'white' : 'black';
+                const oppData = color === 'white' ? state.players.find(p => p.user_id === myMatch.player2.userId) : state.players.find(p => p.user_id === myMatch.player1.userId);
+                matchId = myMatch.id;
+                localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
+                setupGame(color, oppData, myMatch.fen || 'start');
+              } else if (myMatch.status === 'finished' && gameActive) {
+                // Match ended on server, but we are still in game mode. Force exit.
+                gameActive = false;
+                clearInterval(timerInterval);
+                localStorage.removeItem(`px_active_match_${tournamentId}`);
+                showLobby('Match Over', 'Match concluded. Updating leaderboard...', false, false);
+                setTimeout(() => refreshLeaderboard(), 2000);
+              }
+            }
+          }
+        } else if (state.status === 'rest') {
+          showLobby('Round Complete', `Next round in ${state.countdown}s`, false, false);
+          refreshLeaderboard();
+        } else if (state.status === 'completed') {
+          if (globalCountdownInterval) clearInterval(globalCountdownInterval);
+          showLobby('Tournament Ended', 'Redirecting to dashboard in 10s...', false);
+          setTimeout(() => refreshLeaderboard(), 2000);
+          setTimeout(() => {
+            window.location.href = '/pages/dashboard.html';
+          }, 10000);
+        }
+      });
+
+      sock.on('active_match_found', (data) => {
+        if (data.tournamentId && String(data.tournamentId) === String(tournamentId)) {
+          console.log('🔄 Active tournament match detected via sync, rejoining...');
+          Toast.info('Active match found! Reconnecting...');
+          matchId = data.matchId;
+          localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
+          setupGame(data.myColor, data.opponent, data.fen);
+        }
+      });
+
+      sock.on('match_found_tr', (data) => {
+        console.log('⚔️ Match Found via Socket!');
+        if (gameActive) return;
+        Toast.success('Opponent Found! Good luck!');
+        matchId = data.matchId;
+        localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
+        setupGame(data.color, data.opponent);
+      });
+
+      // ─── DATABASE-FIRST MATCH DETECTION (Multi-Server Sync) ───
+      const matchChannel = supabase.channel('match-detection')
+        .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'matches',
+            filter: `tournament_id=eq.${tournamentId}`
+        }, (payload) => {
+            const newMatch = payload.new;
+            if (newMatch.player1_id === user.id || newMatch.player2_id === user.id) {
+                if (gameActive) return; 
+                console.log('⚔️ Match Found via Database Sync!');
+                matchId = newMatch.id;
+                localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
+                
+                const isP1 = newMatch.player1_id === user.id;
+                const oppId = isP1 ? newMatch.player2_id : newMatch.player1_id;
+                const oppName = isP1 ? newMatch.player2_username : newMatch.player1_username;
+                
+                Toast.success('Opponent Found! (DB Sync)');
+                setupGame(isP1 ? 'white' : 'black', { userId: oppId, username: oppName });
+            }
+        })
+        .subscribe();
+
+      sock.on('match_rejoined', (data) => {
+        matchId = data.roomId.replace('tr_', '');
+        setupGame(data.color, data.opponent, data.fen);
+        myTime = data.color === 'white' ? data.white_time : data.black_time;
+        oppTime = data.color === 'white' ? data.black_time : data.white_time;
+        document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+        document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
+      });
+
+      sock.on('tr_timer', (data) => {
+        const timeStr = fmt.countdown(data.countdown);
+        document.getElementById('global-timer').textContent = timeStr;
+
+        const statusTitle = document.getElementById('status-title');
+        if (statusTitle.innerHTML.includes('STARTING IN')) {
+          statusTitle.innerHTML = `STARTING IN: <span style="color:var(--gold)">${timeStr}</span>`;
+        } else if (statusTitle.innerHTML.includes('In Progress')) {
+          // Optional: Update board overlay with tournament time too? 
+          // For now keep it clean
+        }
+      });
+
+      sock.on('tournament_eliminated', () => {
+        localStorage.removeItem(`px_active_match_${tournamentId}`);
+        showLobby('Eliminated 😔', 'You were knocked out of this tournament.', false, false);
+      });
+    }
+
+    function startGlobalTimer() {
+      if (globalCountdownInterval) clearInterval(globalCountdownInterval);
+      const end = new Date(tournamentConfig.end_time).getTime();
+
+      globalCountdownInterval = setInterval(() => {
+        const diff = Math.max(0, Math.floor((end - Date.now()) / 1000));
+        document.getElementById('global-timer').textContent = fmt.countdown(diff);
+      }, 1000);
+    }
+
+    let lastRenderTime = 0;
+    function renderLeaderboard(players) {
+      try {
+        if (!players || !Array.isArray(players) || !user) return;
+      
+      // OPTIMIZATION: Max 1 render per second to keep UI smooth
+      const now = Date.now();
+      if (now - lastRenderTime < 1000) return; 
+      lastRenderTime = now;
+
+      const myP = players.find(p => (p.user_id?.id || p.user_id) === user.id);
+      if (myP) {
+        const myRatingEl = document.getElementById('my-rating');
+        if (myRatingEl) myRatingEl.textContent = `Rank: ${myP.rank || '--'}`;
+      }
+
+      const tourneyStatus = tournamentConfig?.status || 'live';
+      const isCompleted = tourneyStatus === 'completed';
+      const sorted = [...players]
+        .sort((a, b) => {
+          if (a.status === 'eliminated' && b.status !== 'eliminated' && !isCompleted) return 1;
+          if (a.status !== 'eliminated' && b.status === 'eliminated' && !isCompleted) return -1;
+          return (b.score || 0) - (a.score || 0);
+        });
+
+      // OPTIMIZATION: Only render Top 16 + Me to save DOM cycles
+      let displayPool = sorted.slice(0, 16);
+      if (myP && sorted.indexOf(myP) >= 16) {
+          displayPool.push(myP);
+      }
+
+      const html = displayPool.map((p) => {
+        const i = sorted.indexOf(p); // Get actual rank
+        const name = p.username || p.profiles?.username || 'Player';
+        const isMe = (p.user_id?.id || p.user_id) === user.id;
+        const isEliminated = p.status === 'eliminated';
+
+        let statusText = isEliminated ? 'ELIMINATED' : 'ACTIVE';
+        let statusColor = isEliminated ? 'var(--error)' : 'var(--gold)';
+
+        if (isCompleted) {
+          if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
+          else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
+          else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
+          else { statusText = 'ELIMINATED'; statusColor = 'var(--error)'; }
+        }
+
+        const initial = (name && name.length > 0) ? name.replace('@', '')[0].toUpperCase() : '?';
+
+        return `
+          <div class="leaderboard-row ${isMe ? 'me' : ''} ${isEliminated ? 'eliminated' : ''}">
+            <div class="rank-num">${i + 1}</div>
+            <div class="avatar-initial" style="width:28px;height:28px;font-size:11px; ${(isEliminated && !isCompleted) ? 'opacity:0.5' : ''}">${initial}</div>
+            <div style="flex:1; ${(isEliminated && !isCompleted) ? 'opacity:0.5' : ''}">
+              <div style="font-size:13px;font-weight:500">${name}</div>
+              <div style="font-family:var(--font-display);font-size:11px;color:${statusColor}">${statusText}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+        document.getElementById('leaderboard').innerHTML = html || '<div style="padding:20px;text-align:center;font-size:12px;color:gray">No players yet.</div>';
+      } catch (err) {
+        console.error('Leaderboard render error:', err);
+        document.getElementById('leaderboard').innerHTML = '<div style="padding:20px;text-align:center;color:var(--error);font-size:12px;">Failed to load players.</div>';
+      }
+    }
+
+    async function refreshLeaderboard() {
+      const res = await TournamentAPI.getLeaderboard(tournamentId);
+      if (res?.success) {
+        renderLeaderboard(res.leaderboard || []);
+      }
+    }
+
+    function showLobby(title, desc, showSearch = false, showBtn = true, btnText = 'Find Match', btnAction = startSearching) {
+      document.getElementById('status-text').textContent = title;
+      document.getElementById('status-dot').style.display = showSearch ? 'inline-block' : 'none';
+      
+      const btn = document.getElementById('action-btn');
+      btn.textContent = btnText;
+      btn.onclick = btnAction;
+      btn.className = showSearch ? 'btn btn-outline btn-sm' : 'btn btn-gold btn-sm';
+    }
+
+    function startSearching() {
+      refreshLeaderboard();
+      showLobby('Searching...', 'Searching...', true, true, 'Cancel', cancelSearch);
+      SocketActions.findTournamentMatch(tournamentId, matchTimerType);
+    }
+
+    function cancelSearch() {
+      SocketActions.cancelTournamentSearch(tournamentId);
+      showLobby('Ready to Play', '', false, true, 'Find Match', startSearching);
+    }
+
+    function setupGame(color, opponent, fen = 'start') {
+      gameActive = true;
+      myColor = color;
+      myTime = matchTimerType * 60;
+      oppTime = matchTimerType * 60;
+      chess = new Chess();
+      if (fen !== 'start') chess.load(fen);
+
+      const oppName = opponent?.username || 'Opponent';
+      const oppNameEl = document.getElementById('opp-name');
+      const oppAvatarEl = document.getElementById('opp-avatar');
+      const oppRatingEl = document.getElementById('opp-rating');
+      
+      if (oppNameEl) oppNameEl.textContent = fmt.username(oppName);
+      if (oppAvatarEl) oppAvatarEl.textContent = oppName.replace('@', '')[0]?.toUpperCase() || '?';
+      if (oppRatingEl) oppRatingEl.textContent = 'Live Knockout Match';
+
+      // Update Arena Top Bar
+      const statusText = document.getElementById('status-text');
+      if (statusText) statusText.textContent = '⚔️ Playing Match';
+      
+      const actionBtn = document.getElementById('action-btn');
+      if (actionBtn) actionBtn.style.display = 'none';
+
+      document.getElementById('my-bar').style.opacity = '1';
+      document.getElementById('opponent-bar').style.opacity = '1';
+      document.getElementById('resign-btn').style.display = 'inline-flex';
+
+      Toast.success(`Match Connected! Playing against ${oppName}`);
+
+      if (!board) {
+        board = Chessboard('board', {
+          draggable: true,
+          position: fen,
+          orientation: myColor,
+          pieceTheme: function (piece) { return 'https://www.chess.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png'; },
+          onDragStart: onDragStart,
+          onDrop: onDrop,
+          onMouseoverSquare: onMouseoverSquare,
+          onMouseoutSquare: onMouseoutSquare,
+          onSnapEnd: () => {
+            board.position(chess.fen());
+            removeGreySquares();
+          }
+        });
+
+        // Click handler for move dots
+        $('#board').on('click', '.square-55d63', function () {
+          const square = $(this).attr('data-square');
+          const p = chess.get(square);
+          onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
+        });
+      } else {
+        board.orientation(myColor);
+        board.position(chess.fen());
+      }
+
+      startMatchTimer();
+      updatePlayerBars();
+    }
+
+    function removeGreySquares() {
+      $('#board .square-55d63').removeClass('highlight-move highlight-capture highlight-selected');
+    }
+
+    function greySquare(square, isCapture = false) {
+      const $square = $('#board .square-' + square);
+      if (isCapture) {
+        $square.addClass('highlight-capture');
+      } else {
+        $square.addClass('highlight-move');
+      }
+    }
+
+    function onSquareClick(square, piece, isInternal = false) {
+      if (!gameActive) return;
+
+      const isTarget = $('#board .square-' + square).hasClass('highlight-move') || $('#board .square-' + square).hasClass('highlight-capture');
+
+      // 1. If we have a selection and click a target square -> MOVE
+      if (selectedSquare && isTarget) {
+        if (isPromotionMove(selectedSquare, square)) {
+          handlePromotion(selectedSquare, square);
+          return;
+        }
+
+        const move = chess.move({
+          from: selectedSquare,
+          to: square,
+          promotion: 'q'
+        });
+
+        if (move) {
+          board.position(chess.fen());
+          removeGreySquares();
+          selectedSquare = null;
+          SocketActions.makeTrMove(matchId, move, user.id);
+          updatePlayerBars();
+          return;
+        }
+      }
+
+      // 2. Clear selection if clicking same square (unless it's an internal call from drag)
+      if (selectedSquare === square && !isInternal) {
+        removeGreySquares();
+        selectedSquare = null;
+        return;
+      }
+
+      // 3. Select our piece
+      if (piece) {
+        const myColorChar = myColor === 'white' ? 'w' : 'b';
+        const isMyPiece = piece.charAt(0) === myColorChar;
+        const turn = chess.turn();
+
+        if (turn === myColorChar && isMyPiece) {
+          removeGreySquares();
+          selectedSquare = square;
+          $('#board .square-' + square).addClass('highlight-selected');
+
+          const moves = chess.moves({ square: square, verbose: true });
+          if (moves.length === 0) return;
+
+          for (let i = 0; i < moves.length; i++) {
+            greySquare(moves[i].to, moves[i].flags.includes('c'));
+          }
+          return;
+        }
+      }
+
+      // 4. Default: Clear if clicking elsewhere (only if not an internal drag call)
+      if (!isInternal) {
+        removeGreySquares();
+        selectedSquare = null;
+      }
+    }
+
+    let pendingPromotion = null;
+
+    function isPromotionMove(source, target) {
+      const p = chess.get(source);
+      if (!p || p.type !== 'p') return false;
+      if (p.color === 'w' && target[1] !== '8') return false;
+      if (p.color === 'b' && target[1] !== '1') return false;
+
+      const moves = chess.moves({ square: source, verbose: true });
+      return moves.some(m => m.to === target && m.flags.includes('p'));
+    }
+
+    function handlePromotion(source, target) {
+      pendingPromotion = { from: source, to: target };
+      const dialog = document.getElementById('promotion-dialog');
+      dialog.classList.remove('hidden');
+
+      if (!dialog.dataset.bound) {
+        dialog.querySelectorAll('.promotion-piece').forEach(p => {
+          p.onclick = () => {
+            executePromotion(p.dataset.piece);
+          };
+        });
+        dialog.dataset.bound = "true";
+      }
+    }
+
+    function executePromotion(piece) {
+      if (!pendingPromotion) return;
+
+      const move = chess.move({
+        from: pendingPromotion.from,
+        to: pendingPromotion.to,
+        promotion: piece
+      });
+
+      if (move) {
+        board.position(chess.fen());
+        removeGreySquares();
+        selectedSquare = null;
+        SocketActions.makeTrMove(matchId, move, user.id);
+        updatePlayerBars();
+      }
+
+      document.getElementById('promotion-dialog').classList.add('hidden');
+      pendingPromotion = null;
+    }
+
+    function updatePlayerBars() {
+      const turn = chess.turn() === (myColor === 'white' ? 'w' : 'b');
+      document.getElementById('my-bar').classList.toggle('active', turn);
+      document.getElementById('opponent-bar').classList.toggle('active', !turn);
+      
+      // Calculate Piece Points
+      const calcPts = (fen, side) => {
+          const values = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 0 };
+          const target = side === 'w' ? 'PNBRQ' : 'pnbrq';
+          let pts = 0;
+          const board = fen.split(' ')[0];
+          for (const char of board) { if (target.includes(char)) pts += values[char.toLowerCase()] || 0; }
+          return pts;
+      };
+      const fen = chess.fen();
+      const wPts = calcPts(fen, 'w');
+      const bPts = calcPts(fen, 'b');
+      document.getElementById('my-piece-points').textContent = (myColor === 'white' ? wPts : bPts) + ' Pts';
+      document.getElementById('opp-piece-points').textContent = (myColor === 'white' ? bPts : wPts) + ' Pts';
+    }
+
+    function onDragStart(source, piece) {
+      if (!gameActive || chess.game_over()) return false;
+      const turn = chess.turn() === 'w' ? 'white' : 'black';
+      if (turn !== myColor) return false;
+      if (piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return false;
+      onSquareClick(source, piece, true);
+    }
+
+    function onDrop(source, target) {
+      removeGreySquares();
+      if (source === target) return;
+      if (isPromotionMove(source, target)) {
+        handlePromotion(source, target);
+        return 'snapback';
+      }
+      const move = chess.move({ from: source, to: target, promotion: 'q' });
+      if (move === null) return 'snapback';
+      selectedSquare = null;
+      SocketActions.makeTrMove(matchId, move, user.id);
+      updatePlayerBars();
+    }
+
+    function onMouseoverSquare(square, piece) {
+      if (!gameActive) return;
+      const turn = chess.turn();
+      const myColorChar = myColor === 'white' ? 'w' : 'b';
+      if (turn !== myColorChar) return;
+      if (piece && piece.charAt(0) !== myColorChar) return;
+      const moves = chess.moves({ square: square, verbose: true });
+      if (moves.length === 0) return;
+      for (let i = 0; i < moves.length; i++) {
+        greySquare(moves[i].to, moves[i].flags.includes('c'));
+      }
+    }
+
+    function onMouseoutSquare(square, piece) {
+      if (!selectedSquare) removeGreySquares();
+    }
+
+    function startMatchTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (!gameActive) return;
+        if (chess.turn() === (myColor === 'white' ? 'w' : 'b')) {
+          myTime--;
+          document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+        } else {
+          oppTime--;
+          document.getElementById('opp-timer').textContent = fmt.countdown(Math.max(0, oppTime));
+        }
+      }, 1000);
+    }
+
+    function resignGame() {
+      if (confirm('Resign match?')) SocketActions.resign(matchId, user.id);
+    }
+
+    sock.on('move_made', (data) => {
+      if (data.fen) { chess.load(data.fen); board.position(data.fen); updatePlayerBars(); }
+    });
+    sock.on('timer_update', (data) => {
+      myTime = myColor === 'white' ? data.white_time : data.black_time;
+      oppTime = myColor === 'white' ? data.black_time : data.white_time;
+      document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+      document.getElementById('opp-timer').textContent = fmt.countdown(Math.max(0, oppTime));
+    });
+    sock.on('game_over', (data) => {
+      gameActive = false;
+      clearInterval(timerInterval);
+      localStorage.removeItem(`px_active_match_${tournamentId}`);
+
+      const won = data.winnerId === user.id;
+      const isDraw = data.result === 'draw';
+
+      // 🏆 DISPLAY HYBRID SCORES
+      const myPoints = myColor === 'white' ? data.p1_score : data.p2_score;
+      const oppPoints = myColor === 'white' ? data.p2_score : data.p1_score;
+
+      let msg = '';
+      if (tournamentConfig?.type === 'free') {
+          const myPts = myColor === 'white' ? data.p1_pts : data.p2_pts;
+          const oppPts = myColor === 'white' ? data.p2_pts : data.p1_pts;
+          msg = isDraw ? `Match Drawn. Piece Points: ${myPts}` : (won ? `You Won! Piece Points: ${myPts} vs ${oppPts}` : `You Lost. Piece Points: ${myPts} vs ${oppPts}`);
+          if (data.reason === 'checkmate') msg = won ? `Checkmate! You Won!` : `Checkmate! You Lost.`;
+      } else {
+          msg = isDraw ? `Match Drawn. Points: ${myPoints}` : (won ? `You Won! Points: ${myPoints} vs ${oppPoints}` : `You Lost. Points: ${myPoints} vs ${oppPoints}`);
+      }
+
+      if (data.reason === 'cheat_detected' && won) {
+        msg = "Opponent Banned! You Won!";
+      }
+
+      const scoreEl = document.getElementById('my-score');
+      if (scoreEl) scoreEl.textContent = `Points: ${myPoints}`;
+
+      // Automatic Redirection for Losers (especially on timeout as requested)
+      if (!won && !isDraw && tournamentConfig?.type === 'paid') {
+        const statusTitle = 'ELIMINATED 😔';
+        const statusDesc = data.reason === 'timeout'
+          ? 'You ran out of time! Returning to dashboard...'
+          : 'You have been eliminated from the tournament. Returning to dashboard...';
+
+        showLobby(statusTitle, statusDesc, false, false);
+
+        setTimeout(() => {
+          window.location.href = '/pages/dashboard.html';
+        }, 4000);
+      } else {
+        // For Free Tournaments, allow playing again
+        const isFree = tournamentConfig?.type === 'free';
+        showLobby('Match Over', msg, false, isFree, 'Find Next Match', startSearching);
+        
+        // AUTO-NEXT MATCH LOGIC (Reduced to 3s)
+        if (isFree) {
+            setTimeout(() => {
+                if (!gameActive) {
+                    console.log('🔄 Turbo-triggering next match search...');
+                    startSearching();
+                }
+            }, 3000);
+        }
+      }
+
+      setTimeout(() => {
+        refreshLeaderboard();
+      }, 3000);
+    });
+
+    sock.on('tournament_update', () => {
+      console.log('🏆 Tournament update received, refreshing leaderboard...');
+      refreshLeaderboard();
+    });
+
+    initTournament();
+  </script>
+</body>
+
+</html>

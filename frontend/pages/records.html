@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Records Panel – CHESS OX</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <style>
+    .records-layout { display: flex; min-height: 100vh; }
+    .records-sidebar {
+      width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border);
+      position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; z-index: 100;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .records-brand { padding: 24px; border-bottom: 1px solid var(--border); }
+    .records-brand .logo { font-family: var(--font-display); font-size: 16px; font-weight: 900; color: var(--gold); letter-spacing: 2px; }
+    .records-brand .sub { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; margin-top: 4px; }
+    
+    .records-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+    .records-nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--text-secondary);
+      font-size: 13px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent;
+    }
+    .records-nav-item:hover, .records-nav-item.active { background: rgba(232,197,71,0.08); color: var(--gold); border-left-color: var(--gold); }
+    
+    .records-content { margin-left: 240px; flex: 1; min-width: 0; background: var(--bg-body); }
+    .records-topbar {
+      height: 64px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .records-mobile-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; }
+    
+    .records-page { padding: 24px; display: none; animation: fadeIn 0.3s ease; }
+    .records-page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .records-stat {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px; display: flex; flex-direction: column; justify-content: center; min-height: 100px;
+      transition: transform 0.2s;
+    }
+    .records-stat:hover { transform: translateY(-2px); border-color: rgba(232,197,71,0.2); }
+    .stat-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 8px; font-weight: 700; }
+    .stat-value { font-size: 28px; font-weight: 800; font-family: var(--font-display); color: var(--text-primary); }
+    
+    .pending-count { background: var(--error); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 800; margin-left: auto; }
+    
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .card-title { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--gold); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .table-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: rgba(255,255,255,0.02); padding: 14px 16px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-secondary); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.01); }
+
+    .btn-approve { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: var(--success); padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-approve:hover { background: var(--success); color: white; }
+    .btn-reject { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--error); padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-reject:hover { background: var(--error); color: white; }
+
+    /* Withdrawal Card Specifics */
+    .withdraw-card { border-left: 4px solid var(--orange); }
+    .withdraw-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 8px; margin: 12px 0; border: 1px solid var(--border); }
+    .withdraw-payout-box { background: var(--bg-body); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; }
+
+    /* Modals */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; }
+    
+    .admin-sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99; backdrop-filter: blur(2px);
+    }
+    .admin-sidebar-overlay.active { display: block; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    @media (max-width: 768px) {
+      .records-sidebar { transform: translateX(-100%); }
+      .records-sidebar.open { transform: translateX(0); }
+      .records-content { margin-left: 0; }
+      .records-mobile-toggle { display: block; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="records-layout">
+    <div class="admin-sidebar-overlay" id="records-overlay" onclick="toggleRecordsSidebar()"></div>
+    
+    <aside class="records-sidebar" id="records-sidebar">
+      <div class="records-brand">
+        <div class="logo" style="display: flex; align-items: center; gap: 10px;">
+          <img src="/assets/images/logo-chessox.png?v=1" alt="CHESS OX" style="height: 32px; filter: drop-shadow(0 0 5px rgba(232,197,71,0.2))">
+          RECORDS
+        </div>
+        <div class="sub">CHESS OX ADMIN PANEL</div>
+      </div>
+      
+      <nav class="records-nav">
+        <div class="records-nav-item active" onclick="showPage('dashboard', this)">
+          <i class="fa-solid fa-house"></i> Dashboard
+        </div>
+        <div class="records-nav-item" onclick="showPage('users', this)">
+          <i class="fa-solid fa-users"></i> User Directory
+          <span id="nav-users-count" class="pending-count" style="display: none">0</span>
+        </div>
+        <div class="records-nav-item" onclick="showPage('kyc', this)">
+          <i class="fa-solid fa-id-card"></i> KYC Verification
+          <span id="nav-kyc-count" class="pending-count">0</span>
+        </div>
+        <div class="records-nav-item" onclick="showPage('withdrawals', this)">
+          <i class="fa-solid fa-money-bill-transfer"></i> Payout Queue
+          <span id="nav-wd-count" class="pending-count">0</span>
+        </div>
+        <div class="records-nav-item" onclick="showPage('tournaments', this)">
+          <i class="fa-solid fa-trophy"></i> Tournaments
+        </div>
+        <div class="records-nav-item" onclick="showPage('matches', this)">
+          <i class="fa-solid fa-chess"></i> Live Games
+        </div>
+        <div class="records-nav-item" onclick="showPage('transactions', this)">
+          <i class="fa-solid fa-list-ul"></i> All Transactions
+        </div>
+        <div class="records-nav-item" onclick="showPage('feedback', this)">
+          <i class="fa-solid fa-comments"></i> Feedbacks
+        </div>
+        <div class="records-nav-item" onclick="showPage('reports', this)">
+          <i class="fa-solid fa-triangle-exclamation"></i> Support Reports
+        </div>
+        <div class="records-nav-item" onclick="showPage('create-tournament', this)">
+          <i class="fa-solid fa-calendar-plus"></i> Create Event
+        </div>
+      </nav>
+
+      <div style="padding: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px">
+        <a href="./dashboard.html" class="btn btn-secondary btn-sm" style="text-decoration: none; text-align: center">
+          <i class="fa-solid fa-arrow-left"></i> Back to Site
+        </a>
+        <button class="btn btn-danger btn-sm" onclick="recordsLogout()">
+          <i class="fa-solid fa-power-off"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <main class="records-content">
+      <header class="records-topbar">
+        <div style="display:flex; align-items:center; gap:12px">
+          <button class="records-mobile-toggle" onclick="toggleRecordsSidebar()"><i class="fa-solid fa-bars"></i></button>
+          <div style="font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: 1px" id="records-page-title">DASHBOARD</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px">
+          <div class="live-badge" style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--success)">
+            <div class="live-dot" style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success)"></div>
+            <span data-live="online">0</span> ONLINE
+          </div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-muted)" id="records-username">Admin</div>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <section class="records-page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="records-stat">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="d-total">—</div>
+          </div>
+          <div class="records-stat">
+            <div class="stat-label">Online Now</div>
+            <div class="stat-value" id="d-online" style="color: var(--success)">—</div>
+          </div>
+          <div class="records-stat">
+            <div class="stat-label">Active Matches</div>
+            <div class="stat-value" id="d-matches" style="color: var(--orange)">—</div>
+          </div>
+          <div class="records-stat">
+            <div class="stat-label">Pending KYC</div>
+            <div class="stat-value" id="d-kyc" style="color: var(--warning)">—</div>
+          </div>
+          <div class="records-stat">
+            <div class="stat-label">Pending Payouts</div>
+            <div class="stat-value" id="d-wd" style="color: var(--error)">—</div>
+          </div>
+          <div class="records-stat">
+            <div class="stat-label">Circulating Coins</div>
+            <div class="stat-value" id="d-coins" style="color: var(--gold)">—</div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 24px">
+          <div class="card">
+            <div class="card-title">Quick Controls</div>
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <button class="btn btn-primary" style="justify-content: flex-start" onclick="showPage('kyc', document.querySelector('[onclick*=kyc]'))"><i class="fa-solid fa-id-card"></i> Verify KYC Requests</button>
+              <button class="btn btn-orange" style="justify-content: flex-start" onclick="showPage('withdrawals', document.querySelector('[onclick*=withdrawals]'))"><i class="fa-solid fa-money-bill-transfer"></i> Process Pending Payouts</button>
+              <button class="btn btn-secondary" style="justify-content: flex-start" onclick="showPage('create-tournament', document.querySelector('[onclick*=create]'))"><i class="fa-solid fa-calendar-plus"></i> Host New Tournament</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Infrastructure Status</div>
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div class="flex-between" style="font-size: 13px"><span>Main Server</span><span class="badge badge-verified">OPERATIONAL</span></div>
+              <div class="flex-between" style="font-size: 13px"><span>Supabase DB</span><span class="badge badge-verified">CONNECTED</span></div>
+              <div class="flex-between" style="font-size: 13px"><span>Socket Gateway</span><span class="badge badge-verified">ACTIVE</span></div>
+              <div class="flex-between" style="font-size: 13px"><span>Payment Bridge</span><span class="badge badge-verified">VERIFIED</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section class="records-page" id="page-users">
+        <div class="flex-between mb-20">
+          <input type="text" class="input" placeholder="Search by Username or PX-ID..." style="max-width: 350px" id="user-search" oninput="searchUsers(this.value)" />
+          <div style="display: flex; gap: 10px">
+            <button class="btn btn-secondary btn-sm" onclick="filterUsers('active')">Active</button>
+            <button class="btn btn-secondary btn-sm" onclick="filterUsers('blocked')">Blocked</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadUsers()">Reset</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>User Profile</th><th>Player ID</th><th>IQ Level</th><th>KYC Status</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-table"><tr><td colspan="6" style="text-align:center;padding:48px"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- KYC -->
+      <section class="records-page" id="page-kyc">
+        <div id="kyc-list"><div class="spinner" style="margin:48px auto"></div></div>
+      </section>
+
+      <!-- WITHDRAWALS -->
+      <section class="records-page" id="page-withdrawals">
+        <div id="withdrawals-list"><div class="spinner" style="margin:48px auto"></div></div>
+      </section>
+
+      <!-- TOURNAMENTS -->
+      <section class="records-page" id="page-tournaments">
+        <div class="flex-between mb-20">
+          <div style="display: flex; gap: 12px; align-items: center">
+            <input type="text" class="input" placeholder="Find tournament..." style="max-width:240px" id="tournament-search" oninput="filterRecordsTournaments(this.value)" />
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-sm active" id="filter-tr-all" onclick="setTRFilter('all')">All</button>
+              <button class="btn btn-secondary btn-sm" id="filter-tr-free" onclick="setTRFilter('free')">Free TR</button>
+              <button class="btn btn-secondary btn-sm" id="filter-tr-paid" onclick="setTRFilter('paid')">Paid TR</button>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadRecordsTournaments()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>TR ID</th><th>Event Name</th><th>Entry</th><th>Players</th><th>Status</th><th>Time</th><th>Actions</th></tr></thead>
+            <tbody id="tournaments-table"><tr><td colspan="7" style="text-align:center;padding:48px"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- MATCHES -->
+      <section class="records-page" id="page-matches">
+        <div id="matches-list"><div class="spinner" style="margin:48px auto"></div></div>
+      </section>
+
+      <!-- TRANSACTIONS -->
+      <section class="records-page" id="page-transactions">
+        <div class="flex-between mb-20">
+          <select class="input" style="max-width: 240px" onchange="loadTransactions(this.value)">
+            <option value="all">All Transactions</option>
+            <option value="deposit">Deposits</option>
+            <option value="withdraw">Withdrawals</option>
+            <option value="tournament_entry">Tournament Entries</option>
+            <option value="tournament_prize">Prizes Won</option>
+          </select>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="txn-table"><tr><td colspan="5" style="text-align:center;padding:48px"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- FEEDBACK -->
+      <section class="records-page" id="page-feedback">
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Date</th><th>User</th><th>Rating</th><th>Message</th></tr></thead>
+            <tbody id="feedback-table"><tr><td colspan="4" style="text-align:center;padding:48px"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section class="records-page" id="page-reports">
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Category</th><th>Details</th><th>Description</th><th>Proof</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="reports-table"><tr><td colspan="6" style="text-align:center;padding:48px"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CREATE TOURNAMENT -->
+      <section class="records-page" id="page-create-tournament">
+        <div class="card" style="max-width: 700px; margin: 0 auto">
+          <div class="card-title">Launch New Event</div>
+          <div class="grid-2" style="gap:16px">
+            <div class="input-group"><label class="input-label">Tournament Name</label><input type="text" id="ct-name" class="input" placeholder="Grand Master Cup #1" /></div>
+            <div class="input-group"><label class="input-label">Event Type</label><select id="ct-type" class="input" onchange="toggleEntryFee()"><option value="free">Free Entry</option><option value="paid">Paid Entry (Coins)</option></select></div>
+          </div>
+          <div class="grid-2" style="gap:16px; margin-top:16px">
+            <div class="input-group"><label class="input-label">Game Speed (Timer)</label><select id="ct-timer" class="input"><option value="1">1 Minute</option><option value="3" selected>3 Minutes</option><option value="5">5 Minutes</option><option value="10">10 Minutes</option></select></div>
+            <div class="input-group"><label class="input-label">Player Limit</label><input type="number" id="ct-maxplayers" class="input" value="16" min="2" max="1000" /></div>
+          </div>
+          <div class="grid-2" style="gap:16px; margin-top:16px">
+            <div class="input-group"><label class="input-label">Start Date & Time</label><input type="datetime-local" id="ct-start" class="input" /></div>
+            <div class="input-group"><label class="input-label">Est. Duration (Mins)</label><input type="number" id="ct-duration" class="input" value="45" min="10" /></div>
+          </div>
+          
+          <div id="entry-fee-section" style="margin-top:24px; padding-top:24px; border-top:1px solid var(--border)">
+            <div class="grid-2" style="gap:16px">
+              <div class="input-group"><label class="input-label">Entry Fee (Coins)</label><input type="number" id="ct-fee" class="input" value="0" min="0" oninput="calcPrizePool()" /></div>
+              <div class="input-group"><label class="input-label">Total Prize Pool</label><input type="number" id="ct-pool" class="input" readonly style="opacity:0.6" /></div>
+            </div>
+            <div class="grid-3" style="gap:12px; margin-top:16px">
+              <div class="input-group"><label class="input-label">Winner (1st)</label><input type="number" id="ct-p1" class="input" value="0" /></div>
+              <div class="input-group"><label class="input-label">Runner (2nd)</label><input type="number" id="ct-p2" class="input" value="0" /></div>
+              <div class="input-group"><label class="input-label">Third Place</label><input type="number" id="ct-p3" class="input" value="0" /></div>
+            </div>
+          </div>
+          
+          <div id="ct-error" class="error-msg" style="margin: 16px 0; display:none"></div>
+          <button class="btn btn-primary btn-lg w-full" style="margin-top:24px" onclick="createTournament()">🚀 Launch Tournament</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Image Modal -->
+  <div class="modal" id="image-modal" onclick="closeImageModal()">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-width: fit-content; background: none; border: none">
+      <button class="image-modal-close" style="position:absolute; top:-40px; right:0; background:none; border:none; color:white; font-size:32px" onclick="closeImageModal()">&times;</button>
+      <img id="modal-img" src="" style="max-height:85vh; border-radius:12px; border:2px solid var(--border)">
+      <div id="modal-title" style="color:var(--gold); text-align:center; padding-top:16px; font-family:var(--font-display); font-weight:800">DOCUMENT PREVIEW</div>
+    </div>
+  </div>
+
+  <!-- Tournament Details Modal -->
+  <div class="modal" id="tr-details-modal" onclick="closeTRDetails()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div style="padding:24px">
+        <div class="flex-between mb-24">
+          <div class="card-title" id="tr-details-title" style="margin:0">TOURNAMENT DETAILS</div>
+          <button class="btn btn-secondary btn-sm" onclick="closeTRDetails()">Close</button>
+        </div>
+
+        <div class="grid-3 mb-24" id="tr-winners-box">
+          <!-- Winners will be injected here -->
+        </div>
+
+        <div style="font-family:var(--font-display); font-size:12px; color:var(--gold); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px">Match History</div>
+        <div class="table-container" style="max-height: 400px; overflow-y: auto">
+          <table>
+            <thead><tr><th>Round</th><th>Matchup</th><th>Result</th></tr></thead>
+            <tbody id="tr-matches-table">
+              <!-- Matches will be injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/socket.js"></script>
+  <script>
+    function toggleRecordsSidebar() {
+      const sidebar = document.getElementById('records-sidebar');
+      const overlay = document.getElementById('records-overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    }
+
+    function showPage(page, el) {
+      document.querySelectorAll(".records-page").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".records-nav-item").forEach(n => n.classList.remove("active"));
+      
+      const targetPage = document.getElementById("page-" + page);
+      if (targetPage) targetPage.classList.add("active");
+      if (el) el.classList.add("active");
+      
+      document.getElementById("records-page-title").textContent = page.toUpperCase().replace("-", " ");
+      
+      if (window.innerWidth <= 768) {
+        document.getElementById('records-sidebar').classList.remove('open');
+        document.getElementById('records-overlay').classList.remove('active');
+      }
+
+      const loaders = {
+        dashboard: loadDashboard,
+        users: loadUsers,
+        kyc: loadKYC,
+        withdrawals: loadWithdrawals,
+        tournaments: loadRecordsTournaments,
+        matches: loadMatches,
+        transactions: () => loadTransactions("all"),
+        feedback: loadFeedback,
+        reports: loadReports
+      };
+      if (loaders[page]) loaders[page]();
+    }
+
+    // --- DASHBOARD ---
+    async function loadDashboard() {
+      console.log('🔄 Loading Dashboard Stats...');
+      const user = JSON.parse(localStorage.getItem('px_user') || '{}');
+      if (user.username) {
+        document.getElementById('records-username').textContent = user.full_name || user.username;
+      }
+      try {
+        const res = await RecordsAPI.getDashboard();
+        console.log('📊 [Dashboard] API Response:', res);
+        
+        if (!res) {
+          console.error('❌ [Dashboard] No response from API');
+          return;
+        }
+
+        if (!res.success) {
+          console.warn('⚠️ [Dashboard] API Error:', res.message);
+          // Only show error if it's the first load
+          if (document.getElementById("d-total").textContent === "—") {
+             Toast.error("Dashboard failed: " + res.message);
+          }
+          return;
+        }
+        
+        const s = res.stats;
+        if (!s) {
+          console.error('❌ [Dashboard] Response success but no stats object found');
+          return;
+        }
+
+        document.getElementById("d-total").textContent = s.totalUsers !== undefined ? s.totalUsers : 0;
+        document.getElementById("d-online").textContent = s.activeUsers !== undefined ? s.activeUsers : 0;
+        document.getElementById("d-matches").textContent = s.totalMatches !== undefined ? s.totalMatches : 0;
+        document.getElementById("d-kyc").textContent = s.pendingKYC !== undefined ? s.pendingKYC : 0;
+        document.getElementById("d-wd").textContent = s.pendingWithdraw !== undefined ? s.pendingWithdraw : 0;
+        document.getElementById("d-coins").textContent = (s.wallet?.total || 0).toLocaleString();
+        
+        // Update badges
+        const kycBadge = document.getElementById("nav-kyc-count");
+        if (kycBadge) {
+          kycBadge.textContent = s.pendingKYC || 0;
+          kycBadge.style.display = s.pendingKYC > 0 ? "inline" : "none";
+        }
+        
+        const wdBadge = document.getElementById("nav-wd-count");
+        if (wdBadge) {
+          wdBadge.textContent = s.pendingWithdraw || 0;
+          wdBadge.style.display = s.pendingWithdraw > 0 ? "inline" : "none";
+        }
+        
+        const onlineDot = document.querySelector('[data-live="online"]');
+        if (onlineDot) onlineDot.textContent = s.activeUsers || 0;
+
+        console.log('✅ Dashboard Stats Updated');
+      } catch (err) {
+        console.error('💥 [Dashboard] Critical Error:', err);
+        Toast.error("Critical Dashboard Error. Check Console.");
+      }
+    }
+
+    // --- USERS ---
+    async function loadUsers(filter = "") {
+      const tbody = document.getElementById("users-table");
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center"><div class="spinner"></div></td></tr>';
+      const res = await RecordsAPI.getUsers(filter ? `status=${filter}` : "");
+      if (!res?.success) return;
+      
+      tbody.innerHTML = res.users.map(u => `
+        <tr>
+          <td>
+            <div style="font-weight:700">@${u.username}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${u.full_name || 'No Name'}</div>
+          </td>
+          <td style="font-family:var(--font-display);color:var(--gold)">${u.player_id || '-'}</td>
+          <td style="font-weight:800">${u.iq_level || 100}</td>
+          <td><span class="badge ${u.kyc_status === 'verified' ? 'badge-verified' : 'badge-pending'}">${u.kyc_status.toUpperCase()}</span></td>
+          <td><span class="badge ${u.status === 'active' ? 'badge-verified' : 'badge-rejected'}">${u.status.toUpperCase()}</span></td>
+          <td><button class="btn btn-secondary btn-sm" onclick="toggleUserStatus('${u.id}', '${u.status}')">${u.status === 'active' ? 'Block' : 'Unblock'}</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleUserStatus(id, cur) {
+      const next = cur === 'active' ? 'blocked' : 'active';
+      if (!confirm(`Are you sure you want to ${next} this user?`)) return;
+      const res = await RecordsAPI.updateUserStatus(id, next);
+      if (res.success) { loadUsers(); loadDashboard(); }
+    }
+
+    // --- KYC ---
+    async function loadKYC() {
+      const container = document.getElementById('kyc-list');
+      container.innerHTML = '<div class="spinner" style="margin:48px auto"></div>';
+      const res = await RecordsAPI.getKYC();
+      if (!res?.success || !res.requests?.length) {
+        container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)">No pending KYC requests</div>';
+        return;
+      }
+      
+      container.innerHTML = res.requests.map(k => `
+        <div class="card">
+          <div class="flex-between mb-16">
+            <div><div style="font-weight:800;font-size:16px;color:var(--gold)">@${k.profiles?.username}</div><div style="font-size:12px;color:var(--text-muted)">${k.document_type.toUpperCase()} · ${k.profiles?.player_id}</div></div>
+            <div class="action-btns">
+              <button class="btn-approve" onclick="processKYC('${k.id}', 'verified')">Approve</button>
+              <button class="btn-reject" onclick="processKYC('${k.id}', 'rejected')">Reject</button>
+            </div>
+          </div>
+          <div class="grid-3" style="gap:16px">
+            <div><div class="stat-label">Full Name</div><div>${k.name}</div></div>
+            <div><div class="stat-label">Birth Date</div><div>${k.dob}</div></div>
+            <div><div class="stat-label">Nationality</div><div>${k.nationality || 'IN'}</div></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:16px">
+            ${k.front_image_url ? `<button class="btn btn-secondary btn-sm" onclick="openImageModal('${k.front_image_url}', 'ID FRONT')">Front View</button>` : ''}
+            ${k.back_image_url ? `<button class="btn btn-secondary btn-sm" onclick="openImageModal('${k.back_image_url}', 'ID BACK')">Back View</button>` : ''}
+            ${k.pan_image_url ? `<button class="btn btn-secondary btn-sm" onclick="openImageModal('${k.pan_image_url}', 'PAN CARD')">PAN View</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function processKYC(id, status) {
+      let reason = "";
+      if (status === 'rejected') { reason = prompt("Enter rejection reason:"); if (!reason) return; }
+      const res = await RecordsAPI.reviewKYC(id, status, reason);
+      if (res.success) { loadKYC(); loadDashboard(); }
+    }
+
+    // --- PAYOUTS ---
+    async function loadWithdrawals() {
+      const container = document.getElementById('withdrawals-list');
+      container.innerHTML = '<div class="spinner" style="margin:48px auto"></div>';
+      const res = await RecordsAPI.getWithdrawals();
+      if (!res?.success || !res.requests?.length) {
+        container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)">No pending payouts</div>';
+        return;
+      }
+      
+      container.innerHTML = res.requests.map((r, i) => `
+        <div class="card withdraw-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px">
+            <div style="flex:1">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px">
+                <span style="background:var(--orange); color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:800">#${i + 1} QUEUE</span>
+                <span style="font-weight:800; font-size:18px; color:var(--text-primary)">${r.profiles?.player_id || 'PX-USER'}</span>
+                <span style="color:var(--text-muted); font-size:13px">(@${r.profiles?.username})</span>
+              </div>
+              <div class="withdraw-grid">
+                <div><div class="stat-label">Gross</div><div class="stat-value" style="font-size:20px">${r.amount}</div></div>
+                <div><div class="stat-label">GST (18%)</div><div class="stat-value" style="font-size:20px; color:var(--error)">-${r.gst_amount || 0}</div></div>
+                <div style="border-left:1px solid var(--border); padding-left:16px"><div class="stat-label">Net Payable</div><div class="stat-value" style="font-size:20px; color:var(--success)">${r.net_amount || r.amount}</div></div>
+              </div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:8px"><i class="fa-regular fa-clock"></i> Requested on: ${new Date(r.created_at).toLocaleString('en-IN')}</div>
+            </div>
+            <div style="width:280px; display:flex; flex-direction:column; gap:12px">
+              <div class="withdraw-payout-box">
+                <div style="width:36px; height:36px; background:rgba(232,197,71,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--gold)"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                <div style="flex:1; overflow:hidden">
+                  <div style="font-size:13px; font-weight:700; color:var(--gold); overflow:hidden; text-overflow:ellipsis">${r.upi_id || 'No UPI ID'}</div>
+                  <div style="font-size:10px; color:var(--text-muted)">Verify UPI details carefully</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px">
+                <button class="btn-approve" style="flex:2" onclick="handleWithdrawal('${r.id}', 'approve')"><i class="fa-solid fa-check-double"></i> Approve & Paid</button>
+                <button class="btn-reject" style="flex:1" onclick="handleWithdrawal('${r.id}', 'reject')">Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function handleWithdrawal(id, action) {
+      let note = "";
+      if (action === 'reject') { note = prompt("Enter rejection reason:"); if (note === null) return; }
+      const res = await RecordsAPI.processWithdraw(id, action, note);
+      if (res.success) { loadWithdrawals(); loadDashboard(); }
+    }
+
+    // --- TOURNAMENTS ---
+    let allTournaments = [];
+    let trFilter = 'all';
+
+    async function loadRecordsTournaments() {
+      const tbody = document.getElementById("tournaments-table");
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center"><div class="spinner"></div></td></tr>';
+      const res = await RecordsAPI.getAllTournaments();
+      if (!res?.success) return;
+      
+      allTournaments = res.tournaments;
+      applyTRFilters();
+    }
+
+    function setTRFilter(filter) {
+      trFilter = filter;
+      document.querySelectorAll("[id^='filter-tr-']").forEach(btn => btn.classList.remove('active'));
+      document.getElementById("filter-tr-" + filter).classList.add('active');
+      applyTRFilters();
+    }
+
+    function filterRecordsTournaments(query) {
+      applyTRFilters(query.toLowerCase());
+    }
+
+    function applyTRFilters(searchQuery = '') {
+      const tbody = document.getElementById("tournaments-table");
+      const filtered = allTournaments.filter(t => {
+        const matchesFilter = trFilter === 'all' || t.type === trFilter;
+        const matchesSearch = !searchQuery || t.name.toLowerCase().includes(searchQuery) || (t.tr_id && t.tr_id.toLowerCase().includes(searchQuery));
+        return matchesFilter && matchesSearch;
+      });
+
+      tbody.innerHTML = filtered.map(t => `
+        <tr>
+          <td style="font-family:var(--font-display);font-weight:800;color:var(--gold)">${t.tr_id || 'FREE'}</td>
+          <td><div style="font-weight:700">${t.name}</div><div style="font-size:10px;color:var(--text-muted)">ID: ${t.id}</div></td>
+          <td style="font-weight:700;color:var(--orange)">${t.entry_fee || 0} <i class="fa-solid fa-coins"></i></td>
+          <td><span style="font-weight:700">${t.current_players || 0}</span> / ${t.max_players}</td>
+          <td><span class="badge ${t.status === 'active' || t.status === 'live' ? 'badge-live' : 'badge-pending'}">${t.status.toUpperCase()}</span></td>
+          <td style="font-size:12px">${new Date(t.start_time).toLocaleString('en-IN')}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              ${t.type === 'paid' ? `<button class="btn btn-primary btn-sm" onclick="viewTRDetails('${t.id}', '${t.name}')">Details</button>` : ''}
+              ${(t.status !== 'completed' && t.status !== 'cancelled') ? `<button class="btn btn-secondary btn-sm" onclick="cancelTournamentRecords('${t.id}')">Cancel</button>` : '<span style="color:var(--text-muted);font-size:11px">No Action</span>'}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function viewTRDetails(id, name) {
+      console.log('🔍 Fetching details for TR:', id);
+      document.getElementById('tr-details-title').textContent = name;
+      document.getElementById('tr-winners-box').innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+      document.getElementById('tr-matches-table').innerHTML = '<tr><td colspan="3" style="text-align:center">Loading history...</td></tr>';
+      document.getElementById('tr-details-modal').classList.add('active');
+
+      try {
+        const res = await RecordsAPI.getTournamentDetails(id);
+        console.log('📋 TR Details Response:', res);
+        
+        if (!res?.success) {
+          Toast.error(res?.message || "Failed to load details");
+          return;
+        }
+
+        // Render Winners
+        const winMap = { 1: '1st - Gold', 2: '2nd - Silver', 3: '3rd - Bronze' };
+        const prizeMap = { 1: res.prizes?.first, 2: res.prizes?.second, 3: res.prizes?.third };
+        
+        document.getElementById('tr-winners-box').innerHTML = [1,2,3].map(rank => {
+          const win = res.winners.find(w => w.rank === rank);
+          return `
+            <div class="records-stat" style="border-color: ${rank === 1 ? 'var(--gold)' : 'var(--border)'}; min-height: 80px">
+              <div class="stat-label">${winMap[rank]} (${prizeMap[rank] || 0} Coins)</div>
+              <div class="stat-value" style="font-size:15px">${win ? '@' + win.profiles.username : '---'}</div>
+            </div>
+          `;
+        }).join('');
+
+        // Render Match History
+        document.getElementById('tr-matches-table').innerHTML = res.matches.map(m => `
+          <tr>
+            <td style="font-weight:700">Round ${m.round}</td>
+            <td>${m.p1?.username || 'BYE'} <span style="color:var(--gold)">vs</span> ${m.p2?.username || 'BYE'}</td>
+            <td><span style="color:var(--success);font-weight:700">${m.winner_id ? 'WINNER: ' + (m.winner_id === m.player1_id ? (m.p1?.username || 'P1') : (m.p2?.username || 'P2')) : (m.result === 'draw' ? 'DRAW' : m.result.toUpperCase())}</span></td>
+          </tr>
+        `).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted)">No matches played in this tournament yet.</td></tr>';
+      } catch (err) {
+        console.error('TR Details Error:', err);
+        Toast.error("Error fetching tournament data.");
+      }
+    }
+
+    function closeTRDetails() { document.getElementById('tr-details-modal').classList.remove('active'); }
+
+    async function cancelTournamentRecords(id) {
+      if (!confirm("Are you sure? This will refund all players.")) return;
+      const res = await RecordsAPI.cancelTournament(id);
+      if (res.success) loadRecordsTournaments();
+    }
+
+    // --- MATCHES ---
+    async function loadMatches() {
+      const container = document.getElementById("matches-list");
+      container.innerHTML = '<div class="spinner" style="margin:48px auto"></div>';
+      const res = await RecordsAPI.getLiveMatches();
+      if (!res?.success || !res.matches?.length) { container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)">No active games found</div>'; return; }
+      
+      container.innerHTML = `<div class="table-container"><table><thead><tr><th>Players</th><th>Type</th><th>Timer</th><th>Started</th></tr></thead><tbody>${res.matches.map(m => `
+        <tr>
+          <td>
+            <div style="font-weight:700">${m.p1?.username || 'P1'} vs ${m.p2?.username || 'P2'}</div>
+            <div style="font-size:11px;color:var(--text-muted)">IQ: ${m.p1?.iq_level || 100} vs ${m.p2?.iq_level || 100}</div>
+          </td>
+          <td><span class="badge badge-live">${m.match_type.toUpperCase()}</span></td>
+          <td>${m.timer_type} min</td>
+          <td style="font-size:12px">${new Date(m.start_time).toLocaleTimeString('en-IN')}</td>
+        </tr>
+      `).join('')}</tbody></table></div>`;
+    }
+
+    // --- TRANSACTIONS ---
+    async function loadTransactions(type = "all") {
+      const tbody = document.getElementById("txn-table");
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center"><div class="spinner"></div></td></tr>';
+      const res = await RecordsAPI.getTransactions(type);
+      if (!res?.success) return;
+      
+      tbody.innerHTML = res.transactions.map(t => `
+        <tr>
+          <td><div style="font-weight:700">@${t.profiles?.username}</div><div style="font-size:11px;color:var(--text-muted)">${t.profiles?.player_id}</div></td>
+          <td style="text-transform:capitalize">${t.type.replace('_', ' ')}</td>
+          <td style="font-weight:800;color:${['withdraw', 'tournament_entry'].includes(t.type) ? 'var(--error)' : 'var(--success)'}">${t.amount}</td>
+          <td><span class="badge ${t.status === 'success' ? 'badge-verified' : 'badge-pending'}">${t.status}</span></td>
+          <td style="font-size:11px;color:var(--text-muted)">${new Date(t.created_at).toLocaleString('en-IN')}</td>
+        </tr>
+      `).join('');
+    }
+
+    // --- FEEDBACK & REPORTS ---
+    async function loadFeedback() {
+      const tbody = document.getElementById("feedback-table");
+      const res = await RecordsAPI.getFeedbacks();
+      if (!res?.success) return;
+      tbody.innerHTML = res.feedbacks.map(f => `<tr><td style="font-size:11px">${new Date(f.created_at).toLocaleString()}</td><td>@${f.profiles?.username || 'Anon'}</td><td style="color:var(--gold)">${'★'.repeat(f.rating)}</td><td style="font-size:13px">${f.message}</td></tr>`).join('');
+    }
+
+    async function loadReports() {
+      const tbody = document.getElementById("reports-table");
+      const res = await RecordsAPI.getReports();
+      if (!res?.success) return;
+      tbody.innerHTML = res.reports.map(r => `<tr><td><span class="badge badge-rejected">${r.type.toUpperCase()}</span></td><td><div>By: @${r.reporter?.username}</div><div>Target: ${r.reported_user || '-'}</div></td><td>${r.description}</td><td>${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank">View Proof</a>` : 'No Proof'}</td><td><span class="badge badge-pending">${r.status}</span></td><td><button class="btn btn-secondary btn-sm" onclick="resolveReport('${r.id}')">Resolve</button></td></tr>`).join('');
+    }
+
+    async function resolveReport(id) {
+      if (!confirm("Mark as resolved?")) return;
+      const res = await RecordsAPI.updateReportStatus(id, 'resolved');
+      if (res.success) loadReports();
+    }
+
+    // --- TOURNAMENT CREATION ---
+    function toggleEntryFee() {
+      const isPaid = document.getElementById("ct-type").value === "paid";
+      document.getElementById("entry-fee-section").style.opacity = isPaid ? "1" : "0.4";
+    }
+    function calcPrizePool() {
+      const fee = parseInt(document.getElementById("ct-fee").value) || 0;
+      const max = parseInt(document.getElementById("ct-maxplayers").value) || 0;
+      document.getElementById("ct-pool").value = fee * max;
+    }
+    async function createTournament() {
+      const data = {
+        name: document.getElementById("ct-name").value,
+        type: document.getElementById("ct-type").value,
+        timer_type: parseInt(document.getElementById("ct-timer").value),
+        max_players: parseInt(document.getElementById("ct-maxplayers").value),
+        start_time: document.getElementById("ct-start").value,
+        duration_minutes: parseInt(document.getElementById("ct-duration").value),
+        entry_fee: parseInt(document.getElementById("ct-fee").value) || 0,
+        prize_distribution: {
+          first: parseInt(document.getElementById("ct-p1").value) || 0,
+          second: parseInt(document.getElementById("ct-p2").value) || 0,
+          third: parseInt(document.getElementById("ct-p3").value) || 0
+        }
+      };
+      if (!data.name || !data.start_time) { alert("Please fill all required fields"); return; }
+      const res = await RecordsAPI.createTournament(data);
+      if (res.success) { Toast.success("Event Launched!"); showPage('tournaments', document.querySelector('[onclick*=tournaments]')); }
+      else alert(res.message);
+    }
+
+    // --- HELPERS ---
+    function openImageModal(url, title) {
+      document.getElementById('modal-img').src = url;
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('image-modal').classList.add('active');
+    }
+    function closeImageModal() { document.getElementById('image-modal').classList.remove('active'); }
+    async function recordsLogout() { localStorage.clear(); window.location.href = '/pages/login.html'; }
+
+    // Init
+    document.getElementById("ct-start").value = new Date(Date.now() + 3600000).toISOString().slice(0, 16);
+    loadDashboard();
+    setInterval(loadDashboard, 30000);
+  </script>
+</body>
+</html>

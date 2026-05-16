@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clan War | CHESS OX</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/clan-war.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title"><i class="fa-solid fa-khanda" style="color:var(--gold);margin-right:8px"></i>CLAN WAR</div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-player-id" id="tb-player-id">PX-SYNCING...</div>
+        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+      </div>
+    </div>
+    <div class="page-content" id="page-content">
+      <div class="cw-loading"><div class="spinner"></div><p>Loading Clan War...</p></div>
+    </div>
+  </div>
+</div>
+<script src="/js/api.js?v=4"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/clan-war.js?v=1"></script>
+</body>
+</html>

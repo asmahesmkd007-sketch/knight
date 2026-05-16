@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard – CHESS OX</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1642778632018672"
+     crossorigin="anonymous"></script>
+  <style>
+    .top3-grid { display: flex; gap: 14px; justify-content: center; margin-bottom: 24px; align-items: flex-end; flex-wrap: wrap; }
+    .top3-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius); padding: 18px 14px; text-align: center; flex: 1; max-width: 170px; min-width: 120px;
+      transition: all 0.2s;
+    }
+    .top3-card.first { order: 2; border-color: rgba(232,197,71,0.25); background: rgba(232,197,71,0.05); transform: translateY(-8px); }
+    .top3-card.second { order: 1; border-color: rgba(192,192,192,0.2); }
+    .top3-card.third { order: 3; border-color: rgba(205,127,50,0.2); }
+    .top3-crown { font-size: 24px; margin-bottom: 8px; }
+    .top3-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #0a0a0a; margin: 0 auto 8px; }
+    .top3-iq { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+    .lb-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; transition: background 0.15s; }
+    .lb-row:hover { background: var(--bg-card-hover); }
+    .lb-row.me { background: rgba(232,197,71,0.06); border: 1px solid rgba(232,197,71,0.15); margin: 3px 0; }
+    .lb-rank { font-family: var(--font-display); font-size: 15px; font-weight: 700; width: 32px; text-align: center; color: var(--text-muted); flex-shrink: 0; }
+    .search-bar { position: relative; margin-bottom: 16px; }
+    .text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 480px) {
+      .top3-card { max-width: 100px; padding: 14px 8px; }
+      .top3-card.first { transform: translateY(-4px); }
+      .top3-iq { font-size: 14px; }
+    }
+
+    /* AdSense Container Styling */
+    .ads-container {
+      margin-top: 20px;
+      margin-bottom: 20px;
+      min-height: 90px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><div class="page-title">LEADERBOARD</div></div>
+      <div class="topbar-right">
+        <div class="topbar-player-id" id="tb-pid">...</div>
+        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <!-- TOP 3 -->
+      <div id="top3-section" class="top3-grid">
+        <div class="top3-card second"><div class="top3-crown"><i class="fa-solid fa-medal" style="color:#c0c0c0;"></i></div><div class="top3-avatar" style="background:linear-gradient(135deg,#999,#c0c0c0)" id="t2-avatar">?</div><div style="font-weight:600;font-size:13px" id="t2-name">-</div><div class="top3-iq" style="color:#c0c0c0" id="t2-iq">-</div><div style="font-size:11px;color:var(--text-muted)">IQ Level</div></div>
+        <div class="top3-card first"><div class="top3-crown"><i class="fa-solid fa-crown"></i></div><div class="top3-avatar" style="background:linear-gradient(135deg,#b8860b,var(--gold))" id="t1-avatar">?</div><div style="font-weight:700;font-size:14px" id="t1-name">-</div><div class="top3-iq" style="color:var(--gold)" id="t1-iq">-</div><div style="font-size:11px;color:var(--text-muted)">IQ Level</div></div>
+        <div class="top3-card third"><div class="top3-crown"><i class="fa-solid fa-medal" style="color:#cd7f32;"></i></div><div class="top3-avatar" style="background:linear-gradient(135deg,#8B4513,#cd7f32)" id="t3-avatar">?</div><div style="font-weight:600;font-size:13px" id="t3-name">-</div><div class="top3-iq" style="color:#cd7f32" id="t3-iq">-</div><div style="font-size:11px;color:var(--text-muted)">IQ Level</div></div>
+      </div>
+
+      <!-- Leaderboard Top Ad Unit -->
+      <div class="ads-container">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-1642778632018672"
+             data-ad-slot="auto"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+
+      <div class="tabs" style="margin-bottom: 16px; display: flex; gap: 10px;">
+        <button class="btn btn-secondary btn-sm tab-btn active" id="tab-iq" onclick="setSort('iq')">IQ Rankings</button>
+        <button class="btn btn-secondary btn-sm tab-btn" id="tab-trophies" onclick="setSort('trophies')"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Trophy Leaders</button>
+      </div>
+
+      <div class="card">
+        <div class="search-bar">
+          <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;z-index:1"></i>
+          <input type="text" class="input" placeholder="Search @username..." id="lb-search" oninput="searchLeaderboard(this.value)" style="padding-left:36px;position:relative">
+        </div>
+        <div id="lb-list">
+          <div class="flex-center" style="padding:40px"><div class="spinner"></div></div>
+        </div>
+        <div style="text-align:center;margin-top:16px">
+          <button class="btn btn-secondary" id="load-more-lb" onclick="loadMore()" style="display:none">Load More</button>
+        </div>
+      </div>
+
+      <!-- Leaderboard Bottom Ad Unit -->
+      <div class="ads-container">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-1642778632018672"
+             data-ad-slot="auto"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
+<script src="/js/socket.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+initSocket();
+document.getElementById('tb-pid').textContent = user.player_id;
+if (user.profile_image) {
+  document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+} else {
+  document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+}
+
+let allPlayers = [];
+let page = 1;
+let userFriends = [];
+let pendingRequests = [];
+
+async function loadSocialContext() {
+  try {
+    const [fRes, rRes] = await Promise.all([FriendAPI.getFriends(), FriendAPI.getRequests()]);
+    if (fRes?.success) userFriends = fRes.friends;
+    if (rRes?.success) pendingRequests = [...rRes.incoming, ...rRes.outgoing];
+  } catch (e) {}
+}
+
+function getFriendshipStatus(targetUserId, targetUsername) {
+  if (targetUserId === user.id) return 'me';
+  const normalizedTarget = (targetUsername || '').replace(/^@+/, '').toLowerCase();
+  
+  if (userFriends.some(f => f.friend_id === targetUserId || (f.username || '').replace(/^@+/, '').toLowerCase() === normalizedTarget)) return 'friend';
+  if (pendingRequests.some(r => r.sender_id === targetUserId || r.receiver_id === targetUserId)) return 'pending';
+  return 'none';
+}
+
+async function sendRequest(btn, username) {
+  if (btn.classList.contains('sent')) return;
+  try {
+    const res = await FriendAPI.sendRequest(username);
+    if (res.success) {
+      btn.innerHTML = '<i class="fa-solid fa-clock"></i>';
+      btn.classList.add('sent');
+      Toast.success('Request sent!');
+    } else {
+      Toast.error(res.message);
+    }
+  } catch (e) { Toast.error('Failed to send request'); }
+}
+
+let currentSort = 'iq';
+
+async function setSort(s) {
+  currentSort = s;
+  page = 1;
+  document.getElementById('tab-iq').classList.toggle('active', s === 'iq');
+  document.getElementById('tab-trophies').classList.toggle('active', s === 'trophies');
+  document.getElementById('lb-list').innerHTML = '<div class="flex-center" style="padding:40px"><div class="spinner"></div></div>';
+  await loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const res = await GameAPI.getLeaderboard(page, currentSort);
+  if (!res?.success) return;
+  allPlayers = page === 1 ? res.leaderboard : [...allPlayers, ...res.leaderboard];
+
+  // Top 3
+  if (page === 1 && allPlayers.length >= 1) {
+    ['t1','t2','t3'].forEach((id, i) => {
+      const p = allPlayers[i];
+      if (!p) return;
+      const avatarEl = document.getElementById(id + '-avatar');
+      avatarEl.innerHTML = p.profile_image 
+        ? `<img src="${p.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        : (p.full_name || p.username || '?')[0].toUpperCase();
+      
+      const displayName = p.full_name || fmt.username(p.username);
+      document.getElementById(id + '-name').innerHTML = `${displayName} ${p.rank_badge ? `<div class="badge ${fmt.rankClass(p.rank_badge)}" style="font-size:9px;padding:2px 4px;margin-top:4px">${p.rank_badge}</div>` : ''}`;
+      document.getElementById(id + '-iq').textContent = p.iq_level;
+
+      // Add Trophy Display to Top Cards
+      const trophies = p.trophies || { gold: 0, silver: 0, bronze: 0 };
+      const trophyHtml = `
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:8px;">
+          <div title="Gold" style="font-size:11px;"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> ${trophies.gold}</div>
+          <div title="Silver" style="font-size:11px;"><i class="fa-solid fa-trophy" style="color:#c0c0c0"></i> ${trophies.silver}</div>
+          <div title="Bronze" style="font-size:11px;"><i class="fa-solid fa-trophy" style="color:#cd7f32"></i> ${trophies.bronze}</div>
+        </div>
+      `;
+      const existingTrophies = avatarEl.parentElement.querySelector('.card-trophies');
+      if (existingTrophies) existingTrophies.innerHTML = trophyHtml;
+      else {
+          const div = document.createElement('div');
+          div.className = 'card-trophies';
+          div.innerHTML = trophyHtml;
+          avatarEl.parentElement.appendChild(div);
+      }
+    });
+  }
+
+  renderList(allPlayers);
+  document.getElementById('load-more-lb').style.display = res.pages > page ? 'inline-flex' : 'none';
+}
+
+function renderList(players) {
+  const rankColors = ['rank-1','rank-2','rank-3'];
+  const medals = ['<i class="fa-solid fa-medal" style="color:var(--gold);"></i>','<i class="fa-solid fa-medal" style="color:#c0c0c0;"></i>','<i class="fa-solid fa-medal" style="color:#cd7f32;"></i>'];
+  document.getElementById('lb-list').innerHTML = players.map((p, i) => {
+    const isMe = p.user_id === user.id || p.username === user.username;
+    const avatarHtml = p.profile_image 
+      ? `<img src="${p.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : (p.username || '?').replace('@', '')[0].toUpperCase();
+
+    const friendship = getFriendshipStatus(p.user_id, p.username);
+    const friendBtn = (friendship === 'none') 
+      ? `<button class="btn-add-friend" onclick="sendRequest(this, '${p.username}')" style="margin-top:0;padding:4px 6px" title="Add Friend"><i class="fa-solid fa-user-plus"></i></button>`
+      : (friendship === 'pending' ? `<span class="btn-add-friend sent" style="margin-top:0;padding:4px 6px"><i class="fa-solid fa-clock"></i></span>` : '');
+
+    const displayName = p.full_name || fmt.username(p.username);
+
+    return `<div class="lb-row ${isMe ? 'me' : ''}">
+      <div class="lb-rank ${rankColors[i] || ''}">${i < 3 ? medals[i] : p.rank}</div>
+      <div class="avatar-initial" style="width:36px;height:36px;font-size:14px;flex-shrink:0">${avatarHtml}</div>
+      <div style="flex:1; min-width:0">
+        <div class="text-truncate" style="font-weight:600;font-size:13px">${displayName}${isMe ? ' <span style="color:var(--gold);font-size:11px;flex-shrink:0">(You)</span>' : ''}</div>
+        <div style="margin-top:2px">
+          ${p.rank_badge ? `<span class="badge ${fmt.rankClass(p.rank_badge)}" style="font-size:9px;padding:2px 6px">${p.rank_badge}</span>` : ''}
+        </div>
+      </div>
+      <div style="flex-shrink:0;margin-right:4px">
+        ${friendBtn}
+      </div>
+      <div style="text-align:right;width:70px;flex-shrink:0; display:flex; gap:4px; justify-content: flex-end; align-items:center;">
+        <div style="display:flex; flex-direction:column; align-items:center;">
+           <i class="fa-solid fa-trophy" style="color:var(--gold); font-size:12px;"></i>
+           <div style="font-size:11px; font-weight:700;">${p.trophies?.gold || 0}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center;">
+           <i class="fa-solid fa-trophy" style="color:#c0c0c0; font-size:12px;"></i>
+           <div style="font-size:11px; font-weight:700;">${p.trophies?.silver || 0}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center;">
+           <i class="fa-solid fa-trophy" style="color:#cd7f32; font-size:12px;"></i>
+           <div style="font-size:11px; font-weight:700;">${p.trophies?.bronze || 0}</div>
+        </div>
+      </div>
+      <div style="text-align:right;width:45px;flex-shrink:0">
+        <div style="font-family:var(--font-display);font-size:16px;color:var(--gold)">${p.iq_level}</div>
+        <div style="font-size:10px;color:var(--text-muted)">IQ</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function searchLeaderboard(query) {
+  if (!query) { renderList(allPlayers); return; }
+  let q = query.trim().toLowerCase().replace('@', '');
+  renderList(allPlayers.filter(p => 
+    (p.username || '').toLowerCase().replace('@','').includes(q) || 
+    (p.full_name || '').toLowerCase().includes(q)
+  ));
+}
+
+function loadMore() { page++; loadLeaderboard(); }
+
+async function init() {
+  await loadSocialContext();
+  await loadLeaderboard();
+}
+init();
+</script>
+</body>
+</html>
+

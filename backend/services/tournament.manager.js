@@ -1,0 +1,718 @@
+const { supabase } = require('../config/supabase');
+const { Chess } = require('chess.js');
+const { processMatchResult } = require('../controllers/game.controller');
+
+const activeTourneys = new Map();
+const activeTournamentMatches = new Map();
+
+class TournamentManager {
+    static init(io) {
+        console.log('🚀 TournamentManager.init starting...');
+        this.io = io;
+        setInterval(() => this.tick(), 1000);
+        setInterval(() => this.pollLiveTournaments(), 5000);
+        
+        // FAIL-SAFE: Check for replenishment every 3 minutes
+        setInterval(() => {
+            const { autoCreatePaidTournaments, autoCreateFreeTournaments, updateTournamentStatuses } = require('../controllers/tournament.controller');
+            autoCreatePaidTournaments().catch(()=>{});
+            autoCreateFreeTournaments().catch(()=>{});
+            updateTournamentStatuses().catch(()=>{});
+        }, 3 * 60 * 1000);
+
+        // RECOVERY: Recover any stuck tournaments from previous session
+        this.recoverStuckTournaments()
+            .then(() => console.log('✅ TournamentManager recovery complete.'))
+            .catch(err => console.error('❌ Recovery Error:', err));
+    }
+
+    static async pollLiveTournaments() {
+        try {
+            // SELF-HEALING: Detect and fix stuck 'upcoming' tournaments that are actually full
+            const { data: upcomingPaid } = await supabase.from('tournaments')
+                .select('id, tr_id, status, max_players').eq('type', 'paid').eq('status', 'upcoming');
+            
+            if (upcomingPaid) {
+                for (const ut of upcomingPaid) {
+                    const { count } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', ut.id);
+                    if (count >= (ut.max_players || 16)) {
+                        console.log(`🔧 Self-healing TR-${ut.tr_id}: Forcing LOCKED (Actual count: ${count})`);
+                        await supabase.from('tournaments').update({ 
+                            status: 'full', 
+                            current_players: ut.max_players || 16,
+                            start_time: new Date(Date.now() + 120000).toISOString() 
+                        }).eq('id', ut.id);
+                        this.pickupTournament(ut.id).catch(()=>{});
+                    }
+                }
+            }
+
+            const { data: tourneys } = await supabase.from('tournaments')
+                .select('*').eq('type', 'paid')
+                .in('status', ['full', 'locked', 'starting', 'live']);
+            if (!tourneys) return;
+
+            for (const t of tourneys) {
+                if (activeTourneys.has(t.id)) continue;
+                await this.pickupTournament(t.id);
+            }
+        } catch(e) { console.error('pollLiveTournaments err:', e); }
+    }
+
+    static async pickupTournament(tournamentId) {
+        if (activeTourneys.has(tournamentId)) return;
+        
+        const { data: t, error } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
+        if (error || !t) return;
+
+        if (!['full', 'locked', 'starting', 'live'].includes(t.status)) return;
+
+        let maxPlayers = 16;
+        if (t.timer_type === 3 || t.timer_type === 5) maxPlayers = 32;
+
+        let { data: players, error: pError } = await supabase.from('tournament_players')
+            .select('*, profiles(username, rank, full_name)').eq('tournament_id', tournamentId)
+            .order('joined_at', { ascending: true })
+            .limit(maxPlayers);
+        
+        if (pError || !players || players.length === 0) return;
+
+        const playersData = players.map((p, i) => ({
+            user_id: p.user_id, username: p.profiles?.username || 'Unknown',
+            full_name: p.profiles?.full_name || p.profiles?.username || 'Unknown',
+            rank: p.profiles?.rank || 'Bronze', score: 0, status: 'alive', slot: i + 1
+        }));
+
+        this.startTournament(tournamentId, playersData, t);
+    }
+
+    static startTournament(tournamentId, playersData, tData) {
+        let countdown = 60; // 1 minute lobby before Round 1 starts
+        
+        if (tData.status === 'live' && tData.live_lobby_ends_at) {
+            const endsAt = new Date(tData.live_lobby_ends_at);
+            countdown = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+        } else if (tData.start_time) {
+            countdown = Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000));
+        }
+        
+        // Force 1 minute lobby max for all paid tournaments
+        if (tData.type === 'paid') {
+            countdown = 60; // Always 1 minute lobby
+        }
+
+        const tState = {
+            id: tournamentId, tr_id: tData.tr_id,
+            type: tData.type,
+            players: [...playersData], allPlayers: [...playersData],
+            max: tData.max_players, timer: tData.timer_type,
+            status: tData.status || 'full', 
+            phase: tData.phase || (tData.status === 'live' ? 'lobby' : 'upcoming'),
+            countdown,
+            round: tData.round || 0, matches: [],
+            nextRoundPending: false, 
+            prize_pool: tData.prize_pool || 0
+        };
+
+        activeTourneys.set(tournamentId, tState);
+    }
+
+    static tick() {
+        activeTourneys.forEach((tState, tId) => {
+            // FULL/LOCKED → Countdown to LIVE
+            if (tState.status === 'full' || tState.status === 'locked') {
+                tState.countdown--;
+                this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+
+                if (tState.countdown <= 0) {
+                    this.transitionToLive(tId).catch(err => console.error('Transition Error:', err));
+                } else if (tState.countdown % 10 === 0) {
+                    this.broadcastState(tId);
+                }
+            }
+            // LIVE → Handle Lobby or Matches
+            else if (tState.status === 'live') {
+                if (tState.phase === 'lobby') {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                    
+                    if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                        tState.phase = 'starting';
+                        tState.countdown = 60; // 1 min round process time
+                        this.broadcastState(tId);
+                    }
+                }
+                else if (tState.phase === 'starting') {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+
+                    if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                        tState.nextRoundPending = true;
+                        tState.round = 1;
+                        tState.phase = 'round_1';
+                        // 1min: 10m, 3min: 30m, 5min: 50m max
+                        if (tState.timer === 1) tState.countdown = 600;
+                        else if (tState.timer === 3) tState.countdown = 1800;
+                        else tState.countdown = 3000;
+
+                        this.nextRound(tState).finally(() => tState.nextRoundPending = false);
+                    }
+                    if (tState.countdown % 10 === 0) this.broadcastState(tId);
+                } 
+                else {
+                    tState.countdown--;
+                    this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                    if (tState.countdown <= 0) {
+                         // Fail-safe: Tournament took too long (10 mins)
+                         // this.finishTournament(tId, tState);
+                    }
+                    if (tState.matches.length > 0) {
+                        const allDone = tState.matches.every(m => m.status === 'finished');
+                        if (allDone && !tState.nextRoundPending) {
+                            tState.status = 'rest';
+                            tState.countdown = 15;
+                            this.processRoundResults(tState);
+                            this.broadcastState(tId);
+                        }
+                    }
+                }
+            }
+            // REST → Countdown to next round
+            else if (tState.status === 'rest') {
+                tState.countdown--;
+                this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                    tState.nextRoundPending = true;
+                    this.nextRound(tState).finally(() => tState.nextRoundPending = false);
+                }
+            }
+
+            // Sync Match Timers if they are active
+            tState.matches.forEach(m => {
+                if (m.status === 'waiting_connect') {
+                    m.connectTimeout--;
+                    if (m.connectTimeout <= 0) {
+                        const isPaid = tState?.type === 'paid';
+                        if (isPaid && tState.timer !== 5) {
+                            m.status = 'live'; 
+                            return;
+                        }
+
+                        // FOR 5MIN TR: Wait full 300s? Or just enforce first move?
+                        // Spec: "Timer full finish ku aparam tha"
+                        // I'll set connectTimeout to 300 for 5min TR in createMatch if needed,
+                        // but here we just check if it's 5min and handled.
+                        
+                        if (tState.timer === 5) {
+                            // If we reached 0 and still waiting, resolve
+                            const p1Online = m.player1.connected;
+                            const p2Online = m.player2.connected;
+                            if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
+                            else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
+                            else {
+                                const luckyWinnerId = Math.random() > 0.5 ? m.player1.userId : m.player2.userId;
+                                this.resolveMatch(m.id, 'draw', luckyWinnerId, 'both_no_show');
+                            }
+                            return;
+                        }
+
+                        m.status = 'live'; 
+                        return;
+                    }
+                }
+            });
+        });
+
+        // Global Match Timer Tick
+        activeTournamentMatches.forEach((match, matchId) => {
+            // BUG-05: Only tick timers if match is LIVE. 
+            // 'waiting_connect' should not count down the player's clock.
+            if (match.status !== 'live') return;
+            if (match.turn === 'w') match.player1.time--;
+            else match.player2.time--;
+            this.io.to(match.roomId).emit('timer_update', { white_time: match.player1.time, black_time: match.player2.time });
+            if (match.player1.time <= 0 || match.player2.time <= 0) {
+                const result = match.player1.time <= 0 ? 'player2_win' : 'player1_win';
+                const winnerId = match.player1.time <= 0 ? match.player2.userId : match.player1.userId;
+                this.resolveMatch(matchId, result, winnerId, 'timeout');
+            }
+
+            // DISCONNECT GRACE (3 sec) - ONLY FOR 5MIN TR
+            if (match.timer_type === 5 && match.disconnectGrace === null) {
+                if (!match.player1.connected || !match.player2.connected) {
+                    match.disconnectGrace = 3;
+                    match.disconnectedPlayer = !match.player1.connected ? 'p1' : 'p2';
+                }
+            }
+
+            if (match.disconnectGrace !== null) {
+                match.disconnectGrace--;
+                if (match.disconnectGrace <= 0) {
+                    const result = match.disconnectedPlayer === 'p1' ? 'player2_win' : 'player1_win';
+                    const winnerId = match.disconnectedPlayer === 'p1' ? match.player2.userId : match.player1.userId;
+                    this.resolveMatch(matchId, result, winnerId, 'disconnect_timeout');
+                }
+            }
+        });
+    }
+
+
+    static async nextRound(tState) {
+        const alivePlayers = tState.players.filter(p => p.status === 'alive');
+        if (alivePlayers.length <= 1) return this.finishTournament(tState.id, tState);
+
+        tState.matches = []; 
+
+        // Advance round if coming from REST or if it's the very first round (0)
+        if (tState.status === 'rest' || tState.round === 0) {
+            tState.round++;
+        }
+        
+        tState.status = 'live';
+        tState.matches = [];
+        const phaseName = tState.players.length === 2 ? 'final' : (tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`);
+        tState.phase = phaseName;
+
+        await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
+
+        const pool = tState.players.filter(p => p.status === 'alive').sort(() => Math.random() - 0.5);
+        if (pool.length <= 1) return this.finishTournament(tState.id, tState);
+
+        while (pool.length >= 2) {
+            const p1 = pool.shift(); 
+            const p2 = pool.shift();
+            await this.setupMatch(p1, p2, tState);
+        }
+
+        if (pool.length === 1) {
+            const pBye = pool[0];
+            const { userSockets } = require('../socket/socket');
+            const s = userSockets.get(pBye.user_id) || new Set();
+            s.forEach(sid => this.io.to(sid).emit('tournament_msg', { message: 'You got a BYE! Advancing.' }));
+        }
+
+        this.broadcastState(tState.id);
+    }
+
+    static async setupMatch(p1, p2, tState) {
+        const timerType = tState.timer || 1;
+        const timePerPlayer = timerType * 60;
+
+        const { data: dbMatch, error } = await supabase.from('matches').insert({
+            player1_id: p1.user_id, player2_id: p2.user_id,
+            match_type: 'tournament', timer_type: timerType,
+            tournament_id: tState.id, status: 'active',
+            round: tState.round
+        }).select().single();
+        if (error || !dbMatch) return;
+
+        const { userSockets } = require('../socket/socket');
+        const s1 = userSockets.get(p1.user_id) || new Set();
+        const s2 = userSockets.get(p2.user_id) || new Set();
+
+        const p1Online = s1.size > 0;
+        const p2Online = s2.size > 0;
+        console.log(`🔍 TR Match Setup: ${p1.username}(${p1Online}) vs ${p2.username}(${p2Online})`);
+
+        const match = {
+            id: dbMatch.id,
+            tournamentId: tState.id,
+            roomId: dbMatch.room_id || `tr_${dbMatch.id}`,
+            status: 'waiting_connect',
+            connectTimeout: tState.timer === 5 ? 300 : 60,
+            chess: new Chess(),
+            turn: 'w',
+            player1: { userId: p1.user_id, time: timePerPlayer, socketId: [...s1][0], score: 0, connected: p1Online },
+            player2: { userId: p2.user_id, time: timePerPlayer, socketId: [...s2][0], score: 0, connected: p2Online },
+            winnerId: null,
+            timer_type: timerType, // BUG-04: Add timer_type to match object for handleDisconnect
+            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            disconnectGrace: null,
+            disconnectedPlayer: null,
+            moveTimeout: 30 // 30s per move anti-stall
+        };
+
+        if (p1Online && p2Online) {
+            match.status = 'live';
+            console.log(`🚀 Match ${dbMatch.id} starting immediately (both online)`);
+        }
+
+        activeTournamentMatches.set(dbMatch.id, match);
+        tState.matches.push(match);
+
+        // Ensure sockets join the match room
+        [s1, s2].forEach(s => s.forEach(sid => {
+            const sock = this.io.sockets.sockets.get(sid);
+            if (sock) {
+                sock.join(match.roomId);
+                sock.join(`tournament_${tState.id}`);
+            }
+        }));
+
+        const eventData = { matchId: dbMatch.id, tournamentId: tState.id, timer: tState.timer, roomId: match.roomId };
+        s1.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'white', opponent: p2 }));
+        s2.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'black', opponent: p1 }));
+    }
+
+    static processRoundResults(tState) {
+        const { userSockets } = require('../socket/socket');
+        const roundWinners = new Set();
+
+        tState.matches.forEach(m => {
+            if (m.winnerId) {
+                roundWinners.add(m.winnerId);
+            } else {
+                // Fail-safe: Should not happen with new resolveMatch logic
+                const winnerId = (m.player1.score > m.player2.score) ? m.player1.userId : 
+                               (m.player2.score > m.player1.score) ? m.player2.userId : 
+                               (Math.random() > 0.5 ? m.player1.userId : m.player2.userId);
+                roundWinners.add(winnerId);
+            }
+        });
+
+        // Update status for all participants in this round
+        tState.players.forEach(p => {
+            if (p.status === 'alive' && !roundWinners.has(p.user_id)) {
+                p.status = 'eliminated';
+                // Notify eliminated player
+                const sockets = userSockets.get(p.user_id);
+                if (sockets) {
+                    sockets.forEach(sid => {
+                this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
+                        this.io.to(sid).emit('tournament_eliminated');
+                    });
+                }
+            }
+        });
+    }
+
+    static calculatePoints(fen, side) {
+        const values = { 'p': 1, 'r': 2, 'n': 2, 'b': 2, 'q': 5, 'k': 0 };
+        const target = side === 'w' ? 'PRNBQ' : 'prnbq';
+        let pts = 0;
+        const board = fen.split(' ')[0];
+        for (const char of board) {
+            if (target.includes(char)) pts += values[char.toLowerCase()] || 0;
+        }
+        return pts;
+    }
+
+    static async resolveMatch(matchId, result, winnerId, reason) {
+        console.log(`🏁 Resolving Match ${matchId} | Reason: ${reason} | Result: ${result}`);
+        const match = activeTournamentMatches.get(matchId);
+        if (!match || match.status === 'finished') return;
+
+        match.status = 'finished';
+        match.result = result;
+        match.winnerId = winnerId;
+        match.fen = match.chess.fen();
+
+        const tState = activeTourneys.get(match.tournamentId);
+        const isKnockout = tState && tState.timer !== 5;
+        const isHybrid = tState && tState.timer === 5;
+
+        // 🛡️ TIE-BREAK FOR KNOCKOUT DRAWS (1min/3min)
+        if (result === 'draw' && isKnockout) {
+            const p1Pieces = this.calculatePoints(match.fen, 'w');
+            const p2Pieces = this.calculatePoints(match.fen, 'b');
+            
+            if (p1Pieces > p2Pieces) {
+                winnerId = match.player1.userId;
+            } else if (p2Pieces > p1Pieces) {
+                winnerId = match.player2.userId;
+            } else {
+                // If equal pieces, less time used wins
+                const maxTime = match.timer_type * 60;
+                const p1Used = maxTime - match.player1.time;
+                const p2Used = maxTime - match.player2.time;
+                if (p1Used < p2Used) winnerId = match.player1.userId;
+                else if (p2Used < p1Used) winnerId = match.player2.userId;
+                else winnerId = Math.random() > 0.5 ? match.player1.userId : match.player2.userId;
+            }
+            
+            result = (winnerId === match.player1.userId) ? 'player1_win' : 'player2_win';
+            match.winnerId = winnerId;
+            match.result = result;
+            reason = 'tie_break';
+        }
+
+        // 5MIN TR SCORING: Result Points (10/5) + Piece Points
+        if (isHybrid) {
+            const p1Pieces = this.calculatePoints(match.fen, 'w');
+            const p2Pieces = this.calculatePoints(match.fen, 'b');
+            const p1Result = result === 'player1_win' ? 10 : (result === 'draw' ? 5 : 0);
+            const p2Result = result === 'player2_win' ? 10 : (result === 'draw' ? 5 : 0);
+
+            match.player1.score = (match.player1.score || 0) + p1Pieces + p1Result;
+            match.player2.score = (match.player2.score || 0) + p2Pieces + p2Result;
+
+            if (tState) {
+                const p1 = tState.players.find(p => p.user_id === match.player1.userId);
+                const p2 = tState.players.find(p => p.user_id === match.player2.userId);
+                if (p1) p1.score = (p1.score || 0) + (p1Pieces + p1Result);
+                if (p2) p2.score = (p2.score || 0) + (p2Pieces + p2Result);
+            }
+
+            // For hybrid draws in knockout stages, determine a winner to advance
+            if (result === 'draw') {
+                if (match.player1.score > match.player2.score) winnerId = match.player1.userId;
+                else if (match.player2.score > match.player1.score) winnerId = match.player2.userId;
+                else {
+                    const maxTime = (tState?.timer || 5) * 60;
+                    const wUsed = maxTime - match.player1.time;
+                    const bUsed = maxTime - match.player2.time;
+                    winnerId = (wUsed < bUsed) ? match.player1.userId : (bUsed < wUsed ? match.player2.userId : (Math.random() > 0.5 ? match.player1.userId : match.player2.userId));
+                }
+                match.winnerId = winnerId;
+            }
+        } else {
+            // STANDARD SCORING for non-hybrid
+            match.player1.score = result === 'player1_win' ? 1 : (result === 'draw' ? 0.5 : 0);
+            match.player2.score = result === 'player2_win' ? 1 : (result === 'draw' ? 0.5 : 0);
+        }
+
+        // Find and mark the loser as eliminated
+        const { userSockets } = require('../socket/socket');
+        if (tState) {
+            let loserId = null;
+            if (result === 'player1_win') loserId = match.player2.userId;
+            else if (result === 'player2_win') loserId = match.player1.userId;
+            else if (result === 'draw') loserId = (winnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
+
+            if (loserId) {
+                const p = tState.players.find(pl => pl.user_id === loserId);
+                if (p) {
+                    p.status = 'eliminated';
+                    const sockets = userSockets.get(loserId);
+                    if (sockets) sockets.forEach(sid => {
+                        this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
+                        this.io.to(sid).emit('tournament_eliminated');
+                    });
+                }
+            }
+            this.broadcastState(tState.id);
+        }
+
+        // Match resolution is handled by processMatchResult below to avoid race conditions
+        
+        this.io.to(match.roomId).emit('game_over', { result, winnerId, reason, fen: match.fen, p1_score: match.player1.score, p2_score: match.player2.score });
+        processMatchResult(matchId, result, winnerId, match.fen).catch(() => {});
+        
+        setTimeout(() => {
+            activeTournamentMatches.delete(matchId);
+            if (tState) tState.matches = tState.matches.filter(m => m.id !== matchId);
+        }, 5000);
+    }
+
+    static handleMove(userId, matchId, moveSan) {
+        const match = activeTournamentMatches.get(matchId);
+        if (!match || match.status === 'finished') return;
+
+        // SECURITY: Verify the user is a participant and it is their turn
+        const isP1 = match.player1.userId === userId;
+        const isP2 = match.player2.userId === userId;
+        if (!isP1 && !isP2) return; // Not a player in this match
+
+        const myColor = isP1 ? 'w' : 'b';
+        if (match.chess.turn() !== myColor) return; // Not your turn
+
+        // If a move is made, the match is definitely live
+        if (match.status === 'waiting_connect') {
+            console.log(`✅ Match ${matchId} activated by move from ${userId}`);
+            match.status = 'live';
+        }
+
+        try {
+            const moveData = match.chess.move(moveSan);
+            if (!moveData) return false;
+            match.turn = match.chess.turn(); match.fen = match.chess.fen();
+            match.moveTimeout = 30; // Reset anti-stall
+            this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.fen, turn: match.turn });
+
+            // Dashboard sync
+            const dashboardUpdate = { matchId, white_time: match.player1.time, black_time: match.player2.time, turn: match.turn };
+            if (match.player1.socketId) this.io.to(match.player1.socketId).emit('active_match_update', dashboardUpdate);
+            if (match.player2.socketId) this.io.to(match.player2.socketId).emit('active_match_update', dashboardUpdate);
+            
+            // Persist move to Supabase
+            supabase.from('matches').select('moves').eq('id', matchId).single().then(({ data: m }) => {
+                const moves = Array.isArray(m?.moves) ? m.moves : [];
+                moves.push({ move: moveData.san, timestamp: new Date().toISOString(), player: userId });
+                supabase.from('matches').update({ moves, fen: match.fen }).eq('id', matchId).then(() => {});
+            });
+
+            if (match.chess.isGameOver()) {
+                const r = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
+                const w = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? match.player2.userId : match.player1.userId) : null;
+                this.resolveMatch(matchId, r, w, 'board');
+            }
+            return true;
+        } catch(e) { return false; }
+    }
+
+    static async finishTournament(tId, tState) {
+        tState.status = 'completed';
+        this.broadcastState(tId);
+        await supabase.from('tournaments').update({ status: 'completed', phase: 'completed' }).eq('id', tId);
+        const { distributeTournamentPrizes, autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+        const { data: tData } = await supabase.from('tournaments').select('*').eq('id', tId).single();
+        if (tData) await distributeTournamentPrizes(tData);
+        activeTourneys.delete(tId);
+        autoCreatePaidTournaments().catch(() => {});
+    }
+
+    static broadcastState(tournamentId) {
+        const tState = activeTourneys.get(tournamentId);
+        if (!tState || !this.io) return;
+
+        // MEMORY OPTIMIZATION: Pre-calculate players list once per broadcast
+        const basePlayers = tState.players.map(p => ({ 
+            user_id: p.user_id, username: p.username, rank: p.rank, 
+            score: p.score, status: p.status, slot: p.slot 
+        }));
+
+        const baseState = {
+            id: tState.id, tr_id: tState.tr_id, status: tState.status, phase: tState.phase,
+            countdown: tState.countdown, round: tState.round,
+            players: basePlayers
+        };
+
+        // We could emit baseState to everyone, but they also need THEIR OWN match.
+        // Instead of room emit, we personalize for active players.
+        const connectedSockets = this.io.sockets.adapter.rooms.get(`tournament_${tournamentId}`);
+        if (!connectedSockets) return;
+
+        connectedSockets.forEach(socketId => {
+            const socket = this.io.sockets.sockets.get(socketId);
+            const userId = socket?.userId || socket?.handshake?.auth?.userId;
+            if (!socket || !userId) return;
+
+            // Include current active match OR recently finished match
+            const myMatch = tState.matches.find(m => m.player1.userId === userId || m.player2.userId === userId);
+
+            const personalizedState = {
+                ...baseState,
+                matches: myMatch ? [{
+                    id: myMatch.id, roomId: myMatch.roomId, status: myMatch.status,
+                    player1: { userId: myMatch.player1.userId, time: myMatch.player1.time, score: myMatch.player1.score, connected: myMatch.player1.connected },
+                    player2: { userId: myMatch.player2.userId, time: myMatch.player2.time, score: myMatch.player2.score, connected: myMatch.player2.connected },
+                    fen: myMatch.fen
+                }] : []
+            };
+            socket.emit(`tournament_sync_${tournamentId}`, personalizedState);
+        });
+    }
+
+    static onPlayerConnected(userId, socket) {
+        let found = false;
+        activeTourneys.forEach((tState, tId) => {
+            if (tState.allPlayers.some(p => p.user_id === userId)) {
+                socket.join(`tournament_${tId}`);
+                this.broadcastState(tId);
+                found = true;
+            }
+        });
+        activeTournamentMatches.forEach((match, matchId) => {
+            if (match.player1.userId === userId || match.player2.userId === userId) {
+                if (this.rejoinMatch(socket, matchId, userId)) found = true;
+            }
+        });
+        return found;
+    }
+
+    static rejoinMatch(socket, matchId, userId) {
+        const match = activeTournamentMatches.get(matchId);
+        if (!match) return false;
+        if (match.player1.userId === userId) { match.player1.socketId = socket.id; match.player1.connected = true; }
+        else if (match.player2.userId === userId) { match.player2.socketId = socket.id; match.player2.connected = true; }
+        else return false;
+
+        if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) match.status = 'live';
+        
+        match.disconnectGrace = null; 
+        match.disconnectedPlayer = null;
+        match.moveTimeout = 30; // Reset anti-stall window on rejoin
+
+        socket.join(match.roomId);
+        socket.emit('match_rejoined', {
+            roomId: match.roomId, fen: match.chess.fen(), turn: match.turn,
+            pgn: match.chess.pgn(),
+            white_time: match.player1.time, black_time: match.player2.time,
+            color: match.player1.userId === userId ? 'white' : 'black',
+            opponent: match.player1.userId === userId ? 
+                { ...match.player2, username: match.player2.username } : 
+                { ...match.player1, username: match.player1.username },
+            p1_score: match.player1.score, p2_score: match.player2.score
+        });
+
+        socket.emit('active_match_found', {
+            matchId,
+            match_type: 'tournament',
+            timer: match.timer_type,
+            tournamentId: match.tournamentId,
+            white_time: match.player1.time,
+            black_time: match.player2.time,
+            turn: match.chess.turn(),
+            myColor: match.player1.userId === userId ? 'white' : 'black',
+            opponent: match.player1.userId === userId ? 
+                { userId: match.player2.userId, username: match.player2.username } : 
+                { userId: match.player1.userId, username: match.player1.username }
+        });
+        return true;
+    }
+
+    static handleDisconnect(userId) {
+        activeTournamentMatches.forEach((match) => {
+            if (match.player1.userId === userId) { 
+                match.player1.connected = false; 
+                // Rule 7: 60 sec resign timer for 5min TR
+                if (match.timer_type === 5) match.disconnectGrace = 60;
+                else match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
+                match.disconnectedPlayer = 'p1';
+            }
+            else if (match.player2.userId === userId) { 
+                match.player2.connected = false; 
+                if (match.timer_type === 5) match.disconnectGrace = 60;
+                else match.disconnectGrace = match.timer_type === 3 ? 30 : 120; 
+                match.disconnectedPlayer = 'p2';
+            }
+        });
+    }
+
+    static async transitionToLive(tournamentId) {
+        const tState = activeTourneys.get(tournamentId);
+        if (!tState || tState.status === 'live') return;
+
+        // Update memory immediately to prevent re-entry
+        tState.status = 'live';
+        tState.phase = 'lobby';
+        tState.countdown = 60; // 1 min lobby
+
+        const liveLobbyEndsAt = new Date(Date.now() + 60000).toISOString();
+        const { data: t, error } = await supabase.from('tournaments')
+            .update({ status: 'live', phase: 'lobby', live_lobby_ends_at: liveLobbyEndsAt })
+            .eq('id', tournamentId).select().single();
+
+        if (error) return console.error('Transition Error:', error);
+
+        if (t && !t.next_created) {
+            await supabase.from('tournaments').update({ next_created: true }).eq('id', tournamentId);
+            const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+            autoCreatePaidTournaments().catch(()=>{});
+        }
+        this.broadcastState(tournamentId);
+    }
+
+    static async recoverStuckTournaments() {
+        const { data: stuck } = await supabase.from('tournaments').select('*').in('status', ['full', 'starting']).eq('type', 'paid');
+        if (!stuck) return;
+        for (const t of stuck) {
+            if (new Date() >= new Date(t.start_time)) {
+                await this.pickupTournament(t.id);
+                await this.transitionToLive(t.id);
+            }
+        }
+    }
+}
+
+module.exports = TournamentManager;

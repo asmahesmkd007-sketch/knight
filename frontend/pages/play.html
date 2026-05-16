@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play – CHESS OX</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1642778632018672"
+     crossorigin="anonymous"></script>
+  <style>
+    .mode-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 22px; }
+    .mode-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius); padding: 22px; text-align: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .mode-card:hover, .mode-card.selected {
+      border-color: rgba(232,197,71,0.35);
+      background: rgba(232,197,71,0.05);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transform: translateY(-2px);
+    }
+    .mode-card .mode-icon { font-size: 36px; margin-bottom: 10px; color: var(--text-muted); transition: color 0.2s; }
+    .mode-card:hover .mode-icon, .mode-card.selected .mode-icon { color: var(--gold); }
+    .mode-card .mode-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
+    .mode-card .mode-desc { font-size: 11px; color: var(--text-muted); }
+    .timer-grid { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+    .timer-btn {
+      flex: 1; min-width: 64px; padding: 11px 8px;
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.18s;
+      font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-muted);
+    }
+    .timer-btn:hover, .timer-btn.selected {
+      border-color: rgba(232,197,71,0.4); color: var(--gold);
+      background: rgba(232,197,71,0.07);
+    }
+    .timer-btn .timer-sub { font-family: var(--font-body); font-size: 10px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+    .searching-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+      z-index: 500; align-items: center; justify-content: center;
+      flex-direction: column; gap: 18px;
+    }
+    .searching-overlay.active { display: flex; }
+    .search-spinner {
+      width: 72px; height: 72px;
+      border: 3px solid rgba(232,197,71,0.15);
+      border-top-color: var(--gold);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    .bot-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .bot-btn {
+      padding: 12px 6px; background: var(--bg-card);
+      border: 1px solid var(--border-subtle); border-radius: 10px;
+      cursor: pointer; text-align: center; transition: all 0.18s;
+    }
+    .bot-btn:hover { border-color: rgba(124,111,205,0.4); background: rgba(124,111,205,0.07); transform: translateY(-2px); }
+    .bot-btn .bot-iq { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--accent); }
+    .bot-btn .bot-name { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    @media (max-width: 480px) {
+      .mode-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .mode-card { padding: 16px 10px; }
+      .mode-card .mode-icon { font-size: 28px; }
+      .bot-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><div class="page-title">PLAY CHESS</div></div>
+      <div class="topbar-right">
+        <div class="topbar-player-id" id="tb-pid">...</div>
+        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <div style="max-width:700px;margin:auto">
+        <!-- MODE SELECTION -->
+        <div class="card mb-24">
+          <div class="card-title">Select Game Mode</div>
+          <div class="mode-grid">
+            <div class="mode-card selected" onclick="selectMode('random', this)">
+              <div class="mode-icon"><i class="fa-solid fa-dice"></i></div>
+              <div class="mode-name">Random Match</div>
+              <div class="mode-desc">Match with any online player</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('friend', this)">
+              <div class="mode-icon"><i class="fa-solid fa-user-group"></i></div>
+              <div class="mode-name">Friend Match</div>
+              <div class="mode-desc">Challenge a friend by Player ID</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('room', this)">
+              <div class="mode-icon"><i class="fa-solid fa-door-open"></i></div>
+              <div class="mode-name">Public Room</div>
+              <div class="mode-desc">Create a lobby for unknown players</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('bot', this)">
+              <div class="mode-icon"><i class="fa-solid fa-robot"></i></div>
+              <div class="mode-name">Play vs Bot</div>
+              <div class="mode-desc">Practice against AI</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RANDOM PANEL -->
+        <div id="panel-random" class="panel active">
+          <div class="card">
+            <div class="card-title">Select Timer</div>
+            <div class="timer-grid">
+              <div class="timer-btn selected" onclick="selectTimer(1, this)">1<div class="timer-sub">Bullet</div></div>
+              <div class="timer-btn" onclick="selectTimer(3, this)">3<div class="timer-sub">Blitz</div></div>
+              <div class="timer-btn" onclick="selectTimer(5, this)">5<div class="timer-sub">Rapid</div></div>
+              <div class="timer-btn" onclick="selectTimer(10, this)">10<div class="timer-sub">Classical</div></div>
+            </div>
+            <button class="btn btn-primary btn-full btn-lg" onclick="startRandomMatch()"><i class="fa-solid fa-chess-pawn"></i> Find Match</button>
+            
+            <!-- AdSense Unit: Random Match Bottom -->
+            <div class="ads-container">
+              <ins class="adsbygoogle"
+                   style="display:block"
+                   data-ad-client="ca-pub-1642778632018672"
+                   data-ad-slot="auto"
+                   data-ad-format="auto"
+                   data-full-width-responsive="true"></ins>
+              <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+          </div>
+        </div>
+
+        <!-- FRIEND PANEL -->
+        <div id="panel-friend" class="panel">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Select Timer</div>
+            <div class="timer-grid" style="margin-bottom:24px">
+              <div class="timer-btn selected" onclick="selectTimer(1, this)">1<div class="timer-sub">Bullet</div></div>
+              <div class="timer-btn" onclick="selectTimer(3, this)">3<div class="timer-sub">Blitz</div></div>
+              <div class="timer-btn" onclick="selectTimer(5, this)">5<div class="timer-sub">Rapid</div></div>
+              <div class="timer-btn" onclick="selectTimer(10, this)">10<div class="timer-sub">Classical</div></div>
+            </div>
+            
+            <div class="flex-between" style="margin-bottom:16px">
+              <div class="card-title" style="margin:0">Challenge a Friend</div>
+              <a href="/pages/friends.html" class="btn btn-secondary btn-sm" style="padding:6px 12px;font-size:11px"><i class="fa-solid fa-user-plus"></i> Add Friend</a>
+            </div>
+            <div id="play-friends-list" style="max-height:250px;overflow-y:auto">
+                <div style="text-align:center;padding:24px;color:var(--text-muted)"><div class="spinner"></div></div>
+            </div>
+
+            <!-- AdSense Unit: Friend Match Bottom -->
+            <div class="ads-container">
+              <ins class="adsbygoogle"
+                   style="display:block"
+                   data-ad-client="ca-pub-1642778632018672"
+                   data-ad-slot="auto"
+                   data-ad-format="auto"
+                   data-full-width-responsive="true"></ins>
+              <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- ROOM PANEL -->
+        <div id="panel-room" class="panel">
+          <div class="card">
+            <div class="card-title">Select Room Timer</div>
+            <div class="timer-grid" style="margin-bottom:24px">
+              <div class="timer-btn selected" onclick="selectTimer(1, this)">1<div class="timer-sub">Bullet</div></div>
+              <div class="timer-btn" onclick="selectTimer(3, this)">3<div class="timer-sub">Blitz</div></div>
+              <div class="timer-btn" onclick="selectTimer(5, this)">5<div class="timer-sub">Rapid</div></div>
+              <div class="timer-btn" onclick="selectTimer(10, this)">10<div class="timer-sub">Classical</div></div>
+            </div>
+            
+            <div class="grid-2" style="gap:16px;margin-bottom:16px">
+              <button class="btn btn-primary btn-lg" onclick="createRoom()"><i class="fa-solid fa-plus"></i> Create Room</button>
+              <div>
+                <input type="text" id="room-id-input" class="input" placeholder="Enter Room ID" style="margin-bottom:8px">
+                <button class="btn btn-secondary btn-full" onclick="joinRoom()"><i class="fa-solid fa-door-open"></i> Join Room</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOT PANEL -->
+        <div id="panel-bot" class="panel">
+          <div class="card">
+            <div class="card-title">Select Bot Difficulty</div>
+            <div class="bot-grid" id="bot-grid">
+              <div class="bot-btn" onclick="startBotMatch(100, this)"><div class="bot-iq">100</div><div class="bot-name">I AM PRO</div></div>
+              <div class="bot-btn" onclick="startBotMatch(550, this)"><div class="bot-iq">550</div><div class="bot-name">EASY BRO</div></div>
+              <div class="bot-btn" onclick="startBotMatch(850, this)"><div class="bot-iq">850</div><div class="bot-name">BRO TRY</div></div>
+              <div class="bot-btn" onclick="startBotMatch(1570, this)"><div class="bot-iq">1570</div><div class="bot-name">TRY AGAIN</div></div>
+              <div class="bot-btn" onclick="startBotMatch(1850, this)"><div class="bot-iq">1850</div><div class="bot-name">AGAIN EXPERT</div></div>
+              <div class="bot-btn" onclick="startBotMatch(2400, this)"><div class="bot-iq">2400</div><div class="bot-name">AGAIN AGAIN</div></div>
+              <div class="bot-btn" onclick="startBotMatch(3200, this)"><div class="bot-iq">3200</div><div class="bot-name">I AM LOOSER</div></div>
+              <div class="bot-btn" onclick="startBotMatch(3400, this)"><div class="bot-iq">3400</div><div class="bot-name">I AM BOT</div></div>
+            </div>
+
+            <!-- RESPONSIVE AD UNIT -->
+            <div class="responsive-ad">
+              <div class="ads-container">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-1642778632018672"
+                     data-ad-slot="auto"
+                     data-ad-format="horizontal"
+                     data-full-width-responsive="false"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCHING OVERLAY -->
+<div id="search-overlay" class="searching-overlay">
+  <!-- RESPONSIVE AD UNIT -->
+  <div class="responsive-ad" style="width:100%;max-width:400px;margin: 0 0 20px 0;">
+    <div class="ads-container">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-1642778632018672"
+           data-ad-slot="auto"
+           data-ad-format="horizontal"
+           data-full-width-responsive="false"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+  </div>
+
+  <div class="search-spinner"></div>
+  <div style="font-family:var(--font-display);font-size:18px;color:var(--gold);font-weight:700">FINDING MATCH...</div>
+  <div id="search-timer-label" style="font-size:13px;color:var(--text-muted)">Looking for a 1-minute match</div>
+  <button class="btn btn-secondary" style="width:auto" onclick="cancelSearch()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+</div>
+
+<!-- MODAL REMOVED - Using Global Toast -->
+
+<div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
+<script src="/js/socket.js"></script>
+<script>
+if (!requireAuth()) throw new Error();
+const user = getUser();
+loadSidebar();
+document.getElementById('tb-pid').textContent = user.player_id;
+if (user.profile_image) {
+  document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+} else {
+  document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+}
+
+let currentMode = 'random';
+let selectedTimer = 1;
+let pendingInvite = null;
+
+function selectMode(mode, el) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + mode).classList.add('active');
+}
+
+function selectTimer(t, el) {
+  selectedTimer = t;
+  // Only deselect timer buttons within the same panel as the clicked button
+  const panel = el.closest('.panel');
+  if (panel) {
+    panel.querySelectorAll('.timer-btn').forEach(b => b.classList.remove('selected'));
+  } else {
+    document.querySelectorAll('.timer-btn').forEach(b => b.classList.remove('selected'));
+  }
+  el.classList.add('selected');
+}
+
+function startRandomMatch() {
+  const s = getSocket() || initSocket();
+  if (!user) return;
+  document.getElementById('search-overlay').classList.add('active');
+  document.getElementById('search-timer-label').textContent = `Looking for a ${selectedTimer}-minute match`;
+  SocketActions.findMatch(selectedTimer, user.id, user.username);
+}
+
+function cancelSearch() {
+  SocketActions.cancelSearch(selectedTimer, user.id);
+  document.getElementById('search-overlay').classList.remove('active');
+}
+
+let isInviting = false;
+async function sendFriendInvite(friendId) {
+  if (isInviting) return;
+  if (!user) return;
+  isInviting = true;
+  SocketActions.inviteFriend(friendId, user.username, selectedTimer);
+  Toast.info('Challenge sent! Waiting for response...');
+  setTimeout(() => { isInviting = false; }, 3000); // 3s debounce
+}
+
+async function loadPlayFriends() {
+  const listEl = document.getElementById('play-friends-list');
+  if(!listEl) return;
+  const res = await FriendAPI.getFriends();
+  if(!res?.success || !res.friends.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">You have no friends yet. <br><a href="/pages/friends.html" style="color:var(--gold)">Add friends here</a></div>';
+    return;
+  }
+  const online = res.friends.filter(f => f.is_online);
+  if(!online.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">None of your friends are online right now.</div>';
+    return;
+  }
+  listEl.innerHTML = online.map(f => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+       <div style="display:flex;align-items:center;gap:12px">
+         <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, rgba(232,197,71,0.3), var(--gold));color:#000;display:flex;align-items:center;justify-content:center;font-weight:700">${f.username.replace('@','')[0].toUpperCase()}</div>
+         <div style="font-weight:600;font-size:14px">${f.username}</div>
+       </div>
+       <button class="btn btn-primary btn-sm" onclick="sendFriendInvite('${f.friend_id}')">Challenge</button>
+    </div>
+  `).join('');
+}
+
+loadPlayFriends();
+
+async function createRoom() {
+  const btn = event.target.closest('button');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+  
+  const res = await RoomAPI.create(selectedTimer);
+  if (res?.success) {
+    window.location.href = `/pages/room.html?code=${res.room.room_code}`;
+  } else {
+    Toast.error(res?.message || 'Failed to create room.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-plus"></i> Create Room';
+  }
+}
+
+async function joinRoom() {
+  const input = document.getElementById('room-id-input').value.trim().toUpperCase();
+  const roomCode = input.replace(/\s+/g, '-');
+  if (!roomCode) return Toast.error('Enter a Room ID.');
+  
+  const res = await RoomAPI.getByCode(roomCode);
+  if (res?.success) {
+    window.location.href = `/pages/room.html?code=${roomCode}`;
+  } else {
+    Toast.error('Room not found or expired.');
+  }
+}
+
+
+
+function startBotMatch(iq, el) {
+    localStorage.setItem('px_bot_iq', iq);
+  localStorage.setItem('px_game_mode', 'bot');
+  localStorage.setItem('px_bot_color', Math.random() < 0.5 ? 'white' : 'black');
+  window.location.href = '/pages/game.html?mode=bot&iq=' + iq;
+}
+
+function respondInvite(accepted) {
+  const modal = document.getElementById('invite-modal');
+  modal.classList.remove('active');
+  if (accepted && pendingInvite) {
+    if (!user) return;
+    SocketActions.acceptInvite(pendingInvite.fromUserId, user.id, pendingInvite.fromUsername, user.username, pendingInvite.timer);
+  } else if (pendingInvite) {
+    SocketActions.rejectInvite(pendingInvite.fromUserId);
+  }
+  pendingInvite = null;
+}
+
+// Socket listeners
+const sock = initSocket();
+sock.on('match_found', (data) => {
+  document.getElementById('search-overlay').classList.remove('active');
+  localStorage.setItem('px_match', JSON.stringify(data));
+  window.location.href = '/pages/game.html?matchId=' + data.matchId;
+});
+
+sock.on('match_error', (data) => {
+  document.getElementById('search-overlay').classList.remove('active');
+  Toast.error(data.message || 'Match creation failed. Please try again.');
+});
+
+sock.on('searching', () => { document.getElementById('search-overlay').classList.add('active'); });
+sock.on('search_cancelled', () => { document.getElementById('search-overlay').classList.remove('active'); });
+sock.on('friend_invite', (data) => {
+  pendingInvite = data;
+  // Global Toast in socket.js handles the notification
+});
+sock.on('invite_rejected', () => Toast.warning('Challenge was declined.'));
+sock.on('room_error', (data) => Toast.error(data.message));
+sock.on('room_created', () => Toast.success('Room created! Share the ID.'));
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('challenge')) {
+   selectMode('friend', document.querySelectorAll('.mode-card')[1]);
+   // Automatic challenge removed per user request. User must click challenge manually.
+}
+
+if (urlParams.get('acceptChallenge')) {
+   const fromUserId = urlParams.get('acceptChallenge');
+   const timer = parseInt(urlParams.get('timer') || '5');
+   pendingInvite = { fromUserId, fromUsername: 'Email Opponent', timer };
+   document.getElementById('invite-modal-desc').textContent = `Email Challenge: ${timer}-minute game!`;
+   document.getElementById('invite-modal').classList.add('active');
+}
+</script>
+</body>
+</html>

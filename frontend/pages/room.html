@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Lobby | CHESS OX</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <style>
+        .lobby-grid { display: grid; grid-template-columns: 350px 1fr; gap: 24px; }
+        .host-card { background: var(--bg-card); border: 1px solid var(--gold); border-radius: 20px; padding: 24px; text-align: center; }
+        .host-avatar { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold); margin: 0 auto 16px; object-fit: cover; }
+        .queue-list { display: flex; flex-direction: column; gap: 12px; }
+        .player-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid var(--border-subtle); transition: all 0.3s; }
+        .player-row.host-row { border-color: var(--gold); background: rgba(232,197,71,0.05); }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .status-waiting { background: rgba(232,197,71,0.15); color: var(--gold); }
+        .status-playing { background: rgba(52,211,153,0.15); color: var(--success); }
+        .status-offline { background: rgba(248,113,113,0.15); color: var(--error); }
+        .status-host-offline { background: rgba(248,113,113,0.15); color: var(--error); }
+        
+        .room-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .code-box { 
+            background: rgba(0,0,0,0.3); 
+            border: 1px dashed var(--gold); 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-family: monospace; 
+            font-size: 13px; 
+            color: var(--gold); 
+            cursor: pointer; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            width: 100%;
+            display: block;
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 900px) {
+            .lobby-grid { grid-template-columns: 1fr; gap: 16px; }
+            .main-content { padding-left: 0 !important; }
+        }
+        @media (max-width: 480px) {
+            .page-content { padding: 10px 8px; }
+            .host-card { padding: 12px; border-radius: 14px; width: 100%; margin: 0; box-sizing: border-box; }
+            .room-controls { grid-template-columns: 1fr; gap: 8px; }
+            .code-box { font-size: 10px; padding: 10px; border-style: solid; border-width: 1px; }
+            .host-avatar { width: 70px; height: 70px; }
+            h2#host-name { font-size: 1.1rem; }
+            #auto-match-ui { padding: 10px; gap: 10px; }
+            .queue-list { gap: 8px; }
+            .player-row { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="sidebar-container"></div>
+        <div class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="page-title">PUBLIC LOBBY</div>
+                    <div id="lobby-status-badge" class="live-badge">LOBBY ONLINE</div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-player-id" id="room-code-display">ROOM: PX-XXXXXX</div>
+                    <div class="topbar-avatar" id="tb-avatar">P</div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <div class="lobby-grid">
+                    <!-- LEFT SIDE: HOST & CONTROLS -->
+                    <div id="host-panel">
+                        <div class="host-card">
+                            <div id="host-avatar-container"></div>
+                            <h2 id="host-name">Host Name</h2>
+                            <p class="text-muted" style="margin-bottom: 20px;">Room Owner</p>
+                            
+                            <div class="code-box" id="code-box" onclick="copyCode()">Loading link...</div>
+                            <p style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">Click to copy invite link</p>
+
+                            <div id="host-controls" style="display: none;">
+                                <!-- Auto-match Toggle -->
+                                <div id="auto-match-ui" style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <input type="checkbox" id="auto-match-toggle" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--gold);" onchange="toggleAutoMatch()">
+                                    <div style="text-align: left;">
+                                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Auto-match (5sec)</div>
+                                        <div id="auto-match-status" style="font-size: 0.75rem; color: var(--gold); font-weight: 500;">Disabled</div>
+                                    </div>
+                                </div>
+
+                                <div class="room-controls">
+                                    <button class="btn btn-primary" onclick="updateRoomStatus('ACTIVE')">Open Lobby</button>
+                                    <button class="btn btn-secondary" onclick="updateRoomStatus('WAITING')">Set Waiting</button>
+                                </div>
+                                <button class="btn btn-error btn-full" style="margin-top: 12px;" onclick="leaveRoom()">Close Room</button>
+                            </div>
+                            <div id="guest-controls" style="display: none;">
+                                <button class="btn btn-error btn-full" style="margin-top: 20px;" onclick="leaveRoom()">Leave Lobby</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE: QUEUE -->
+                    <div class="card" style="padding: 24px;">
+                        <div class="flex-between" style="margin-bottom: 20px;">
+                            <h3><i class="fa-solid fa-users"></i> Queue (<span id="player-count">0</span>)</h3>
+                            <div id="room-timer-badge" class="iq-pill">5 Min Blitz</div>
+                        </div>
+                        <div class="queue-list" id="queue-list">
+                            <!-- Players will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/sidebar.js?v=1"></script>
+    <script src="/js/socket.js?v=3"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('code');
+        
+        let state = {
+            user: getUser(),
+            room: null,
+            players: [],
+            isHost: false,
+            isHeartbeatActive: false
+        };
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!requireAuth()) return;
+            if (!roomCode) return window.location.href = '/pages/play.html';
+            
+            try {
+                await loadSidebar();
+                initSocket(); // This is the global one from socket.js
+                setupRoomSocketHandlers();
+                initLobby();
+            } catch (err) {
+                console.error('Lobby Init Error:', err);
+            }
+        });
+
+        async function initLobby() {
+            // Refresh user data just in case
+            state.user = getUser();
+            if (!state.user) return window.location.href = '/pages/login.html';
+
+            const res = await RoomAPI.getByCode(roomCode);
+            if (!res?.success) {
+                Toast.error('Room not found or expired.');
+                return setTimeout(() => window.location.href = '/pages/play.html', 1500);
+            }
+
+            state.room = res.room;
+            state.isHost = state.user.id === res.room.host_id;
+
+            if (res.room.status === 'CLOSED' || (!state.isHost && res.room.status === 'HOST_OFFLINE')) {
+                Toast.error('This lobby is no longer active.');
+                return setTimeout(() => window.location.href = '/pages/play.html', 1500);
+            }
+            
+            // Initial render
+            render();
+
+            // Join via socket (wait for authentication to settle)
+            const socket = getSocket();
+            const join = () => {
+                setTimeout(() => {
+                    console.log('[Lobby] Joining room via socket:', roomCode);
+                    SocketActions.joinPublicRoom(roomCode, 'browser-' + Date.now());
+                }, 800);
+            };
+
+            if (socket && socket.connected) join();
+            else if (socket) socket.on('connect', join);
+
+            // Start Heartbeat
+            if (!state.isHeartbeatActive) {
+                state.isHeartbeatActive = true;
+                setInterval(() => SocketActions.sendRoomHeartbeat(), 5000);
+            }
+        }
+
+        function setupRoomSocketHandlers() {
+            const socket = getSocket();
+            if (!socket) return console.error('Socket not initialized');
+
+            socket.on('public_room_sync', (data) => {
+                state.players = data.players;
+                state.room = { ...state.room, ...data };
+                render();
+            });
+
+            socket.on('public_room_closed', (data) => {
+                Toast.warning(data?.message || 'Lobby has been closed by host.');
+                setTimeout(() => window.location.href = '/pages/play.html', 2000);
+            });
+
+            socket.on('match_found', (data) => {
+                Toast.success('Match starting!');
+                setTimeout(() => window.location.href = `/pages/game.html?id=${data.matchId}`, 1000);
+            });
+            
+            socket.on('room_error', (data) => Toast.error(data.message));
+        }
+
+        let autoMatchEnabled = localStorage.getItem('px_auto_match') === 'true';
+        let autoMatchTimer = null;
+        let countdownSeconds = 5;
+
+        function toggleAutoMatch() {
+            autoMatchEnabled = document.getElementById('auto-match-toggle').checked;
+            localStorage.setItem('px_auto_match', autoMatchEnabled);
+            const statusEl = document.getElementById('auto-match-status');
+            if (statusEl) statusEl.innerText = autoMatchEnabled ? 'Waiting for players...' : 'Disabled';
+            if (!autoMatchEnabled) cancelAutoMatchCountdown();
+            else render();
+        }
+
+        function startAutoMatchCountdown(targetUserId) {
+            if (autoMatchTimer) return;
+            
+            countdownSeconds = 5;
+            const statusEl = document.getElementById('auto-match-status');
+            if (statusEl) statusEl.innerText = `Matching in ${countdownSeconds}s...`;
+            
+            autoMatchTimer = setInterval(() => {
+                countdownSeconds--;
+                if (statusEl) statusEl.innerText = `Matching in ${countdownSeconds}s...`;
+                
+                if (countdownSeconds <= 0) {
+                    clearInterval(autoMatchTimer);
+                    autoMatchTimer = null;
+                    if (statusEl) statusEl.innerText = 'Starting match...';
+                    acceptMatch(targetUserId);
+                }
+            }, 1000);
+        }
+
+        function cancelAutoMatchCountdown() {
+            if (autoMatchTimer) {
+                clearInterval(autoMatchTimer);
+                autoMatchTimer = null;
+            }
+            const statusEl = document.getElementById('auto-match-status');
+            if (statusEl) statusEl.innerText = autoMatchEnabled ? 'Waiting for players...' : 'Disabled';
+        }
+
+        function render() {
+            if (!state.room) return;
+
+            // Update Topbar
+            const inviteLink = `${window.location.origin}/pages/room.html?code=${state.room.roomCode || state.room.room_code}`;
+            document.getElementById('code-box').textContent = inviteLink;
+            document.getElementById('room-code-display').textContent = `ROOM: ${state.room.roomCode || state.room.room_code}`;
+            
+            // Update Status Badge
+            const statusBadge = document.getElementById('lobby-status-badge');
+            statusBadge.textContent = (state.room.status || 'ACTIVE').replace('_', ' ');
+            statusBadge.className = `live-badge status-${(state.room.status || 'ACTIVE').toLowerCase().replace('_', '-')}`;
+
+            // Update Host
+            const host = state.room.host || state.room.profiles;
+            const hostImg = host.profile_image || host.profileImage;
+            document.getElementById('host-name').textContent = host.username || 'Host';
+            document.getElementById('host-avatar-container').innerHTML = hostImg 
+                ? `<img src="${hostImg}" class="host-avatar">`
+                : `<div class="host-avatar flex-center" style="background:var(--gold);color:var(--bg-primary);font-size:40px;font-weight:800">${(host.username || 'H')[0].toUpperCase()}</div>`;
+
+            // Controls
+            document.getElementById('host-controls').style.display = state.isHost ? 'block' : 'none';
+            document.getElementById('guest-controls').style.display = state.isHost ? 'none' : 'block';
+
+            // Auto-match Logic for Host
+            if (state.isHost) {
+                const toggle = document.getElementById('auto-match-toggle');
+                if (toggle) toggle.checked = autoMatchEnabled;
+                const statusEl = document.getElementById('auto-match-status');
+                if (statusEl && !autoMatchTimer) statusEl.innerText = autoMatchEnabled ? 'Waiting for players...' : 'Disabled';
+
+                if (autoMatchEnabled && state.room.status === 'ACTIVE' && state.players.length > 0) {
+                    const nextPlayer = state.players[0];
+                    if (nextPlayer.status === 'waiting') {
+                        startAutoMatchCountdown(nextPlayer.user_id || nextPlayer.userId);
+                    } else {
+                        cancelAutoMatchCountdown();
+                    }
+                } else {
+                    cancelAutoMatchCountdown();
+                }
+            }
+
+            // Queue List
+            document.getElementById('player-count').textContent = state.players.length;
+            const queueList = document.getElementById('queue-list');
+            
+            let html = '';
+            state.players.forEach((p, idx) => {
+                const isNext = idx === 0 && state.room.status === 'ACTIVE';
+                const profiles = p.profiles || p;
+                const pImg = profiles.profile_image || profiles.profileImage;
+                
+                html += `
+                    <div class="player-row" style="${isNext ? 'border-color:var(--gold);background:rgba(232,197,71,0.02)' : ''}">
+                        <div class="flex gap-12" style="align-items:center">
+                            ${pImg 
+                                ? `<img src="${pImg}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1px solid var(--border)">`
+                                : `<div class="avatar-initial" style="width:40px;height:40px;font-size:16px">${(profiles.username || 'P')[0].toUpperCase()}</div>`
+                            }
+                            <div>
+                                <div style="font-weight:700">${profiles.username || 'Player'}</div>
+                                <div style="font-size:10px;color:var(--text-muted)">Queue Position: #${idx + 1}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-12" style="align-items:center">
+                            <span class="status-badge status-${p.status === 'playing' ? 'playing' : 'waiting'}">${p.status.toUpperCase()}</span>
+                            ${state.isHost && isNext ? `<button class="btn btn-primary btn-sm" onclick="acceptMatch('${p.user_id || p.userId}')">PLAY MATCH</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            queueList.innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--text-muted)">Waiting for players...</div>';
+            
+            // Timer Badge
+            document.getElementById('room-timer-badge').textContent = `${state.room.timerType || 5} Min Match`;
+        }
+
+        function updateRoomStatus(status) {
+            if (!state.room) return;
+            SocketActions.updateRoomStatus(state.room.id || state.room.roomId, status);
+            Toast.info(`Lobby set to ${status}`);
+        }
+
+        function acceptMatch(targetUserId) {
+            if (!state.room) return;
+            SocketActions.acceptPublicMatch(state.room.id || state.room.roomId, targetUserId);
+            Toast.success('Starting match...');
+        }
+
+        function leaveRoom() {
+            if (!state.room) return;
+            if (state.isHost) {
+                if (!confirm('Are you sure? Closing the lobby will remove all waiting players.')) return;
+                SocketActions.leavePublicRoom(state.room.id || state.room.roomId);
+            } else {
+                SocketActions.leavePublicRoom(state.room.id || state.room.roomId);
+            }
+            window.location.href = '/pages/play.html';
+        }
+
+        function copyCode() {
+            const code = state.room.roomCode || state.room.room_code;
+            const link = `${window.location.origin}/pages/room.html?code=${code}`;
+            navigator.clipboard.writeText(link);
+            Toast.success('Invite link copied!');
+        }
+    </script>
+</body>
+</html>

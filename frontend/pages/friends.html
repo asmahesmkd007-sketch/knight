@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friends – CHESS OX</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1642778632018672"
+     crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .friend-tabs {
+      display: flex; gap: 16px; margin-bottom: 22px;
+      border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;
+      overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .friend-tabs::-webkit-scrollbar { display: none; }
+    .friend-tab {
+      color: var(--text-muted); font-weight: 600; font-size: 13px;
+      padding-bottom: 8px; cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .friend-tab:hover { color: var(--text-primary); }
+    .friend-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .friend-page { display: none; }
+    .friend-page.active { display: block; animation: fadeIn 0.25s ease; }
+    .friend-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; background: var(--bg-card);
+      border: 1px solid var(--border-subtle); border-radius: 12px;
+      margin-bottom: 10px; transition: all 0.18s;
+    }
+    .friend-card:hover { border-color: rgba(232,197,71,0.2); transform: translateY(-1px); }
+    .f-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .f-avatar {
+      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(232,197,71,0.3), rgba(232,197,71,0.1));
+      border: 1px solid rgba(232,197,71,0.2);
+      color: var(--gold); font-weight: 700; font-size: 15px;
+      display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      position: absolute; bottom: -1px; right: -1px;
+      border: 2px solid var(--bg-primary);
+    }
+    .status-dot.online { background: var(--success); }
+    .status-dot.offline { background: var(--text-muted); }
+    .f-info { min-width: 0; }
+    .f-info .f-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .f-info .f-seen { font-size: 11px; color: var(--text-muted); }
+    .f-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .req-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; background: var(--bg-card);
+      border: 1px dashed var(--border-subtle); border-radius: 10px; margin-bottom: 10px;
+      gap: 12px;
+    }
+    .search-wrap { display: flex; gap: 10px; max-width: 480px; margin-bottom: 22px; }
+    .search-input {
+      flex: 1; padding: 11px 14px; border-radius: 10px;
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      color: var(--text-primary); outline: none; font-family: var(--font-body); font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: rgba(232,197,71,0.35); }
+    .search-wrap .btn { width: auto; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (max-width: 480px) {
+      .friend-card { flex-wrap: wrap; gap: 10px; }
+      .f-actions { width: 100%; justify-content: flex-end; }
+      .f-actions .btn { width: auto; }
+      .req-card { flex-wrap: wrap; }
+    }
+
+    /* AdSense Container Styling */
+    .ads-container {
+      margin-top: 24px;
+      min-height: 90px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">SOCIAL</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'"
+            style="cursor:pointer">P</div>
+        </div>
+      </div>
+
+      <div class="page-content" style="max-width:800px">
+        <div class="friend-tabs">
+          <div class="friend-tab active" onclick="switchTab('list')"><i class="fa-solid fa-users"></i> My Friends</div>
+          <div class="friend-tab" onclick="switchTab('requests')"><i class="fa-solid fa-envelope-open"></i> Requests
+            <span id="req-badge" class="badge" style="background:var(--gold);color:#0a0a0a;display:none;margin-left:4px"></span></div>
+          <div class="friend-tab" onclick="switchTab('challenges')"><i class="fa-solid fa-chess-knight"></i> Challenges
+            <span id="chal-badge" class="badge" style="background:var(--teal);color:#0a0a0a;display:none;margin-left:4px"></span></div>
+          <div class="friend-tab" onclick="switchTab('clan')"><i class="fa-solid fa-shield-halved"></i> Clan Invites
+            <span id="clan-badge" class="badge" style="background:var(--orange);color:#0a0a0a;display:none;margin-left:4px"></span></div>
+          <div class="friend-tab" onclick="switchTab('add')"><i class="fa-solid fa-plus"></i> Add Friend</div>
+        </div>
+
+        <!-- MY FRIENDS TAB -->
+        <div id="tab-list" class="friend-page active">
+          <div style="font-size:11px;color:var(--gold);letter-spacing:1.5px;font-weight:700;margin-bottom:12px;text-transform:uppercase">ONLINE</div>
+          <div id="online-friends">
+            <div style="text-align:center;padding:24px;color:var(--text-muted)">
+              <div class="spinner"></div>
+            </div>
+          </div>
+
+          <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;font-weight:600;margin:32px 0 12px">
+            OFFLINE</div>
+          <div id="offline-friends"></div>
+
+          <!-- AdSense Unit: My Friends Bottom -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+        </div>
+
+        <!-- REQUESTS TAB -->
+        <div id="tab-requests" class="friend-page">
+          <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;font-weight:600;margin-bottom:12px">
+            INCOMING FRIEND REQUESTS</div>
+          <div id="requests-list" style="margin-bottom:32px">
+            <div style="text-align:center;padding:24px;color:var(--text-muted)">No pending requests.</div>
+          </div>
+
+          <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;font-weight:600;margin:28px 0 12px">
+            SENT FRIEND REQUESTS</div>
+          <div id="sent-requests-list">
+            <div style="text-align:center;padding:24px;color:var(--text-muted)">No pending sent requests.</div>
+          </div>
+          
+          <!-- AdSense Unit: Requests Bottom -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+        </div>
+
+        <!-- CHALLENGES TAB -->
+        <div id="tab-challenges" class="friend-page">
+          <div style="font-size:11px;color:var(--gold);letter-spacing:1.5px;font-weight:700;margin-bottom:12px;text-transform:uppercase">INCOMING CHALLENGES</div>
+          <div id="challenges-list">
+            <div style="text-align:center;padding:24px;color:var(--text-muted)">No active challenges.</div>
+          </div>
+
+          <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;font-weight:600;margin:32px 0 12px">
+            SENT CHALLENGES</div>
+          <div id="sent-challenges-list">
+            <div style="text-align:center;padding:24px;color:var(--text-muted)">No pending sent challenges.</div>
+          </div>
+        </div>
+
+        <!-- CLAN INVITES TAB -->
+        <div id="tab-clan" class="friend-page">
+          <div style="font-size:11px;color:var(--gold);letter-spacing:1.5px;font-weight:700;margin-bottom:12px;text-transform:uppercase">INCOMING CLAN INVITATIONS</div>
+          <div id="clan-invites-list">
+            <div style="text-align:center;padding:24px;color:var(--text-muted)">No pending clan invitations.</div>
+          </div>
+        </div>
+
+        <!-- ADD FRIEND TAB -->
+        <div id="tab-add" class="friend-page">
+          <div class="card">
+            <div class="card-title">Find friends</div>
+            <div class="search-wrap">
+              <input type="text" id="add-search" class="search-input" placeholder="Type @username...">
+              <button class="btn btn-primary" onclick="sendFriendRequest()">Send Request</button>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted)">They must accept your request before you can challenge
+              them.</p>
+          </div>
+
+          <!-- AdSense Unit: Add Friend Bottom -->
+          <div class="ads-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-1642778632018672"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Global Challenge Modal is injected via socket.js -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/api.js?v=2"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/socket.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error();
+    const user = getUser();
+    loadSidebar();
+    const sock = initSocket();
+    if (sock) {
+      sock.on('silent_notification', () => { loadRequests(); loadFriends(); });
+    }
+
+
+    if (user.profile_image) {
+      document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.friend-tab').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.friend-page').forEach(el => el.classList.remove('active'));
+      document.querySelector(`.friend-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    async function sendFriendRequest() {
+      const username = document.getElementById('add-search').value.trim();
+      if (!username) return Toast.error('Please enter a username');
+
+      const res = await FriendAPI.sendRequest(username);
+      if (res.success) {
+        Toast.success('Friend Request Sent!');
+        document.getElementById('add-search').value = '';
+      } else {
+        Toast.error(res.message);
+      }
+    }
+
+    async function loadRequests() {
+      const [reqRes, chalRes, clanRes] = await Promise.all([
+        FriendAPI.getRequests(), 
+        FriendAPI.getChallenges(),
+        ClanAPI.getMyInvitations()
+      ]);
+
+      // 1. Incoming Friend Requests
+      const list = document.getElementById('requests-list');
+      if (reqRes.success) {
+        if (reqRes.incoming.length === 0) {
+          list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No pending requests.</div>';
+        } else {
+          list.innerHTML = reqRes.incoming.map(r => `
+        <div class="req-card">
+          <div class="f-user">
+            <div class="f-avatar" style="width:36px;height:36px;font-size:14px">${r.sender.username.replace('@', '')[0].toUpperCase()}</div>
+            <div class="f-info"><div class="f-name">${r.sender.username}</div><div class="f-seen">${new Date(r.created_at).toLocaleString()}</div></div>
+          </div>
+          <div class="f-actions">
+            <button class="btn btn-secondary btn-sm" onclick="respondReq('${r.id}', 'reject')">Close</button>
+            <button class="btn btn-primary btn-sm" onclick="respondReq('${r.id}', 'accept')">Accept</button>
+          </div>
+        </div>
+      `).join('');
+        }
+
+        // 2. Sent (Outgoing) Friend Requests
+        const sentList = document.getElementById('sent-requests-list');
+        if (reqRes.outgoing.length === 0) {
+          sentList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No pending sent requests.</div>';
+        } else {
+          sentList.innerHTML = reqRes.outgoing.map(r => `
+        <div class="req-card" style="opacity:0.8">
+          <div class="f-user">
+            <div class="f-avatar" style="width:36px;height:36px;font-size:14px;background:var(--border)">${r.receiver.username.replace('@', '')[0].toUpperCase()}</div>
+            <div class="f-info"><div class="f-name">${r.receiver.username}</div><div class="f-seen">Sent ${new Date(r.created_at).toLocaleDateString()}</div></div>
+          </div>
+          <div class="f-actions">
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600">PENDING</span>
+          </div>
+        </div>
+      `).join('');
+        }
+      }
+
+      // 3. Game Challenges
+      const chalList = document.getElementById('challenges-list');
+      if (chalRes.success) {
+        const incoming = chalRes.challenges || [];
+        const outgoing = chalRes.outgoingChallenges || [];
+
+        let html = '';
+        incoming.forEach(c => {
+            const sender = c.from_user || { username: 'Unknown' };
+            html += `
+          <div class="req-card" style="border-style: solid; border-color: var(--teal)">
+            <div class="f-user">
+              <div class="f-avatar" style="width:36px;height:36px;font-size:14px;background:var(--teal);color:#000">${(sender.username || '?').replace('@', '')[0].toUpperCase()}</div>
+              <div class="f-info">
+                <div class="f-name">${sender.username} <span class="badge badge-live" style="font-size:9px">INCOMING</span></div>
+                <div class="f-seen">${c.timer}min Match</div>
+              </div>
+            </div>
+            <div class="f-actions">
+              <button class="btn btn-secondary btn-sm" onclick="respondChal('${c.id}', 'declined')">Decline</button>
+              <button class="btn btn-primary btn-sm" onclick="respondChal('${c.id}', 'accepted', '${c.from_user_id}', '${sender.username}', ${c.timer})">Play</button>
+            </div>
+          </div>`;
+        });
+
+        // Outgoing
+        if (outgoing.length === 0) {
+          document.getElementById('sent-challenges-list').innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No pending sent challenges.</div>';
+        } else {
+          let outHtml = '';
+          outgoing.forEach(c => {
+              const receiver = c.to_user || { username: 'Unknown' };
+              outHtml += `
+          <div class="req-card" style="opacity:0.8">
+            <div class="f-user">
+              <div class="f-avatar" style="width:36px;height:36px;font-size:14px;background:var(--border)">${(receiver.username || '?').replace('@', '')[0].toUpperCase()}</div>
+              <div class="f-info">
+                <div class="f-name">${receiver.username} <span class="badge badge-pending" style="font-size:9px">WAITING</span></div>
+                <div class="f-seen">${c.timer}min Match</div>
+              </div>
+            </div>
+            <div class="f-actions">
+               <span style="font-size:11px;color:var(--text-muted);font-weight:600">SENT</span>
+            </div>
+          </div>`;
+          });
+          document.getElementById('sent-challenges-list').innerHTML = outHtml;
+        }
+
+        chalList.innerHTML = html || '<div style="text-align:center;padding:24px;color:var(--text-muted)">No active challenges.</div>';
+      }
+
+      // 4. Clan Invitations
+      const clanList = document.getElementById('clan-invites-list');
+      if (clanRes.success) {
+        const invitations = clanRes.invitations || [];
+        if (invitations.length === 0) {
+          clanList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No pending clan invitations.</div>';
+        } else {
+          clanList.innerHTML = invitations.map(i => `
+            <div class="req-card" style="border-left: 3px solid var(--orange)">
+              <div class="f-user">
+                <div class="f-avatar" style="width:36px;height:36px;font-size:14px;background:var(--orange);color:#000">${i.clans.tag[0]}</div>
+                <div class="f-info">
+                  <div class="f-name">[${i.clans.tag}] ${i.clans.name}</div>
+                  <div class="f-seen">Invited ${new Date(i.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div class="f-actions">
+                <button class="btn btn-secondary btn-sm" onclick="respondClanInvite('${i.id}', 'reject')">Decline</button>
+                <button class="btn btn-primary btn-sm" onclick="respondClanInvite('${i.id}', 'accept')">Join Clan</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 4. Badge Counts
+      const reqBadge = document.getElementById('req-badge');
+      const incomingReqs = reqRes.incoming?.length || 0;
+      if (incomingReqs > 0) {
+        reqBadge.textContent = incomingReqs;
+        reqBadge.style.display = 'inline-flex';
+      } else {
+        reqBadge.style.display = 'none';
+      }
+
+      const chalBadge = document.getElementById('chal-badge');
+      const incomingChals = chalRes.challenges?.length || 0;
+      if (incomingChals > 0) {
+        chalBadge.textContent = incomingChals;
+        chalBadge.style.display = 'inline-flex';
+      } else {
+        chalBadge.style.display = 'none';
+      }
+
+      const clanBadge = document.getElementById('clan-badge');
+      const incomingInvites = clanRes.invitations?.length || 0;
+      if (incomingInvites > 0) {
+        clanBadge.textContent = incomingInvites;
+        clanBadge.style.display = 'inline-flex';
+      } else {
+        clanBadge.style.display = 'none';
+      }
+    }
+
+    async function respondReq(id, action) {
+      const res = await FriendAPI.respondRequest(id, action);
+      if (res.success) {
+        Toast.success(action === 'accept' ? 'Friend Added!' : 'Request ignored.');
+        loadRequests();
+        loadFriends();
+      } else Toast.error(res.message);
+    }
+
+    async function respondClanInvite(id, action) {
+      const res = await ClanAPI.respondInvitation(id, action);
+      if (res.success) {
+        Toast.success(action === 'accept' ? 'Welcome to the Clan!' : 'Invitation declined.');
+        loadRequests();
+      } else Toast.error(res.message);
+    }
+
+    async function respondChal(id, action, fromUserId, fromUsername, timer) {
+      if (action === 'accepted') {
+        // If accepting, we use the socket directly for immediate play
+        const sock = getSocket() || initSocket();
+        sock.emit('accept_invite', {
+          fromUserId,
+          toUserId: user.id,
+          fromUsername,
+          toUsername: user.username,
+          timer
+        });
+        // Also update DB status
+        await FriendAPI.respondChallenge(id, 'accepted');
+        Toast.success('Joining match...');
+      } else {
+        const res = await FriendAPI.respondChallenge(id, 'declined');
+        if (res.success) {
+          Toast.info('Challenge declined.');
+          loadRequests();
+        }
+      }
+    }
+
+    async function loadFriends() {
+      const res = await FriendAPI.getFriends();
+      if (!res.success) return;
+
+      const onlineEl = document.getElementById('online-friends');
+      const offlineEl = document.getElementById('offline-friends');
+
+      const online = res.friends.filter(f => f.is_online);
+      const offline = res.friends.filter(f => !f.is_online);
+
+      const renderFriend = (f) => `
+    <div class="friend-card">
+      <div class="f-user">
+        <div class="f-avatar">
+          ${f.username.replace('@', '')[0].toUpperCase()}
+          <div class="status-dot ${f.is_online ? 'online' : 'offline'}"></div>
+        </div>
+        <div class="f-info">
+          <div class="f-name">${f.username}</div>
+          <div class="f-seen">${f.is_online ? 'Online right now' : 'Last seen: ' + new Date(f.last_seen).toLocaleDateString()}</div>
+        </div>
+      </div>
+      <div class="f-actions">
+        ${f.is_online
+          ? `<button class="btn btn-primary btn-sm" onclick="window.location='/pages/play.html?challenge=${f.friend_id}'"><i class="fa-solid fa-khanda"></i> Challenge</button>`
+          : ''}
+        <button class="btn btn-danger btn-sm" style="background:transparent" onclick="removeFriend('${f.friendship_id}', '${f.username}')"><i class="fa-solid fa-user-xmark"></i></button>
+      </div>
+    </div>
+  `;
+
+      onlineEl.innerHTML = online.length ? online.map(renderFriend).join('') : '<div style="color:var(--text-muted);font-size:13px;padding:8px">No friends online right now.</div>';
+      offlineEl.innerHTML = offline.length ? offline.map(renderFriend).join('') : '<div style="color:var(--text-muted);font-size:13px;padding:8px">Your offline friends will appear here.</div>';
+    }
+
+    async function removeFriend(id, name) {
+      if (!confirm(`Remove ${name} from your friends list?`)) return;
+      const res = await FriendAPI.removeFriend(id);
+      if (res.success) { Toast.success('Friend removed.'); loadFriends(); }
+      else Toast.error(res.message);
+    }
+
+    // Initial Load
+    loadRequests();
+    loadFriends();
+    // Poll every 15s — store interval ID so it can be cleared if needed
+    const _pollInterval = setInterval(() => { loadRequests(); loadFriends(); }, 15000);
+    // Clean up on page unload to prevent memory leaks
+    window.addEventListener('beforeunload', () => clearInterval(_pollInterval));
+
+    // Auto-add @ to search input
+    const searchInput = document.getElementById('add-search');
+    searchInput.addEventListener('input', function () {
+      if (this.value && !this.value.startsWith('@')) {
+        this.value = '@' + this.value;
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ── Backgrounds: warm dark-grey hierarchy ── */
+  --bg-primary:   #111118;
+  --bg-secondary: #18181f;
+  --bg-tertiary:  #1e1e27;
+  --bg-card:      #1c1c24;
+  --bg-card-hover:#212130;
+  --bg-glass:     rgba(24,24,31,0.82);
+  --bg-input:     #16161d;
+  --bg-sunken:    #0e0e14;
+
+  /* ── Brand: warm gold ── */
+  --gold:         #D4A843;
+  --gold-light:   #e8c060;
+  --gold-dark:    #b08a2e;
+  --gold-dim:     rgba(212,168,67,0.12);
+
+  /* ── Accent ── */
+  --accent:       #7B6FC4;
+  --accent-light: #9b91d8;
+
+  /* ── Borders ── */
+  --border:        rgba(212,168,67,0.14);
+  --border-subtle: rgba(255,255,255,0.07);
+  --border-medium: rgba(255,255,255,0.10);
+  --border-glow:   rgba(212,168,67,0.35);
+
+  /* ── Typography ── */
+  --text-primary:   #eeeef5;
+  --text-secondary: #b8b8cc;
+  --text-muted:     #72728a;
+
+  /* ── Semantic ── */
+  --success:     #3ecf6e;
+  --error:       #f06b7e;
+  --warning:     #f0b429;
+  --info:        #4A8FD4;
+
+  /* ── Layout ── */
+  --sidebar-w:  240px;
+  --topbar-h:   64px;
+
+  /* ── Radii ── */
+  --radius:    12px;
+  --radius-sm:  8px;
+  --radius-lg: 18px;
+
+  /* ── Shadows ── */
+  --shadow:    0 4px 24px rgba(0,0,0,0.45);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f0f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e8e8f0;
+  --bg-card: rgba(255,255,255,0.9);
+  --text-primary: #0e0e1a;
+  --text-secondary: #3a3a52;
+  --text-muted: #6b6b88;
+  --border: rgba(160,130,20,0.25);
+  --border-subtle: rgba(0,0,0,0.1);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter);
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Premium Button Styles */
+.btn-premium {
+  @apply relative overflow-hidden transition-all duration-300 active:scale-95;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #111;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 15px rgba(212, 168, 67, 0.3);
+}
+
+.btn-premium:hover {
+  @apply scale-[1.02];
+  box-shadow: 0 8px 25px rgba(212, 168, 67, 0.45);
+}

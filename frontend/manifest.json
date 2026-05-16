@@ -1,0 +1,18 @@
+{
+  "name": "CHESS OX Chess",
+  "short_name": "CHESS OX",
+  "description": "The Ultimate Chess Platform — Online Multiplayer, Tournaments & Rewards",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1628",
+  "theme_color": "#0a1628",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/images/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

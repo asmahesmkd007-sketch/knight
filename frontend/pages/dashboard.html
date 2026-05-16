@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | CHESS OX</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a1628">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="icon" type="image/png" href="/assets/images/logo-chessox.png?v=1">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1642778632018672"
+     crossorigin="anonymous"></script>
+  <style>
+    /* ── SYNC OVERLAY ── */
+    .sync-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg-primary);
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    .sync-overlay.hidden { opacity: 0; pointer-events: none; }
+    .sync-logo { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--gold); letter-spacing: 3px; margin-top: 20px; }
+    .sync-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; letter-spacing: 2px; text-transform: uppercase; }
+
+    /* ── AMBIENT BG ORBS ── */
+    .dash-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.07;
+      animation: orb-drift 12s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 500px; height: 500px; background: var(--gold); top: -150px; right: -100px; animation-delay: 0s; }
+    .orb-2 { width: 400px; height: 400px; background: var(--accent); bottom: -100px; left: 10%; animation-delay: -4s; }
+    .orb-3 { width: 300px; height: 300px; background: var(--gold); top: 40%; left: 30%; animation-delay: -8s; opacity: 0.04; }
+    @keyframes orb-drift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(30px,20px) scale(1.08); } }
+
+    /* ── HERO CARD ── */
+    .hero-card {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, rgba(232,197,71,0.07) 0%, rgba(124,111,205,0.05) 50%, rgba(8,8,16,0) 100%);
+      border: 1px solid rgba(232,197,71,0.18);
+      border-radius: 20px; padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .hero-card::before {
+      content: '♘';
+      position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+      font-size: 120px; opacity: 0.04; line-height: 1;
+      color: var(--gold); pointer-events: none;
+      font-family: serif;
+    }
+    .hero-avatar {
+      width: 68px; height: 68px; border-radius: 18px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(232,197,71,0.25), rgba(232,197,71,0.08));
+      border: 2px solid rgba(232,197,71,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 800; color: var(--gold);
+      overflow: hidden;
+      box-shadow: 0 0 0 4px rgba(232,197,71,0.08), 0 8px 24px rgba(0,0,0,0.4);
+      transition: box-shadow 0.3s;
+    }
+    .hero-avatar:hover { box-shadow: 0 0 0 6px rgba(232,197,71,0.15), 0 8px 32px rgba(0,0,0,0.5); }
+    .hero-name { font-family: var(--font-display); font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+    .hero-label { font-size: 10px; color: var(--text-muted); letter-spacing: 2.5px; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+    .hero-meta { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .iq-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(232,197,71,0.1); border: 1px solid rgba(232,197,71,0.25);
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; color: var(--gold);
+    }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-actions .btn { width: auto; flex: 1; min-width: 120px; }
+
+    /* ── STAT CARDS ── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px; padding: 20px 18px;
+      position: relative; overflow: hidden;
+      transition: all 0.25s ease;
+      cursor: default;
+    }
+    .stat-tile::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: var(--tile-accent, var(--gold));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .stat-tile:hover { border-color: rgba(232,197,71,0.2); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+    .stat-tile:hover::after { transform: scaleX(1); }
+    .stat-tile.gold-tile { --tile-accent: var(--gold); }
+    .stat-tile.purple-tile { --tile-accent: var(--accent); }
+    .stat-tile.green-tile { --tile-accent: var(--success); }
+    .stat-tile.blue-tile { --tile-accent: #4A90D9; }
+    .tile-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; margin-bottom: 14px;
+      background: var(--tile-icon-bg, rgba(232,197,71,0.1));
+      color: var(--tile-accent, var(--gold));
+    }
+    .tile-label { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+    .tile-value { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+    .tile-sub { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .tile-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; margin-top: 6px; padding: 2px 7px; border-radius: 20px; }
+    .tile-trend.up { background: rgba(52,211,153,0.1); color: var(--success); }
+    .tile-trend.neutral { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+
+    /* ── MAIN GRID ── */
+    .dash-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+
+    /* ── SECTION HEADER ── */
+    .section-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-hdr-title {
+      font-family: var(--font-display); font-size: 13px; font-weight: 700;
+      color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+    }
+    .section-hdr-title .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+      box-shadow: 0 0 6px rgba(232,197,71,0.6);
+    }
+    .section-hdr a { font-size: 11px; color: var(--gold); text-decoration: none; opacity: 0.8; transition: opacity 0.2s; }
+    .section-hdr a:hover { opacity: 1; }
+
+    /* ── ACTION GRID ── */
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .action-tile {
+      display: flex; flex-direction: column; align-items: flex-start;
+      padding: 18px 16px; border-radius: 14px;
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      text-decoration: none; cursor: pointer;
+      transition: all 0.22s ease; position: relative; overflow: hidden;
+    }
+    .action-tile::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 80% 20%, var(--at-glow, rgba(232,197,71,0.08)), transparent 70%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .action-tile:hover { transform: translateY(-3px); border-color: rgba(232,197,71,0.25); box-shadow: 0 10px 28px rgba(0,0,0,0.35); }
+    .action-tile:hover::before { opacity: 1; }
+    .action-tile.featured { background: linear-gradient(135deg, rgba(232,197,71,0.1), rgba(232,197,71,0.04)); border-color: rgba(232,197,71,0.25); }
+    .at-icon { font-size: 22px; margin-bottom: 10px; color: var(--at-color, var(--text-muted)); transition: transform 0.2s; }
+    .action-tile:hover .at-icon { transform: scale(1.15) rotate(-5deg); }
+    .at-title { font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 2px; }
+    .at-sub { font-size: 11px; color: var(--text-muted); }
+
+    /* ── LIVE ACTIVITY PANEL ── */
+    .live-panel { display: flex; flex-direction: column; gap: 10px; }
+    .live-stat-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-radius: 12px;
+      background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle);
+      transition: border-color 0.2s;
+    }
+    .live-stat-row:hover { border-color: rgba(232,197,71,0.15); }
+    .live-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .live-stat-val { font-family: var(--font-display); font-size: 28px; font-weight: 800; }
+    .live-stat-val.gold { color: var(--gold); }
+    .live-stat-val.orange { color: #f59e0b; }
+
+    /* ── TOURNAMENT ROWS ── */
+    .tr-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-radius: 12px;
+      background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle);
+      transition: all 0.2s; margin-bottom: 8px;
+    }
+    .tr-row:last-child { margin-bottom: 0; }
+    .tr-row:hover { border-color: rgba(232,197,71,0.2); background: rgba(232,197,71,0.03); }
+    .tr-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .tr-meta { font-size: 11px; color: var(--gold); margin-top: 2px; font-family: var(--font-display); }
+
+    /* ── CHALLENGE CARD ── */
+    .challenge-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-radius: 14px;
+      background: rgba(232,197,71,0.05); border: 1px solid rgba(232,197,71,0.2);
+      margin-bottom: 10px; animation: slide-in 0.3s ease;
+    }
+    @keyframes slide-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── RECENT ACTIVITY FEED ── */
+    .activity-feed { display: flex; flex-direction: column; gap: 0; }
+    .activity-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.15s;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .activity-icon.win { background: rgba(52,211,153,0.12); color: var(--success); }
+    .activity-icon.loss { background: rgba(248,113,113,0.12); color: var(--error); }
+    .activity-icon.draw { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    .activity-icon.deposit { background: rgba(232,197,71,0.12); color: var(--gold); }
+    .activity-icon.tournament { background: rgba(124,111,205,0.12); color: var(--accent); }
+    .activity-text { flex: 1; min-width: 0; }
+    .activity-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .activity-time { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .activity-badge { font-family: var(--font-display); font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .activity-badge.win { color: var(--success); }
+    .activity-badge.loss { color: var(--error); }
+
+    /* ── WIN RATE RING ── */
+    .wr-ring-wrap { display: flex; align-items: center; gap: 20px; padding: 16px 0; }
+    .wr-ring { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+    .wr-ring svg { transform: rotate(-90deg); }
+    .wr-ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 6; }
+    .wr-ring-fill { fill: none; stroke: var(--gold); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+    .wr-ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--gold); }
+    .wr-stats { display: flex; flex-direction: column; gap: 6px; }
+    .wr-stat { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .wr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── NOTIF ITEM UNREAD ── */
+    .notif-item.unread { background: rgba(232,197,71,0.04); border-left: 2px solid rgba(232,197,71,0.4); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1100px) {
+      .dash-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .hero-card { padding: 20px; }
+      .hero-card::before { display: none; }
+      .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .action-grid { grid-template-columns: 1fr 1fr; }
+      .hero-name { font-size: 20px; }
+      .tile-value { font-size: 22px; }
+      .live-stat-val { font-size: 22px; }
+      .hero-actions { width: 100%; }
+    }
+      @media (max-width: 400px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .action-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+
+  </style>
+</head>
+
+<body>
+
+  <!-- AMBIENT BACKGROUND -->
+  <div class="dash-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="sync-overlay" id="sync-overlay">
+    <div class="spinner"></div>
+    <div class="sync-logo">
+      <img src="/assets/images/logo-chessox.png?v=1" alt="CHESS OX" style="height: 60px;">
+    </div>
+    <div class="sync-sub">Syncing your data...</div>
+  </div>
+
+  <div class="app-layout">
+    <!-- SIDEBAR CONTAINER -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">DASHBOARD</div>
+          <div class="live-badge">
+            <div class="live-dot"></div> LIVE
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-player-id" id="tb-player-id" title="Click to copy">PX-SYNCING...</div>
+          <div style="position:relative">
+            <button class="notif-btn" id="notif-btn"><i class="fa-solid fa-bell"></i><span class="notif-count"
+                id="notif-count" style="display:none">0</span></button>
+            <div class="notif-dropdown" id="notif-dropdown">
+              <div class="notif-header"><i class="fa-solid fa-bell"></i> Notifications</div>
+              <div id="notif-list">
+                <div style="padding:20px;text-align:center;color:var(--text-muted)">No notifications</div>
+              </div>
+            </div>
+          </div>
+          <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- ── HERO ── -->
+        <div class="hero-card">
+          <div class="flex-between" style="flex-wrap:wrap;gap:20px;position:relative;z-index:1">
+            <div class="flex gap-16" style="align-items:center">
+              <div class="hero-avatar" id="dash-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
+              <div>
+                <div class="hero-label">Welcome back, Champion</div>
+                <div class="hero-name" id="dash-username">Player</div>
+                <div class="hero-meta">
+                  <span class="badge" id="dash-rank-badge">Bronze</span>
+                  <span class="iq-pill"><i class="fa-solid fa-brain"></i> IQ <span id="dash-iq">100</span></span>
+                  <span id="dash-kyc-badge"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ── STAT TILES ── -->
+        <div class="stats-row">
+          <div class="stat-tile gold-tile">
+            <div class="tile-icon" style="--tile-icon-bg:rgba(232,197,71,0.1)"><i class="fa-solid fa-coins"></i></div>
+            <div class="tile-label">Wallet Balance</div>
+            <div class="tile-value" id="dash-wallet">0</div>
+            <div class="tile-sub">Available Coins</div>
+            <div class="tile-trend neutral" id="dash-wallet-trend"><i class="fa-solid fa-circle-dot"></i> Live</div>
+          </div>
+          <div class="stat-tile green-tile">
+            <div class="tile-icon" style="--tile-icon-bg:rgba(52,211,153,0.1);color:var(--success)"><i class="fa-solid fa-chess-pawn"></i></div>
+            <div class="tile-label">Matches Played</div>
+            <div class="tile-value" id="dash-matches">0</div>
+            <div class="tile-sub" id="dash-wld">0W / 0L / 0D</div>
+          </div>
+          <div class="stat-tile blue-tile">
+            <div class="tile-icon" style="--tile-icon-bg:rgba(74,144,217,0.1);color:#4A90D9"><i class="fa-solid fa-percent"></i></div>
+            <div class="tile-label">Win Rate</div>
+            <div class="tile-value" id="dash-winrate">0%</div>
+            <div class="tile-sub">All-time performance</div>
+          </div>
+          <div class="stat-tile purple-tile">
+            <div class="tile-icon" style="--tile-icon-bg:rgba(124,111,205,0.1)"><i class="fa-solid fa-fire"></i></div>
+            <div class="tile-label">Best Streak</div>
+            <div class="tile-value" id="dash-streak">0</div>
+            <div class="tile-sub">Wins in a row</div>
+          </div>
+        </div>
+
+        <!-- ── PENDING CHALLENGES ── -->
+        <div id="dash-challenges-section" style="display:none;margin-bottom:20px">
+          <div class="section-hdr">
+            <div class="section-hdr-title"><div class="dot"></div> Pending Challenges</div>
+          </div>
+          <div id="dash-challenges-list"></div>
+        </div>
+
+        <!-- ── MAIN GRID ── -->
+        <div class="dash-grid">
+
+          <!-- LEFT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+
+
+
+            <!-- ACTIVE MATCH REJOIN -->
+            <div id="active-match-section" style="display:none">
+              <div class="card" style="padding:22px; border-color: var(--gold); background: linear-gradient(135deg, rgba(232,197,71,0.12) 0%, rgba(8,8,16,0) 100%);">
+                <div class="flex-between" style="align-items:center">
+                  <div class="flex gap-16" style="align-items:center">
+                    <div class="live-dot" style="width:10px; height:10px; box-shadow: 0 0 10px var(--gold);"></div>
+                    <div>
+                      <div class="hero-label" style="color: var(--gold); margin-bottom: 2px;">Ongoing Match Detected</div>
+                      <div class="hero-name" style="font-size: 18px;" id="am-opponent">vs Opponent</div>
+                      <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;" id="am-details">5 min · Random Match</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary" onclick="rejoinActiveMatch()" style="width: auto; padding: 10px 24px;">
+                    <i class="fa-solid fa-play" style="margin-right: 8px;"></i> Rejoin Now
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- QUICK ACTIONS -->
+            <div class="card" style="padding:22px">
+              <div class="section-hdr" style="margin-bottom:14px">
+                <div class="section-hdr-title"><div class="dot"></div> Quick Actions</div>
+              </div>
+              <div class="action-grid">
+                <a href="/pages/play.html" class="action-tile featured" style="--at-glow:rgba(232,197,71,0.12)">
+                  <div class="at-icon" style="--at-color:var(--gold)"><i class="fa-solid fa-chess-knight"></i></div>
+                  <div class="at-title">Play Chess</div>
+                  <div class="at-sub">Find a random opponent</div>
+                </a>
+                <a href="/pages/paid-tournament.html" class="action-tile featured" style="--at-glow:rgba(124,111,205,0.1)">
+                  <div class="at-icon" style="--at-color:var(--accent)"><i class="fa-solid fa-trophy"></i></div>
+                  <div class="at-title">Paid TR</div>
+                  <div class="at-sub">Win real coins</div>
+                </a>
+                <a href="/pages/wallet.html" class="action-tile" style="--at-glow:rgba(74,144,217,0.08)">
+                  <div class="at-icon" style="--at-color:#4A90D9"><i class="fa-solid fa-wallet"></i></div>
+                  <div class="at-title">Add Money</div>
+                  <div class="at-sub">Top up via Razorpay</div>
+                </a>
+              </div>
+            </div>
+
+            <!-- WIN RATE BREAKDOWN -->
+            <div class="card" style="padding:22px">
+              <div class="section-hdr" style="margin-bottom:14px">
+                <div class="section-hdr-title"><div class="dot"></div> Performance</div>
+                <a href="/pages/history.html">View History →</a>
+              </div>
+              <div class="wr-ring-wrap">
+                <div class="wr-ring">
+                  <svg width="80" height="80" viewBox="0 0 80 80">
+                    <circle class="wr-ring-bg" cx="40" cy="40" r="34"/>
+                    <circle class="wr-ring-fill" id="wr-ring-fill" cx="40" cy="40" r="34"
+                      stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                  </svg>
+                  <div class="wr-ring-text" id="wr-ring-pct">0%</div>
+                </div>
+                <div class="wr-stats">
+                  <div class="wr-stat">
+                    <div class="wr-dot" style="background:var(--success)"></div>
+                    <span style="color:var(--text-muted);font-size:11px">Wins</span>
+                    <span style="font-weight:700;font-size:13px;margin-left:4px" id="wr-wins">0</span>
+                  </div>
+                  <div class="wr-stat">
+                    <div class="wr-dot" style="background:var(--error)"></div>
+                    <span style="color:var(--text-muted);font-size:11px">Losses</span>
+                    <span style="font-weight:700;font-size:13px;margin-left:4px" id="wr-losses">0</span>
+                  </div>
+                  <div class="wr-stat">
+                    <div class="wr-dot" style="background:var(--text-muted)"></div>
+                    <span style="color:var(--text-muted);font-size:11px">Draws</span>
+                    <span style="font-weight:700;font-size:13px;margin-left:4px" id="wr-draws">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LIVE TOURNAMENTS (conditional) -->
+            <div class="card" id="live-tr-section" style="display:none;padding:22px">
+              <div class="section-hdr" style="margin-bottom:14px">
+                <div class="section-hdr-title">
+                  <div class="live-dot" style="width:7px;height:7px"></div>
+                  Live Tournaments
+                </div>
+                <a href="/pages/paid-tournament.html">View All →</a>
+              </div>
+              <div id="live-tr-list"></div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+
+            <!-- LIVE ACTIVITY -->
+            <div class="card" style="padding:22px">
+              <div class="section-hdr" style="margin-bottom:14px">
+                <div class="section-hdr-title"><div class="dot"></div> Live Activity</div>
+                <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+              </div>
+              <div class="live-panel">
+                <div class="live-stat-row">
+                  <div>
+                    <div class="live-stat-label">Online Players</div>
+                    <div class="live-stat-val gold" data-live="online">0</div>
+                  </div>
+                  <div style="font-size:28px;opacity:0.15;color:var(--gold)"><i class="fa-solid fa-users"></i></div>
+                </div>
+                <div class="live-stat-row">
+                  <div>
+                    <div class="live-stat-label">Active Matches</div>
+                    <div class="live-stat-val orange" data-live="matches">0</div>
+                  </div>
+                  <div style="font-size:28px;opacity:0.15;color:#f59e0b"><i class="fa-solid fa-chess"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RESPONSIVE AdSense Unit: Middle Sidebar -->
+            <div class="responsive-ad" style="margin-bottom: 20px;">
+              <div class="ads-container" style="min-height: 90px; max-height: 120px; overflow: hidden;">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-1642778632018672"
+                     data-ad-slot="auto"
+                     data-ad-format="horizontal"
+                     data-full-width-responsive="false"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+              </div>
+            </div>
+
+            <!-- RECENT ACTIVITY FEED -->
+            <div class="card" style="padding:22px">
+              <div class="section-hdr" style="margin-bottom:14px">
+                <div class="section-hdr-title"><div class="dot"></div> Recent Activity</div>
+                <a href="/pages/history.html">See all →</a>
+              </div>
+              <div class="activity-feed" id="activity-feed">
+                <div style="text-align:center;padding:24px;color:var(--text-muted)">
+                  <div class="spinner" style="width:24px;height:24px;margin:0 auto 8px"></div>
+                  <div style="font-size:12px">Loading activity...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LEADERBOARD PEEK -->
+            <div class="card" style="padding:22px">
+              <div class="section-hdr" style="margin-bottom:14px">
+                <div class="section-hdr-title"><div class="dot"></div> Top Players</div>
+                <a href="/pages/leaderboard.html">Full Board →</a>
+              </div>
+              <div id="lb-peek">
+                <div style="text-align:center;padding:16px;color:var(--text-muted)">
+                  <div class="spinner" style="width:24px;height:24px;margin:0 auto"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RESPONSIVE AdSense Unit: Above Footer -->
+            <div class="responsive-ad" style="margin-bottom: 20px;">
+              <div class="ads-container" style="min-height: 90px; max-height: 120px; overflow: hidden;">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-1642778632018672"
+                     data-ad-slot="auto"
+                     data-ad-format="horizontal"
+                     data-full-width-responsive="false"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <footer style="margin-top:48px;padding:20px 24px;text-align:center;color:var(--text-muted);font-size:11px;border-top:1px solid var(--border-subtle);opacity:0.5;">
+        © 2026 CHESS OX · The evolution of strategy.
+      </footer>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- GLOBAL CHALLENGE MODAL -->
+  <div class="modal-overlay" id="challenge-modal">
+    <div class="modal">
+      <div class="modal-title"><i class="fa-solid fa-chess-pawn"></i> Challenge Received!</div>
+      <div class="modal-desc" id="challenge-modal-desc">Player wants to challenge you</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="respondGlobalChallenge(false)">Decline</button>
+        <button class="btn btn-primary" onclick="respondGlobalChallenge(true)">Accept</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/api.js?v=4"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/socket.js?v=3"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        if (!requireAuth()) return;
+        const user = getUser();
+        if (!user) { window.location.href = '/pages/login.html'; return; }
+
+        updateUI(user);
+        await loadSidebar();
+        if (typeof updateSidebarUI === 'function') updateSidebarUI(user);
+
+        const res = await UserAPI.getProfile();
+        if (res?.success) {
+          setSession(getToken(), getRefreshToken(), res.user);
+          updateUI(res.user);
+          if (!res.user.hasPassword) {
+            Toast.info('Please set a password to secure your account.');
+            setTimeout(() => { window.location.href = '/pages/account.html?tab=security&action=setPassword'; }, 1500);
+            return;
+          }
+        }
+
+        loadDashboardData();
+        initRealtime(user);
+        document.getElementById('sync-overlay').classList.add('hidden');
+      } catch (err) {
+        console.error('Init error:', err);
+        document.getElementById('sync-overlay').classList.add('hidden');
+      }
+    });
+
+    function updateUI(user) {
+      document.getElementById('tb-player-id').textContent = user.player_id || 'PX-SYNCING...';
+      document.getElementById('dash-username').textContent = user.full_name || fmt.username(user.username);
+      document.getElementById('dash-iq').textContent = user.iq_level || 100;
+
+      const avatarHtml = user.profile_image
+        ? `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:18px">`
+        : (user.username || 'P').replace('@', '')[0].toUpperCase();
+      document.getElementById('tb-avatar').innerHTML = avatarHtml;
+      document.getElementById('dash-avatar').innerHTML = avatarHtml;
+
+      const kycBadgeMap = {
+        verified: '<span class="badge badge-verified"><i class="fa-solid fa-check"></i> Verified</span>',
+        pending: '<span class="badge badge-pending"><i class="fa-solid fa-clock"></i> KYC Pending</span>',
+        not_verified: '<span class="badge badge-rejected"><i class="fa-solid fa-xmark"></i> KYC Required</span>'
+      };
+document.getElementById('dash-kyc-badge').innerHTML = kycBadgeMap[user.kyc_status] || '';
+
+      const rankBadgeMap = { 
+        Bronze: 'badge-bronze', 
+        Copil: 'badge-copil', 
+        Silver: 'badge-silver', 
+        Gold: 'badge-gold', 
+        Platinum: 'badge-platinum', 
+        Diamond: 'badge-diamond', 
+        Kingdom: 'badge-kingdom', 
+        'Grand Master': 'badge-grandmaster' 
+      };
+      const rBadge = document.getElementById('dash-rank-badge');
+      rBadge.className = `badge ${rankBadgeMap[user.rank] || 'badge-bronze'}`;
+      rBadge.textContent = user.rank || 'Bronze';
+    }
+
+    // ─── DASHBOARD STATE ─────────────────────────────────────
+    let dashboardStats = null;
+    let rejoinTimerInterval = null;
+
+    async function loadDashboardData() {
+      const tryLoad = async (p) => { try { return await p || { success: false }; } catch { return { success: false }; } };
+
+      const [walletRes, statsRes, chalRes, notifRes, trRes, lbRes, histRes] = await Promise.all([
+        tryLoad(WalletAPI.getBalance()),
+        tryLoad(UserAPI.getStats()),
+        tryLoad(FriendAPI.getChallenges()),
+        tryLoad(UserAPI.getNotifications()),
+        tryLoad(TournamentAPI.getAll('paid', 'live')),
+        tryLoad(GameAPI.getLeaderboard(1)),
+        tryLoad(GameAPI.getHistory('all', 'all', 1)),
+      ]);
+
+      // ── Wallet ──
+      if (walletRes.success) {
+        const bal = walletRes.wallet.balance;
+        document.getElementById('dash-wallet').textContent = bal.toLocaleString();
+        const u = getUser();
+        if (u) { u.coins = bal; localStorage.setItem('px_user', JSON.stringify(u)); if (typeof updateSidebarUI === 'function') updateSidebarUI(u); }
+      }
+
+      // ── Stats + Win Rate Ring ──
+      if (statsRes.success && statsRes.stats) {
+        const s = statsRes.stats;
+        
+        // Safety: Ensure all values are at least 0
+        const wins = parseInt(s.wins) || 0;
+        const losses = parseInt(s.losses) || 0;
+        const draws = parseInt(s.draws) || 0;
+        const total = parseInt(s.total_matches) || (wins + losses + draws);
+        
+        // Calculate win rate if backend returns 0 but we have games
+        let winRate = parseFloat(s.win_rate) || 0;
+        if (winRate === 0 && total > 0) {
+            winRate = Math.round(((wins + 0.5 * draws) / total) * 100);
+        }
+
+        document.getElementById('dash-matches').textContent = total;
+        document.getElementById('dash-winrate').textContent = winRate + '%';
+        document.getElementById('dash-wld').textContent = `${wins}W / ${losses}L / ${draws}D`;
+        document.getElementById('dash-streak').textContent = s.best_streak || 0;
+
+        // Sync Performance Tab Section
+        if (document.getElementById('wr-wins')) document.getElementById('wr-wins').textContent = wins;
+        if (document.getElementById('wr-losses')) document.getElementById('wr-losses').textContent = losses;
+        if (document.getElementById('wr-draws')) document.getElementById('wr-draws').textContent = draws;
+        if (document.getElementById('wr-ring-pct')) document.getElementById('wr-ring-pct').textContent = winRate + '%';
+        
+        const ringFill = document.getElementById('wr-ring-fill');
+        if (ringFill) {
+          const circumference = 2 * Math.PI * 34; // r=34
+          const offset = circumference - (winRate / 100) * circumference;
+          ringFill.style.strokeDashoffset = offset;
+        }
+        
+        // Update IQ and Rank from stats response
+        if (statsRes.iq_level !== undefined) document.getElementById('dash-iq').textContent = statsRes.iq_level;
+        if (statsRes.rank) {
+            const rankBadgeMap = { 
+              Bronze: 'badge-bronze', 
+              Copil: 'badge-copil', 
+              Silver: 'badge-silver', 
+              Gold: 'badge-gold', 
+              Platinum: 'badge-platinum', 
+              Diamond: 'badge-diamond', 
+              Kingdom: 'badge-kingdom', 
+              'Grand Master': 'badge-grandmaster' 
+            };
+            const rBadge = document.getElementById('dash-rank-badge');
+            if (rBadge) {
+                rBadge.className = `badge ${rankBadgeMap[statsRes.rank] || 'badge-bronze'}`;
+                rBadge.textContent = statsRes.rank;
+            }
+        }
+
+        document.getElementById('wr-wins').textContent = wins;
+        document.getElementById('wr-losses').textContent = losses;
+        document.getElementById('wr-draws').textContent = draws;
+        document.getElementById('wr-ring-pct').textContent = winRate + '%';
+        
+        // Animate ring
+        const pct = Math.min(100, winRate);
+        const circumference = 213.6;
+        const offset = circumference - (pct / 100) * circumference;
+        setTimeout(() => {
+          const ring = document.getElementById('wr-ring-fill');
+          if (ring) ring.style.strokeDashoffset = offset;
+        }, 400);
+      }
+
+      // ── Live Tournaments ──
+      if (trRes.success && trRes.tournaments?.length > 0) {
+        document.getElementById('live-tr-section').style.display = 'block';
+        document.getElementById('live-tr-list').innerHTML = trRes.tournaments.slice(0, 3).map(t => `
+          <div class="tr-row">
+            <div>
+              <div class="tr-name">${t.name}</div>
+              <div class="tr-meta"><i class="fa-solid fa-coins"></i> ${t.prize_pool?.toLocaleString()} Coins · ${t.current_players}/${t.max_players} Players</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='/pages/tournament-live.html?id=${t.id}'">${t.is_joined ? 'Enter' : 'View'}</button>
+          </div>
+        `).join('');
+      } else {
+        document.getElementById('live-tr-section').style.display = 'none';
+      }
+
+      // ── Challenges ──
+      const sec = document.getElementById('dash-challenges-section');
+      const list = document.getElementById('dash-challenges-list');
+      if (chalRes.success && chalRes.challenges?.length > 0) {
+        sec.style.display = 'block';
+        list.innerHTML = chalRes.challenges.map(c => `
+          <div class="challenge-card">
+            <div class="flex gap-12" style="align-items:center">
+              <div class="avatar-initial" style="width:36px;height:36px;font-size:14px">${c.from_user.username.replace('@','')[0].toUpperCase()}</div>
+              <div>
+                <div style="font-size:14px;font-weight:700">${c.from_user.username}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${c.timer}min Chess Match</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="respondGlobalChallengeFromList('${c.id}',true,'${c.from_user_id}','${c.from_user.username}',${c.timer})"><i class="fa-solid fa-chess-pawn"></i> Play</button>
+          </div>
+        `).join('');
+      } else {
+        sec.style.display = 'none';
+      }
+
+      // ── Notifications ──
+      if (notifRes.success) {
+        const nList = document.getElementById('notif-list');
+        const badge = document.getElementById('notif-count');
+        const unread = notifRes.notifications.filter(n => !n.read);
+        badge.textContent = unread.length;
+        badge.style.display = unread.length > 0 ? 'flex' : 'none';
+        nList.innerHTML = notifRes.notifications.length === 0
+          ? '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12px">No notifications</div>'
+          : notifRes.notifications.slice(0, 5).map(n => `
+            <div class="notif-item ${n.read ? '' : 'unread'}" onclick="handleNotifClick(${JSON.stringify(n).replace(/"/g,'&quot;')})">
+              <div class="notif-title">${n.title}</div>
+              <div class="notif-msg">${n.message}</div>
+              <div class="notif-time">${fmt.relTime(n.created_at)}</div>
+            </div>`).join('');
+      }
+
+      // ── Recent Activity Feed ──
+      const feed = document.getElementById('activity-feed');
+      if (histRes.success && histRes.matches?.length > 0) {
+        const user = getUser();
+        feed.innerHTML = histRes.matches.slice(0, 6).map(m => {
+          const isP1 = m.player1_id?.id === user?.id || m.player1_id === user?.id;
+          const opp = isP1 ? m.player2_id : m.player1_id;
+          const result = m.result === 'draw' ? 'draw' : (m.winner_id === user?.id ? 'win' : 'loss');
+          const icons = { win: 'fa-trophy', loss: 'fa-face-frown', draw: 'fa-handshake' };
+          const labels = { win: '+IQ', loss: '-IQ', draw: '±0' };
+          const iqChange = isP1 ? (m.iq_change_p1 || 0) : (m.iq_change_p2 || 0);
+          const displayName = opp?.full_name || fmt.username(opp?.username || 'Unknown');
+          return `
+            <div class="activity-item" style="padding: 12px 10px; gap: 10px">
+              <div class="activity-icon ${result}" style="width:32px; height:32px; font-size:12px"><i class="fa-solid ${icons[result]}"></i></div>
+              <div class="activity-text">
+                <div class="activity-title" title="vs ${opp?.username || 'Unknown'}">vs ${displayName} · ${m.timer_type || '?'}m</div>
+                <div class="activity-time">${fmt.relTime(m.created_at)}</div>
+              </div>
+              <div class="activity-badge ${result}">${iqChange >= 0 ? '+' : ''}${iqChange} IQ</div>
+            </div>`;
+        }).join('');
+      } else {
+        feed.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px"><i class="fa-solid fa-chess-pawn" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.3"></i>No matches yet</div>';
+      }
+
+      // ── Leaderboard Peek ──
+      const lbEl = document.getElementById('lb-peek');
+      if (lbRes.success && lbRes.leaderboard?.length > 0) {
+        const medals = ['🥇','🥈','🥉'];
+        lbEl.innerHTML = lbRes.leaderboard.slice(0, 5).map((p, i) => {
+          const displayName = p.full_name || fmt.username(p.username);
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-subtle)">
+            <div style="width:24px;text-align:center;font-size:${i < 3 ? '16px' : '12px'};color:var(--text-muted);font-weight:700">${i < 3 ? medals[i] : p.rank}</div>
+            <div class="avatar-initial" style="width:30px;height:30px;font-size:12px">${(p.full_name || p.username || '?')[0].toUpperCase()}</div>
+            <div class="text-truncate" style="flex:1;font-size:13px;font-weight:600">${displayName}</div>
+            <div style="font-family:var(--font-display);font-size:13px;color:var(--gold);font-weight:700">${p.iq_level}</div>
+          </div>`;
+        }).join('');
+      } else {
+        lbEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">No data</div>';
+      }
+
+      // ── Active Match Rejoin ──
+      if (rejoinTimerInterval) clearInterval(rejoinTimerInterval);
+      const amData = JSON.parse(localStorage.getItem('px_active_match_data') || 'null');
+      const amSection = document.getElementById('active-match-section');
+      
+      if (amData) {
+          const typeMap = { random: 'Random Match', tournament: 'Tournament', clan_war: 'Clan War', friend: 'Friend Match', room: 'Private Room' };
+          let initialTime = amData.timer * 60;
+          let currentWhite = amData.white_time !== undefined ? amData.white_time : initialTime;
+          let currentBlack = amData.black_time !== undefined ? amData.black_time : initialTime;
+          let currentTurn = amData.turn || 'w';
+
+          const updateUI = () => {
+              const myTime = amData.myColor === 'white' ? currentWhite : currentBlack;
+              if (myTime <= 0) {
+                  clearInterval(rejoinTimerInterval);
+                  localStorage.removeItem('px_active_match_data');
+                  amSection.style.display = 'none';
+                  return;
+              }
+              document.getElementById('am-details').textContent = `${fmt.countdown(myTime)} left · ${typeMap[amData.match_type] || 'Match'}`;
+          };
+
+          amSection.style.display = 'block';
+          document.getElementById('am-opponent').textContent = 'vs ' + (amData.opponent?.full_name || amData.opponent?.username || 'Opponent');
+          updateUI();
+
+          rejoinTimerInterval = setInterval(() => {
+              if (currentTurn === 'w') currentWhite--;
+              else currentBlack--;
+              updateUI();
+          }, 1000);
+      } else {
+          amSection.style.display = 'none';
+      }
+    }
+
+    function rejoinActiveMatch() {
+        const amData = JSON.parse(localStorage.getItem('px_active_match_data') || 'null');
+        if (amData) {
+            localStorage.setItem('px_match', JSON.stringify(amData));
+            let url = '/pages/game.html?matchId=' + amData.matchId;
+            if (amData.match_type === 'tournament') url = '/pages/tournament-live.html?id=' + amData.tournamentId;
+            window.location.href = url;
+        }
+    }
+
+    function handleNotifClick(n) {
+      const routes = { challenge: '/pages/friends.html', friend_request: '/pages/friends.html', withdraw: '/pages/wallet.html', kyc: '/pages/account.html' };
+      const route = routes[n.type] || (n.title?.includes('Challenge') ? '/pages/friends.html' : n.title?.includes('KYC') ? '/pages/account.html' : null);
+      if (route) window.location.href = route;
+    }
+
+    async function respondGlobalChallengeFromList(id, accepted, fromUserId, fromUsername, timer) {
+      if (accepted) {
+        const s = getSocket() || initSocket();
+        s.emit('accept_invite', { fromUserId, toUserId: getUser().id, fromUsername, toUsername: getUser().username, timer });
+        await FriendAPI.respondChallenge(id, 'accepted');
+        window.location.href = '/pages/play.html';
+      }
+    }
+
+    let pendingChallenge = null;
+    function initRealtime(user) {
+      const sock = initSocket();
+      if (!sock) return;
+      sock.on('friend_invite', (data) => {
+        pendingChallenge = data;
+        // Global Toast in socket.js handles the notification
+      });
+      sock.on('silent_notification', () => loadDashboardData());
+      
+      sock.on('timer_update', (data) => {
+        const amData = JSON.parse(localStorage.getItem('px_active_match_data') || 'null');
+        if (amData) {
+          amData.white_time = data.white_time;
+          amData.black_time = data.black_time;
+          localStorage.setItem('px_active_match_data', JSON.stringify(amData));
+          
+          const myTime = amData.myColor === 'white' ? data.white_time : data.black_time;
+          const amSection = document.getElementById('active-match-section');
+          const detailsEl = document.getElementById('am-details');
+          if (amSection && amSection.style.display !== 'none' && detailsEl) {
+            const typeMap = { random: 'Random Match', tournament: 'Tournament', clan_war: 'Clan War', friend: 'Friend Match', room: 'Private Room' };
+            detailsEl.textContent = `${fmt.countdown(myTime)} left · ${typeMap[amData.match_type] || 'Match'}`;
+          }
+        }
+      });
+    }
+
+    function respondGlobalChallenge(accepted) {
+      document.getElementById('challenge-modal').classList.remove('active');
+      if (accepted && pendingChallenge) {
+        const s = getSocket() || initSocket();
+        s.emit('accept_invite', { fromUserId: pendingChallenge.fromUserId, toUserId: getUser().id, fromUsername: pendingChallenge.fromUsername, toUsername: getUser().username, timer: pendingChallenge.timer });
+        window.location.href = '/pages/play.html';
+      }
+      pendingChallenge = null;
+    }
+
+    // Player ID copy
+    document.getElementById('tb-player-id').addEventListener('click', function() {
+      navigator.clipboard?.writeText(this.textContent).then(() => Toast.success('Player ID copied!'));
+    });
+
+    // Notif dropdown
+    document.getElementById('notif-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const dd = document.getElementById('notif-dropdown');
+      const wasOpen = dd.classList.contains('open');
+      dd.classList.toggle('open');
+      if (!wasOpen) {
+        const badge = document.getElementById('notif-count');
+        if (badge.style.display !== 'none') {
+          badge.style.display = 'none';
+          badge.textContent = '0';
+          await UserAPI.markNotificationsRead();
+        }
+      }
+    });
+    document.addEventListener('click', () => document.getElementById('notif-dropdown')?.classList.remove('open'));
+  </script>
+
+</body>
+
+</html>

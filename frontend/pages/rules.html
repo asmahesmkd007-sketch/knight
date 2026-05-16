@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Rules Book | CHESS OX</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a1628">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <style>
+    .rules-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding-bottom: 60px;
+    }
+
+    .rules-header {
+      background: linear-gradient(135deg, rgba(232,197,71,0.1) 0%, rgba(8,8,16,0) 100%);
+      border: 1px solid rgba(232,197,71,0.2);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rules-header::before {
+      content: '📖';
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 100px;
+      opacity: 0.05;
+    }
+
+    .rules-header h1 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+
+    .rules-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .rules-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 40px;
+      line-height: 1.6;
+    }
+
+    .toc {
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .toc a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .toc a:hover {
+      color: var(--gold);
+    }
+
+    .rule-section {
+      margin-bottom: 40px;
+    }
+
+    .rule-section h2 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--gold);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(232,197,71,0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .rule-section h2 .num {
+      font-size: 14px;
+      opacity: 0.5;
+    }
+
+    .rule-article {
+      margin-bottom: 20px;
+      padding-left: 20px;
+      border-left: 2px solid rgba(255,255,255,0.05);
+    }
+
+    .rule-article h3 {
+      font-size: 15px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .rule-text {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .rule-item {
+      margin-bottom: 10px;
+    }
+
+    .rule-item-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-right: 8px;
+    }
+
+    .shaded-note {
+      background: rgba(232,197,71,0.05);
+      border-left: 3px solid var(--gold);
+      padding: 12px 16px;
+      margin-bottom: 30px;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .toc { grid-template-columns: 1fr; }
+      .rules-header { padding: 30px 20px; }
+      .rules-content { padding: 25px 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">CHESS RULES</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-player-id" id="tb-player-id">PX-SYNCING...</div>
+          <div class="topbar-avatar" id="tb-avatar">P</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div class="rules-container">
+          <div class="rules-header">
+            <h1>Chess Rules Book</h1>
+            <p>Official Rules & Regulations · 2026-2027 Edition</p>
+          </div>
+
+          <div class="rules-content">
+            <div class="shaded-note">
+              <i class="fa-solid fa-info-circle"></i> Changes/edits from last school year to this school year are highlighted in our system.
+            </div>
+
+            <div class="toc">
+              <a href="#rule1"><span>1. Introduction</span></a>
+              <a href="#rule2"><span>2. Chess Board and Its Arrangement</span></a>
+              <a href="#rule3"><span>3. The Chessmen and Their Arrangement</span></a>
+              <a href="#rule4"><span>4. Conduct of the Game</span></a>
+              <a href="#rule5"><span>5. Definition of the Move</span></a>
+              <a href="#rule6"><span>6. Moves of the Individual Chessmen</span></a>
+              <a href="#rule7"><span>7. Determination and Completion of a Move</span></a>
+              <a href="#rule8"><span>8. The Touched Chessmen</span></a>
+              <a href="#rule9"><span>9. Illegal Position Created During the Game</span></a>
+              <a href="#rule10"><span>10. Check</span></a>
+              <a href="#rule11"><span>11. Won Game</span></a>
+              <a href="#rule12"><span>12. Drawing Game</span></a>
+            </div>
+
+            <div class="rule-section" id="rule1">
+              <h2><span class="num">RULE 1</span> INTRODUCTION</h2>
+              <div class="rule-article">
+                <div class="rule-item">
+                  <span class="rule-item-title">SECTION 1</span>
+                  <span class="rule-text">The game of chess is played between two opponents by moving objects, referred to as chessmen, on a board with squares of two alternating colors called a chessboard.</span>
+                </div>
+                <div class="rule-item">
+                  <span class="rule-item-title">SECTION 2</span>
+                  <span class="rule-text">Players and coaches are to conduct themselves in an ethical manner in the spirit of fair play.</span>
+                </div>
+                <div class="rule-item">
+                  <span class="rule-item-title">SECTION 3</span>
+                  <span class="rule-text">Chess contests may be individual, team, medley team, or board Swiss.</span>
+                </div>
+                <div style="margin-top: 10px; padding-left: 20px;">
+                  <div class="rule-text"><strong>Article 1:</strong> An Individual Tournament is an event in which players are paired against each other.</div>
+                  <div class="rule-text"><strong>Article 2:</strong> A Team Tournament is an event in which a team of players is paired against the same number of players from another team, more than 1 individual from a team is simultaneously paired against the same number of players from another team, and the individual results are compiled to produce a team score.</div>
+                  <div class="rule-text"><strong>Article 3:</strong> A Medley Team is an event in which members of a team are treated as individual contestants that are paired against each other and the scores of the individuals are added together to produce a team score.</div>
+                  <div class="rule-text"><strong>Article 4:</strong> A Board Swiss is an event in which a team of players is divided into subgroups. Each subgroup is paired as an Individual event. A team score is obtained by adding together the scores of the team members from each subgroup.</div>
+                </div>
+                <div class="rule-item" style="margin-top: 15px;">
+                  <span class="rule-item-title">SECTION 4</span>
+                  <span class="rule-text">Each school must provide the equipment specified in the Terms and Conditions or be subject to forfeiture. The responsibility for providing equipment in a given match is the player of the Black Chess pieces as determined by the pairings.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule2">
+              <h2><span class="num">RULE 2</span> CHESS BOARD AND ITS ARRANGEMENT</h2>
+              <div class="rule-article">
+                <div class="rule-item">
+                  <span class="rule-item-title">SECTION 1</span>
+                  <span class="rule-text">The chessboard is composed of 64 equal squares, alternately light (the “white” squares) and dark (the “black” squares).</span>
+                </div>
+                <div style="margin-top: 10px; padding-left: 20px;">
+                  <div class="rule-text"><strong>Article 1:</strong> The chessboard must have a color combination that clearly distinguishes between the light colored squares and the dark colored squares.</div>
+                  <div class="rule-text" style="padding-left: 15px; font-size: 13px;">a) The following colors are acceptable for light squares: cream, white, and tan/buff.</div>
+                  <div class="rule-text" style="padding-left: 15px; font-size: 13px;">b) The following colors are acceptable for dark squares: green, brown, black, and dark blue.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule4">
+              <h2><span class="num">RULE 4</span> CONDUCT OF THE GAME</h2>
+              <div class="rule-article">
+                <div class="rule-item"><span class="rule-item-title">SECTION 1</span> <span class="rule-text">The two players must alternate in making one move at a time.</span></div>
+                <div class="rule-item"><span class="rule-item-title">SECTION 2</span> <span class="rule-text">The player with the white chessmen makes the first move.</span></div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule5">
+              <h2><span class="num">RULE 5</span> DEFINITION OF THE MOVE</h2>
+              <div class="rule-article">
+                <div class="rule-item"><span class="rule-item-title">SECTION 1</span> <span class="rule-text">A move is the transfer of a chessman from one square to another vacant or occupied square.</span></div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule6">
+              <h2><span class="num">RULE 6</span> MOVES OF THE INDIVIDUAL CHESSMEN</h2>
+              <div class="rule-article">
+                <div class="rule-item"><span class="rule-item-title">SECTION 1</span> <span class="rule-text">The King moves to an adjacent square or can perform Castling.</span></div>
+                <div class="rule-item"><span class="rule-item-title">SECTION 2</span> <span class="rule-text">Castling is a move of the King and either Rook which counts as a single move.</span></div>
+                <div class="rule-item"><span class="rule-item-title">SECTION 7</span> <span class="rule-text">The Pawn moves forward only. It can move one or two squares from its start position.</span></div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule10">
+              <h2><span class="num">RULE 10</span> CHECK</h2>
+              <div class="rule-article">
+                <div class="rule-item"><span class="rule-item-title">SECTION 1</span> <span class="rule-text">The King is in check when the square on which it stands is attacked by an opponent’s chessman.</span></div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule11">
+              <h2><span class="num">RULE 11</span> WON GAME</h2>
+              <div class="rule-article">
+                <div class="rule-item"><span class="rule-item-title">SECTION 1</span> <span class="rule-text">The game is won by the player who delivers checkmate to the opponent’s King.</span></div>
+              </div>
+            </div>
+
+            <div class="rule-section" id="rule12">
+              <h2><span class="num">RULE 12</span> DRAWING GAME</h2>
+              <div class="rule-article">
+                <div class="rule-item"><span class="rule-item-title">SECTION 1</span> <span class="rule-text">The game is drawn when stalemate occurs, or by agreement, or insufficient material.</span></div>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+                <p style="color: var(--text-muted); font-size: 12px;">For the full official rules document, please contact support.</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <footer style="margin-top:48px;padding:20px 24px;text-align:center;color:var(--text-muted);font-size:11px;border-top:1px solid var(--border-subtle);opacity:0.5;">
+        © 2026 CHESS OX · The evolution of strategy.
+      </footer>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (!requireAuth()) return;
+      const user = getUser();
+      updateUI(user);
+      await loadSidebar();
+      if (typeof updateSidebarUI === 'function') updateSidebarUI(user);
+    });
+
+    function updateUI(user) {
+      document.getElementById('tb-player-id').textContent = user.player_id || 'PX-PLAYER';
+      const avatarHtml = user.profile_image
+        ? `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:18px">`
+        : (user.username || 'P').replace('@', '')[0].toUpperCase();
+      document.getElementById('tb-avatar').innerHTML = avatarHtml;
+    }
+  </script>
+</body>
+
+</html>
