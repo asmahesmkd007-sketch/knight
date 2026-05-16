@@ -1,0 +1,186 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-teal: var(--teal);
+  --color-card-deep: var(--card-deep);
+  --color-win: var(--win);
+  --color-draw: var(--draw);
+  --font-display: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+  /* Chess Encyclopedia palette — dark luxury editorial */
+  --background: #0f0f1a;
+  --foreground: #f4f4f6;
+  --card: #1a1a2e;
+  --card-foreground: #f4f4f6;
+  --card-deep: #12122a;
+  --popover: #1a1a2e;
+  --popover-foreground: #f4f4f6;
+  --primary: #d4a843;
+  --primary-foreground: #0f0f1a;
+  --secondary: #1a1a2e;
+  --secondary-foreground: #f4f4f6;
+  --muted: #1a1a2e;
+  --muted-foreground: #9ca3b0;
+  --accent: #3dd6ac;
+  --accent-foreground: #0f0f1a;
+  --destructive: #ef4444;
+  --destructive-foreground: #f4f4f6;
+  --border: rgba(212, 168, 67, 0.12);
+  --input: rgba(212, 168, 67, 0.18);
+  --ring: #d4a843;
+  --gold: #d4a843;
+  --gold-light: #f0c866;
+  --teal: #3dd6ac;
+  --win: #22c55e;
+  --draw: #3b82f6;
+}
+
+.dark {
+  --background: #0f0f1a;
+  --foreground: #f4f4f6;
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    line-height: 1.8;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+}
+
+/* Animated chessboard hero pattern */
+.chess-hero-bg {
+  background-image:
+    linear-gradient(45deg, #1a1a2e 25%, transparent 25%),
+    linear-gradient(-45deg, #1a1a2e 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a1a2e 75%),
+    linear-gradient(-45deg, transparent 75%, #1a1a2e 75%);
+  background-size: 80px 80px;
+  background-position: 0 0, 0 40px, 40px -40px, -40px 0;
+  background-color: #252540;
+}
+
+/* Drop cap on opening paragraphs */
+.dropcap::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  line-height: 0.9;
+  float: left;
+  padding: 6px 12px 0 0;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.4;
+}
+
+/* Subtle pulse for hero pieces */
+@keyframes goldPulse {
+  0%, 100% { text-shadow: 0 0 24px rgba(212,168,67,0.3); }
+  50% { text-shadow: 0 0 48px rgba(240,200,102,0.6); }
+}
+.gold-pulse { animation: goldPulse 4s ease-in-out infinite; will-change: text-shadow; }
+
+/* Progress bar GPU compositing */
+.progress-bar-track { will-change: transform; }
+
+/* Smooth accordion transitions */
+[data-radix-accordion-content] {
+  overflow: hidden;
+}
+[data-radix-accordion-content][data-state="open"] {
+  animation: accordionDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-radix-accordion-content][data-state="closed"] {
+  animation: accordionUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes accordionDown {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-accordion-content-height); opacity: 1; }
+}
+@keyframes accordionUp {
+  from { height: var(--radix-accordion-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+
+/* Mobile TOC sheet animation */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.mobile-toc-sheet { animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Prevent layout shift on chessboard */
+.chess-grid { contain: layout style; }
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  .toc-link { min-height: 44px; display: flex; align-items: center; }
+  .quiz-option { min-height: 48px; }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .gold-pulse { animation: none; }
+  .progress-bar-track { transition: none; }
+  html { scroll-behavior: auto; }
+  [data-radix-accordion-content][data-state="open"],
+  [data-radix-accordion-content][data-state="closed"] { animation: none; }
+}
+
+/* Overflow safety */
+.min-w-0 { min-width: 0; }
+img, video, canvas, svg { max-width: 100%; }
+pre, code { overflow-x: auto; }
+
+/* Focus visible styles */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

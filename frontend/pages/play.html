@@ -67,6 +67,157 @@
     }
 
 
+    /* ===== SETTINGS BUTTON ===== */
+    .btn-settings {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: rgba(212,168,67,0.07); border: 1px solid rgba(212,168,67,0.18);
+      color: var(--text-muted); font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.25s, background 0.25s, border-color 0.25s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+      position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .btn-settings::after { content:''; position:absolute; inset:0; border-radius:11px; background:radial-gradient(circle at 50% 50%,rgba(212,168,67,0.3) 0%,transparent 70%); opacity:0; transition:opacity 0.3s; }
+    .btn-settings:hover { color:var(--gold); background:var(--gold-dim); border-color:rgba(212,168,67,0.4); transform:rotate(60deg); box-shadow:0 0 16px rgba(212,168,67,0.2); }
+    .btn-settings:hover::after { opacity:1; }
+    .btn-settings.active { color:var(--gold); background:rgba(212,168,67,0.15); border-color:rgba(212,168,67,0.5); transform:rotate(30deg); box-shadow:0 0 20px rgba(212,168,67,0.25); }
+    .btn-settings .sp-pulse { position:absolute; top:-3px; right:-3px; width:9px; height:9px; background:var(--gold); border-radius:50%; border:2px solid var(--bg-primary); animation:spulse 2s infinite; display:none; }
+    .btn-settings.has-custom .sp-pulse { display:block; }
+    @keyframes spulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,0.6);}50%{box-shadow:0 0 0 6px rgba(212,168,67,0);} }
+
+    /* ===== SETTINGS OVERLAY & PANEL ===== */
+    #ps-overlay { position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,0.65); backdrop-filter:blur(10px); opacity:0; pointer-events:none; transition:opacity 0.32s ease; }
+    #ps-overlay.open { opacity:1; pointer-events:all; }
+    #ps-panel {
+      position:fixed; top:0; right:-560px; bottom:0; width:520px; max-width:100vw;
+      background:linear-gradient(180deg,#1c1c26 0%,#18181f 100%);
+      border-left:1px solid rgba(212,168,67,0.14);
+      box-shadow:-24px 0 80px rgba(0,0,0,0.75);
+      z-index:1300; display:flex; flex-direction:column;
+      transition:right 0.38s cubic-bezier(0.4,0,0.2,1); overflow:hidden;
+    }
+    #ps-panel.open { right:0; }
+    .psp-header { padding:20px 22px 0; border-bottom:1px solid rgba(212,168,67,0.1); display:flex; flex-direction:column; flex-shrink:0; background:linear-gradient(135deg,rgba(212,168,67,0.09) 0%,transparent 100%); position:relative; overflow:hidden; }
+    .psp-header::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:radial-gradient(circle,rgba(212,168,67,0.12) 0%,transparent 70%); pointer-events:none; }
+    .psp-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .psp-title { font-family:var(--font-display); font-size:17px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:10px; }
+    .psp-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,rgba(212,168,67,0.3),rgba(212,168,67,0.1)); border:1px solid rgba(212,168,67,0.35); display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:15px; box-shadow:0 4px 12px rgba(212,168,67,0.15); }
+    .psp-live-dot { width:7px; height:7px; border-radius:50%; background:#3ecf6e; margin-left:4px; box-shadow:0 0 6px rgba(62,207,110,0.6); animation:pspdot 1.5s infinite; display:inline-block; }
+    @keyframes pspdot { 0%,100%{opacity:1;}50%{opacity:0.4;} }
+    .psp-close { width:34px; height:34px; border-radius:9px; border:none; background:rgba(255,255,255,0.06); color:var(--text-muted); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+    .psp-close:hover { background:rgba(240,107,126,0.18); color:var(--error); transform:scale(1.1) rotate(90deg); }
+    .psp-tabs { display:flex; gap:1px; background:rgba(0,0,0,0.25); border-radius:10px 10px 0 0; padding:4px 4px 0; overflow-x:auto; scrollbar-width:none; }
+    .psp-tabs::-webkit-scrollbar { display:none; }
+    .psp-tab { flex:1; min-width:65px; padding:8px 4px 10px; border:none; background:transparent; color:var(--text-muted); font-family:var(--font-body); font-size:10.5px; font-weight:600; cursor:pointer; border-radius:8px 8px 0 0; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s; white-space:nowrap; position:relative; }
+    .psp-tab i { font-size:13px; transition:transform 0.2s; }
+    .psp-tab:hover { color:var(--text-secondary); background:rgba(255,255,255,0.04); }
+    .psp-tab:hover i { transform:scale(1.15); }
+    .psp-tab.active { color:var(--gold); background:rgba(212,168,67,0.06); }
+    .psp-tab.active::after { content:''; position:absolute; bottom:0; left:10%; right:10%; height:2.5px; background:linear-gradient(90deg,transparent,var(--gold),transparent); border-radius:2px 2px 0 0; }
+    .psp-body { flex:0 1 50%; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:16px; scroll-behavior:smooth; min-height:0; }
+    .psp-body::-webkit-scrollbar { width:3px; }
+    .psp-body::-webkit-scrollbar-thumb { background:rgba(212,168,67,0.25); border-radius:4px; }
+    .psp-tab-panel { display:none; flex-direction:column; gap:14px; }
+    .psp-tab-panel.active { display:flex; animation:pspTabIn 0.22s ease; }
+    @keyframes pspTabIn { from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);} }
+    .psp-section-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:7px; }
+    .psp-section-label i { color:var(--gold); font-size:10px; }
+    .psp-section-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(212,168,67,0.18),transparent); }
+    /* ── Options grid layouts ── */
+    .psp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+    .psp-swatch { border-radius:10px; border:2px solid rgba(255,255,255,0.06); cursor:pointer; overflow:hidden; position:relative; transition:transform 0.22s ease,border-color 0.22s,box-shadow 0.22s; aspect-ratio:1; }
+    .psp-swatch:hover { transform:scale(1.07); border-color:rgba(212,168,67,0.55); }
+    .psp-swatch.selected { border-color:var(--gold); box-shadow:0 0 0 3px rgba(212,168,67,0.28),0 4px 16px rgba(0,0,0,0.5); }
+    .psp-swatch .sw-label { position:absolute; bottom:0; left:0; right:0; padding:3px 4px; font-size:8.5px; font-weight:700; background:linear-gradient(to top,rgba(0,0,0,0.92),transparent); color:#fff; text-align:center; letter-spacing:0.3px; }
+    .psp-swatch.selected .sw-label { color:var(--gold); }
+    .psp-swatch .sw-check { position:absolute; top:3px; right:3px; width:15px; height:15px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7.5px; color:#000; font-weight:900; opacity:0; transform:scale(0); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+    .psp-swatch.selected .sw-check { opacity:1; transform:scale(1); }
+    .psp-piece-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+    .psp-piece-card { border-radius:11px; border:2px solid var(--border-subtle); background:rgba(255,255,255,0.03); cursor:pointer; padding:10px 6px 7px; text-align:center; transition:all 0.22s ease; position:relative; overflow:hidden; }
+    .psp-piece-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(212,168,67,0.1),transparent); opacity:0; transition:opacity 0.22s; }
+    .psp-piece-card:hover { border-color:rgba(212,168,67,0.5); transform:translateY(-2px); background:rgba(255,255,255,0.05); }
+    .psp-piece-card:hover::before { opacity:1; }
+    .psp-piece-card.selected { border-color:var(--gold); background:rgba(212,168,67,0.07); box-shadow:0 0 0 3px rgba(212,168,67,0.2); }
+    .psp-piece-card.selected::before { opacity:1; }
+    .psp-piece-card img { width:36px; height:36px; object-fit:contain; margin-bottom:5px; transition:transform 0.2s; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5)); display:block; margin-left:auto; margin-right:auto; }
+    .psp-piece-card:hover img { transform:scale(1.14) translateY(-2px); }
+    .psp-piece-card .pc-name { font-size:9.5px; font-weight:600; color:var(--text-secondary); }
+    .psp-piece-card.selected .pc-name { color:var(--gold); }
+    .psp-piece-card .pc-check { position:absolute; top:4px; right:4px; width:15px; height:15px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7.5px; color:#000; font-weight:700; opacity:0; transform:scale(0); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+    .psp-piece-card.selected .pc-check { opacity:1; transform:scale(1); }
+    .psp-bg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+    .psp-bg-card { border-radius:10px; border:2px solid var(--border-subtle); cursor:pointer; overflow:hidden; position:relative; aspect-ratio:4/3; transition:all 0.22s ease; }
+    .psp-bg-card:hover { border-color:rgba(212,168,67,0.6); transform:scale(1.04); box-shadow:0 6px 20px rgba(0,0,0,0.4); }
+    .psp-bg-card.selected { border-color:var(--gold); box-shadow:0 0 0 3px rgba(212,168,67,0.3); }
+    .psp-bg-card .bg-label { position:absolute; bottom:0; left:0; right:0; padding:5px 7px; font-size:10px; font-weight:600; background:linear-gradient(to top,rgba(0,0,0,0.9),transparent); color:#fff; }
+    .psp-bg-card.selected .bg-label { color:var(--gold); }
+    .psp-border-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+    .psp-border-card { border-radius:10px; border:2px solid var(--border-subtle); background:rgba(255,255,255,0.03); cursor:pointer; padding:13px 8px 9px; text-align:center; transition:all 0.22s ease; position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; gap:7px; }
+    .psp-border-card:hover { border-color:rgba(212,168,67,0.5); transform:translateY(-2px); background:rgba(255,255,255,0.05); }
+    .psp-border-card.selected { border-color:var(--gold); background:rgba(212,168,67,0.07); box-shadow:0 0 0 3px rgba(212,168,67,0.2); }
+    .psp-border-card .bc-preview { width:44px; height:44px; border-radius:5px; overflow:hidden; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; flex-shrink:0; }
+    .psp-border-card .bc-preview div { background:#b58863; }
+    .psp-border-card .bc-preview div:nth-child(odd) { background:#f0d9b5; }
+    .psp-border-card .bc-name { font-size:9.5px; font-weight:600; color:var(--text-secondary); }
+    .psp-border-card.selected .bc-name { color:var(--gold); }
+    .psp-border-card .bc-check { position:absolute; top:4px; right:4px; width:15px; height:15px; background:var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7.5px; color:#000; font-weight:700; opacity:0; transform:scale(0); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+    .psp-border-card.selected .bc-check { opacity:1; transform:scale(1); }
+
+    /* ── Footer ── */
+    .psp-footer { padding:11px 16px; border-top:1px solid rgba(212,168,67,0.1); display:flex; gap:9px; flex-shrink:0; align-items:center; background:rgba(10,10,14,0.5); }
+    .psp-footer .btn { flex:1; padding:9px 12px; font-size:12px; }
+
+    /* ── Live Preview (always visible, ~half panel) ── */
+    #ps-preview-wrap {
+      flex-shrink:0; border-top:1px solid rgba(212,168,67,0.1);
+      background:linear-gradient(180deg,rgba(212,168,67,0.04) 0%,rgba(10,10,14,0.3) 100%);
+      padding:12px 16px 14px; display:flex; flex-direction:column; gap:10px;
+    }
+    .ps-preview-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); display:flex; align-items:center; gap:7px; }
+    .ps-preview-label i { color:var(--gold); font-size:10px; }
+    .ps-preview-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(212,168,67,0.2),transparent); }
+    .ps-preview-stage { display:flex; align-items:center; justify-content:center; }
+    /* Preview board — fixed square layout */
+    .ps-preview-board-outer {
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:10px;
+      transition:background 0.4s ease,box-shadow 0.4s ease,border 0.35s ease,padding 0.35s ease;
+    }
+    .ps-preview-board-wrap {
+      display:flex; align-items:center; justify-content:center;
+      border-radius:6px; overflow:hidden;
+    }
+    .ps-preview-board {
+      display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr);
+      width:240px; height:240px;
+      border-radius:3px; overflow:hidden;
+      box-shadow:0 6px 30px rgba(0,0,0,0.6);
+      flex-shrink:0; transition:box-shadow 0.3s;
+    }
+    /* ensure each square is a perfect square */
+    .ps-preview-board .sq {
+      position:relative; display:flex; align-items:center; justify-content:center;
+      transition:background 0.4s ease; aspect-ratio:1/1;
+    }
+    .ps-preview-board .sq img { width:80%; height:80%; object-fit:contain; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6)); }
+    /* border classes on OUTER so board never shrinks */
+    .ps-preview-board-outer.border-wood   { border:6px solid #8B5E3C; border-radius:4px; }
+    .ps-preview-board-outer.border-metal  { border:5px solid #7a8fa8; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1); }
+    .ps-preview-board-outer.border-gold   { border:5px solid var(--gold); box-shadow:0 0 18px rgba(212,168,67,0.4); }
+    .ps-preview-board-outer.border-neon   { border:4px solid #00f7ff; box-shadow:0 0 18px rgba(0,247,255,0.4); }
+    .ps-preview-board-outer.border-marble { border:6px solid #d4cfc9; border-radius:3px; }
+    .ps-preview-hint { font-size:10px; color:var(--text-muted); text-align:center; margin-top:2px; }
+
+    /* ── Responsive ── */
+    @media (max-width:600px) {
+      #ps-panel { width:100vw; right:-100vw; }
+      .ps-preview-board { width:192px; height:192px; }
+      .psp-grid { grid-template-columns:repeat(4,1fr); gap:6px; }
+      .psp-piece-grid { grid-template-columns:repeat(4,1fr); gap:6px; }
+      .psp-bg-grid { grid-template-columns:repeat(3,1fr); gap:6px; }
+      .psp-border-grid { grid-template-columns:repeat(3,1fr); gap:6px; }
+      .psp-tab { font-size:9.5px; padding:7px 3px 9px; min-width:56px; }
+      #ps-preview-wrap { padding:10px 12px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -75,9 +226,13 @@
   <div class="main-content">
     <div class="topbar">
       <div class="topbar-left"><div class="page-title">PLAY CHESS</div></div>
-      <div class="topbar-right">
+      <div class="topbar-right" style="gap:8px">
         <div class="topbar-player-id" id="tb-pid">...</div>
         <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
+        <button class="btn-settings" id="btn-open-ps" title="Board Settings" onclick="openPS()">
+          <i class="fa-solid fa-sliders"></i>
+          <span class="sp-pulse"></span>
+        </button>
       </div>
     </div>
     <div class="page-content">
@@ -220,6 +375,61 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div id="ps-overlay" onclick="closePS()"></div>
+
+<!-- SETTINGS PANEL -->
+<div id="ps-panel">
+  <div class="psp-header">
+    <div class="psp-header-top">
+      <div class="psp-title">
+        <div class="psp-icon"><i class="fa-solid fa-sliders"></i></div>
+        Board Settings <span class="psp-live-dot"></span>
+      </div>
+      <button class="psp-close" onclick="closePS()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="psp-tabs">
+      <button class="psp-tab active" onclick="pspTab('pst-board',this)"><i class="fa-solid fa-chess-board"></i>Board</button>
+      <button class="psp-tab" onclick="pspTab('pst-pieces',this)"><i class="fa-solid fa-chess-knight"></i>Pieces</button>
+      <button class="psp-tab" onclick="pspTab('pst-bg',this)"><i class="fa-solid fa-image"></i>BG</button>
+      <button class="psp-tab" onclick="pspTab('pst-frame',this)"><i class="fa-solid fa-border-style"></i>Frame</button>
+    </div>
+  </div>
+  <div class="psp-body">
+    <div class="psp-tab-panel active" id="pst-board">
+      <div><div class="psp-section-label"><i class="fa-solid fa-chess-board"></i>Board Color Theme</div>
+      <div class="psp-grid" id="ps-board-grid"></div></div>
+    </div>
+    <div class="psp-tab-panel" id="pst-pieces">
+      <div><div class="psp-section-label"><i class="fa-solid fa-chess-knight"></i>Piece Style</div>
+      <div class="psp-piece-grid" id="ps-piece-grid"></div></div>
+    </div>
+    <div class="psp-tab-panel" id="pst-bg">
+      <div><div class="psp-section-label"><i class="fa-solid fa-image"></i>Board Area Background</div>
+      <div class="psp-bg-grid" id="ps-bg-grid"></div></div>
+    </div>
+    <div class="psp-tab-panel" id="pst-frame">
+      <div><div class="psp-section-label"><i class="fa-solid fa-border-style"></i>Board Frame Style</div>
+      <div class="psp-border-grid" id="ps-frame-grid"></div></div>
+    </div>
+  </div>
+  <!-- LIVE PREVIEW SECTION (always visible) -->
+  <div id="ps-preview-wrap">
+    <div class="ps-preview-label"><i class="fa-solid fa-eye"></i> Live Preview</div>
+    <div class="ps-preview-stage">
+      <div class="ps-preview-board-outer" id="ps-preview-outer">
+        <div class="ps-preview-board-wrap" id="ps-preview-bg">
+          <div class="ps-preview-board" id="ps-preview-board"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="psp-footer">
+    <button class="btn btn-secondary" onclick="psReset()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+    <button class="btn btn-primary" onclick="psSave()"><i class="fa-solid fa-check"></i> Save Settings</button>
   </div>
 </div>
 
@@ -420,6 +630,246 @@ if (urlParams.get('acceptChallenge')) {
    document.getElementById('invite-modal-desc').textContent = `Email Challenge: ${timer}-minute game!`;
    document.getElementById('invite-modal').classList.add('active');
 }
+
+// =====================================================
+// PLAY PAGE SETTINGS SYSTEM
+// =====================================================
+const PS_BOARD_THEMES = [
+  {id:'classic',name:'Classic',light:'#f0d9b5',dark:'#b58863'},
+  {id:'ocean',name:'Ocean',light:'#dee3e6',dark:'#8ca2ad'},
+  {id:'midnight',name:'Midnight',light:'#4b7399',dark:'#1a3a5c'},
+  {id:'forest',name:'Forest',light:'#ffffdd',dark:'#86a666'},
+  {id:'coral',name:'Coral',light:'#f5dfd2',dark:'#c76b4e'},
+  {id:'slate',name:'Slate',light:'#cdd6e0',dark:'#4a6582'},
+  {id:'violet',name:'Violet',light:'#e5d9f2',dark:'#7c4f97'},
+  {id:'gold',name:'Gold',light:'#fdf3d5',dark:'#c9952c'},
+  {id:'ice',name:'Ice',light:'#e8f4f8',dark:'#5b9ab8'},
+  {id:'cherry',name:'Cherry',light:'#f9e4e8',dark:'#a83250'},
+  {id:'walnut',name:'Walnut',light:'#d4c09a',dark:'#6b4226'},
+  {id:'neon',name:'Neon',light:'#1a1a2e',dark:'#0d0d1a'},
+  {id:'emerald',name:'Emerald',light:'#c8e6c0',dark:'#2e7d32'},
+  {id:'rose',name:'Rose',light:'#fce4ec',dark:'#c2185b'},
+  {id:'steel',name:'Steel',light:'#eceff1',dark:'#546e7a'},
+  {id:'amber',name:'Amber',light:'#fff8e1',dark:'#f57c00'}
+];
+const PS_PIECE_THEMES = [
+  {id:'neo',name:'Neo',url:'https://www.chess.com/chess-themes/pieces/neo/150/',wiki:false},
+  {id:'wikipedia',name:'Classic',url:'https://chessboardjs.com/img/chesspieces/wikipedia/',wiki:true},
+  {id:'alpha',name:'Alpha',url:'https://www.chess.com/chess-themes/pieces/alpha/150/',wiki:false},
+  {id:'bases',name:'Bases',url:'https://www.chess.com/chess-themes/pieces/bases/150/',wiki:false},
+  {id:'blindfold',name:'Blind',url:'https://www.chess.com/chess-themes/pieces/blindfold/150/',wiki:false},
+  {id:'book',name:'Book',url:'https://www.chess.com/chess-themes/pieces/book/150/',wiki:false},
+  {id:'bubblegum',name:'Bubble',url:'https://www.chess.com/chess-themes/pieces/bubblegum/150/',wiki:false},
+  {id:'glass',name:'Glass',url:'https://www.chess.com/chess-themes/pieces/glass/150/',wiki:false},
+  {id:'gothic',name:'Gothic',url:'https://www.chess.com/chess-themes/pieces/gothic/150/',wiki:false},
+  {id:'icy_sea',name:'Icy',url:'https://www.chess.com/chess-themes/pieces/icy_sea/150/',wiki:false},
+  {id:'lolz',name:'Lolz',url:'https://www.chess.com/chess-themes/pieces/lolz/150/',wiki:false},
+  {id:'tigers',name:'Tigers',url:'https://www.chess.com/chess-themes/pieces/tigers/150/',wiki:false}
+];
+const PS_BG_TEMPLATES = [
+  {id:'none',name:'None',css:'',shadow:''},
+  {id:'galaxy',name:'Galaxy',css:'linear-gradient(135deg,#0d0d2b,#1a0a3a,#0a1a3a)',shadow:'0 0 50px rgba(100,60,200,0.4)'},
+  {id:'sunset',name:'Sunset',css:'linear-gradient(135deg,#1a0a00,#3d1800,#1a0a0a)',shadow:'0 0 45px rgba(220,80,30,0.35)'},
+  {id:'forest',name:'Forest',css:'linear-gradient(135deg,#040d04,#0a2010,#041004)',shadow:'0 0 45px rgba(30,120,40,0.35)'},
+  {id:'ocean',name:'Ocean',css:'linear-gradient(135deg,#020c1a,#042040,#020a14)',shadow:'0 0 45px rgba(20,80,160,0.35)'},
+  {id:'rose',name:'Rose Gold',css:'linear-gradient(135deg,#1a0a0e,#2a1018,#180a0c)',shadow:'0 0 45px rgba(180,60,90,0.35)'},
+  {id:'aurora',name:'Aurora',css:'linear-gradient(135deg,#030a10,#0a1a2a,#0d1a0a,#0a0a1a)',shadow:'0 0 55px rgba(40,180,120,0.3)'},
+  {id:'lava',name:'Lava',css:'linear-gradient(135deg,#1a0500,#2d0a00,#1a0800)',shadow:'0 0 45px rgba(220,40,10,0.4)'},
+  {id:'dusk',name:'Dusk',css:'linear-gradient(135deg,#0e0618,#1a0a2e,#0a0e1a)',shadow:'0 0 45px rgba(120,40,200,0.3)'},
+  {id:'arctic',name:'Arctic',css:'linear-gradient(135deg,#0a1a24,#0e2030,#081418)',shadow:'0 0 45px rgba(100,180,220,0.3)'},
+  {id:'amber',name:'Amber',css:'linear-gradient(135deg,#1a1000,#2e1a00,#1a0e00)',shadow:'0 0 45px rgba(220,140,20,0.35)'},
+  {id:'matrix',name:'Matrix',css:'linear-gradient(135deg,#000a00,#001500,#000800)',shadow:'0 0 45px rgba(0,200,60,0.35)'}
+];
+const PS_BORDERS = [
+  {id:'none',name:'None',cls:''},
+  {id:'wood',name:'Wood',cls:'border-wood'},
+  {id:'metal',name:'Metal',cls:'border-metal'},
+  {id:'gold',name:'Gold',cls:'border-gold'},
+  {id:'neon',name:'Neon',cls:'border-neon'},
+  {id:'marble',name:'Marble',cls:'border-marble'}
+];
+
+let psData = JSON.parse(localStorage.getItem('px_game_settings') || '{}');
+if (!psData.boardTheme) psData.boardTheme = 'classic';
+if (!psData.pieceTheme) psData.pieceTheme = 'neo';
+if (!psData.bgTemplate) psData.bgTemplate = 'none';
+if (!psData.boardBorder) psData.boardBorder = 'none';
+
+function openPS() {
+  psRenderAll();
+  psUpdatePreview();
+  document.getElementById('ps-overlay').classList.add('open');
+  document.getElementById('ps-panel').classList.add('open');
+  document.getElementById('btn-open-ps').classList.add('active');
+}
+function closePS() {
+  document.getElementById('ps-overlay').classList.remove('open');
+  document.getElementById('ps-panel').classList.remove('open');
+  document.getElementById('btn-open-ps').classList.remove('active');
+}
+function pspTab(id, btn) {
+  document.querySelectorAll('.psp-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.psp-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+function psRenderAll() {
+  const s = psData;
+  const bg = document.getElementById('ps-board-grid');
+  if (bg) bg.innerHTML = PS_BOARD_THEMES.map(t => `
+    <div class="psp-swatch ${s.boardTheme===t.id?'selected':''}" id="psb-${t.id}" onclick="psBoardSel('${t.id}')" title="${t.name}">
+      <div class="sw-check">&#10003;</div>
+      <div style="width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr">
+        <div style="background:${t.light}"></div><div style="background:${t.dark}"></div>
+        <div style="background:${t.dark}"></div><div style="background:${t.light}"></div>
+      </div>
+      <div class="sw-label">${t.name}</div>
+    </div>`).join('');
+  const pg = document.getElementById('ps-piece-grid');
+  if (pg) pg.innerHTML = PS_PIECE_THEMES.map(t => {
+    const img = t.wiki ? t.url+'wK.png' : t.url+'wk.png';
+    return `<div class="psp-piece-card ${s.pieceTheme===t.id?'selected':''}" id="psp-${t.id}" onclick="psPieceSel('${t.id}')">
+      <div class="pc-check">&#10003;</div>
+      <img src="${img}" alt="${t.name}" onerror="this.style.display='none'">
+      <div class="pc-name">${t.name}</div>
+    </div>`;
+  }).join('');
+  const bgg = document.getElementById('ps-bg-grid');
+  if (bgg) bgg.innerHTML = PS_BG_TEMPLATES.map(t => {
+    const inner = t.id==='none'
+      ? `<div style="width:100%;height:100%;background:var(--bg-card);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px">&#8212; None &#8212;</div>`
+      : `<div style="width:100%;height:100%;background:${t.css}"></div>`;
+    return `<div class="psp-bg-card ${s.bgTemplate===t.id?'selected':''}" id="psbg-${t.id}" onclick="psBgSel('${t.id}')">${inner}<div class="bg-label">${t.name}</div></div>`;
+  }).join('');
+  const fg = document.getElementById('ps-frame-grid');
+  if (fg) fg.innerHTML = PS_BORDERS.map(t => `
+    <div class="psp-border-card ${s.boardBorder===t.id?'selected':''}" id="psf-${t.id}" onclick="psFrameSel('${t.id}')">
+      <div class="bc-check">&#10003;</div>
+      <div class="bc-preview"><div></div><div></div><div></div><div></div></div>
+      <div class="bc-name">${t.name}</div>
+    </div>`).join('');
+}
+function psBoardSel(id) {
+  psData.boardTheme = id;
+  document.querySelectorAll('#ps-board-grid .psp-swatch').forEach(e=>e.classList.remove('selected'));
+  const el=document.getElementById('psb-'+id); if(el) el.classList.add('selected');
+  psSaveLocal(); psUpdatePreview();
+}
+function psPieceSel(id) {
+  psData.pieceTheme = id;
+  document.querySelectorAll('#ps-piece-grid .psp-piece-card').forEach(e=>e.classList.remove('selected'));
+  const el=document.getElementById('psp-'+id); if(el) el.classList.add('selected');
+  psSaveLocal(); psUpdatePreview();
+}
+function psBgSel(id) {
+  psData.bgTemplate = id;
+  document.querySelectorAll('#ps-bg-grid .psp-bg-card').forEach(e=>e.classList.remove('selected'));
+  const el=document.getElementById('psbg-'+id); if(el) el.classList.add('selected');
+  psSaveLocal(); psUpdatePreview();
+}
+function psFrameSel(id) {
+  psData.boardBorder = id;
+  document.querySelectorAll('#ps-frame-grid .psp-border-card').forEach(e=>e.classList.remove('selected'));
+  const el=document.getElementById('psf-'+id); if(el) el.classList.add('selected');
+  psSaveLocal(); psUpdatePreview();
+}
+function psSaveLocal() {
+  localStorage.setItem('px_game_settings', JSON.stringify(psData));
+  const isDefault = psData.boardTheme==='classic' && psData.pieceTheme==='neo' && psData.bgTemplate==='none' && psData.boardBorder==='none';
+  document.getElementById('btn-open-ps').classList.toggle('has-custom', !isDefault);
+}
+function psReset() {
+  psData = {boardTheme:'classic',pieceTheme:'neo',bgTemplate:'none',boardBorder:'none',showLegalMoves:true,highlightMoves:true,showCoords:false,animatePieces:true,boardGlow:false,soundEnabled:true,confettiOnWin:true,animSpeed:2};
+  psSaveLocal();
+  psRenderAll();
+  psUpdatePreview();
+  Toast.success('Settings reset to defaults!');
+}
+function psSave() {
+  psSaveLocal();
+  closePS();
+  Toast.success('Board settings saved! Will apply when you start a game.');
+}
+// Preview always on
+const psPreviewOn = true;
+
+// Piece positions for mini board [row][col] = piece code or null
+const PREVIEW_LAYOUT = [
+  ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+  ['bP','bP','bP','bP','bP','bP','bP','bP'],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  ['wP','wP','wP','wP','wP','wP','wP','wP'],
+  ['wR','wN','wB','wQ','wK','wB','wN','wR']
+];
+
+function psUpdatePreview() {
+  if (!psPreviewOn) return;
+  const t = PS_BOARD_THEMES.find(x => x.id === psData.boardTheme) || PS_BOARD_THEMES[0];
+  const bg = PS_BG_TEMPLATES.find(x => x.id === psData.bgTemplate) || PS_BG_TEMPLATES[0];
+  const pt = PS_PIECE_THEMES.find(x => x.id === psData.pieceTheme) || PS_PIECE_THEMES[0];
+  const border = PS_BORDERS.find(x => x.id === psData.boardBorder) || PS_BORDERS[0];
+
+  // Background on inner wrap
+  const bgWrap = document.getElementById('ps-preview-bg');
+  if (bgWrap) {
+    bgWrap.style.background = bg.css || '';
+    bgWrap.style.boxShadow  = bg.shadow || '';
+    bgWrap.style.padding    = '0'; // no padding here — board is always full-size
+  }
+
+  // Border on OUTER element so board never shrinks
+  const outerEl = document.getElementById('ps-preview-outer');
+  if (outerEl) {
+    const allBorderCls = ['border-wood','border-metal','border-gold','border-neon','border-marble'];
+    allBorderCls.forEach(c => outerEl.classList.remove(c));
+    if (border.cls && border.cls !== 'border-none') outerEl.classList.add(border.cls);
+    // BG glow via padding on outer
+    outerEl.style.background = bg.css || '';
+    outerEl.style.boxShadow  = bg.shadow || '';
+    outerEl.style.padding    = bg.id === 'none' ? '0' : '10px';
+  }
+
+  // Board squares + pieces
+  const board = document.getElementById('ps-preview-board');
+  if (!board) return;
+  const cells = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const isLight = (r + c) % 2 === 0;
+      const sq = document.createElement('div');
+      sq.className = 'sq';
+      sq.style.background = isLight ? t.light : t.dark;
+      const piece = PREVIEW_LAYOUT[r][c];
+      if (piece) {
+        const color = piece[0]; // 'w' or 'b'
+        const type  = piece[1]; // R,N,B,Q,K,P
+        const wikiMap = {R:'R',N:'N',B:'B',Q:'Q',K:'K',P:'P'};
+        const nonWikiMap = {R:'r',N:'n',B:'b',Q:'q',K:'k',P:'p'};
+        const name = pt.wiki
+          ? (color==='w'?'w':'b') + wikiMap[type]
+          : (color==='w'?'w':'b') + nonWikiMap[type];
+        const img = document.createElement('img');
+        img.src = pt.url + name + '.png';
+        img.alt = piece;
+        img.onerror = function(){ this.style.display='none'; };
+        sq.appendChild(img);
+      }
+      cells.push(sq);
+    }
+  }
+  board.innerHTML = '';
+  cells.forEach(sq => board.appendChild(sq));
+}
+
+// Init badge on load
+(function(){
+  const isDefault = psData.boardTheme==='classic' && psData.pieceTheme==='neo' && psData.bgTemplate==='none' && psData.boardBorder==='none';
+  const btn = document.getElementById('btn-open-ps');
+  if (btn) btn.classList.toggle('has-custom', !isDefault);
+})();
 </script>
 </body>
 </html>

@@ -9,7 +9,23 @@
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
   <style>
     .game-layout { display: flex; gap: 18px; align-items: flex-start; }
-    .board-section { flex-shrink: 0; width: min(500px, 90vw); margin: 0 auto; }
+    /* board-section auto-sizes: the outer frame decorates around the real board */
+    .board-section { flex-shrink: 0; width: min(500px, calc(90vw - 12px)); margin: 0 auto; }
+    #board-frame-outer {
+      border-radius: 10px;
+      transition: background 0.45s ease, box-shadow 0.45s ease, border 0.35s ease, padding 0.35s ease;
+    }
+    /* board itself always fills 100% of its container */
+    #board-bg-wrapper { width: 100%; }
+    #board { width: 100% !important; }
+    /* chessboard.js squares must be square — override any stray heights */
+    #board .square-55d63 { aspect-ratio: 1 / 1 !important; }
+    /* board border styles on outer frame */
+    #board-frame-outer.border-wood   { border: 6px solid #8B5E3C !important; border-radius: 4px !important; }
+    #board-frame-outer.border-metal  { border: 5px solid #7a8fa8 !important; border-radius: 3px !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12) !important; }
+    #board-frame-outer.border-gold   { border: 5px solid var(--gold) !important; border-radius: 6px !important; box-shadow: 0 0 22px rgba(212,168,67,0.4) !important; }
+    #board-frame-outer.border-neon   { border: 3px solid #00f7ff !important; border-radius: 8px !important; box-shadow: 0 0 20px rgba(0,247,255,0.45) !important; }
+    #board-frame-outer.border-marble { border: 6px solid #d4cfc9 !important; border-radius: 2px !important; }
     .side-panel { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 250px; max-width: 340px; }
     .player-bar {
       display: flex; align-items: center; gap: 12px; padding: 12px 14px;
@@ -35,7 +51,6 @@
     .result-icon { font-size: 56px; margin-bottom: 14px; }
     .result-title { font-family: var(--font-display); font-size: 26px; font-weight: 800; margin-bottom: 8px; }
     .result-iq { font-size: 14px; color: var(--text-muted); margin-bottom: 22px; }
-    #board { width: 100% !important; }
     .highlight-selected { background: rgba(232,197,71,0.35) !important; }
     .highlight-move { cursor: pointer; position: relative; }
     .highlight-move::after { content:''; display:block; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:28%; height:28%; background:rgba(0,0,0,0.25); border-radius:50%; }
@@ -54,17 +69,90 @@
     .highlight-last-move { background: rgba(232,197,71,0.25) !important; }
     .highlight-check { animation: blink-red 0.8s infinite; background: rgba(248,113,113,0.5) !important; }
     @keyframes blink-red { 0%, 100% { background: rgba(248,113,113,0.5) !important; } 50% { background: rgba(248,113,113,0.15) !important; } }
-    .promotion-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; }
-    .promotion-modal.active { display: flex; }
-    .promotion-content { background: var(--bg-secondary); padding: 22px; border-radius: 14px; text-align: center; border: 1px solid var(--border-subtle); }
-    .promotion-options { display: flex; gap: 10px; margin-top: 14px; }
-    .promotion-piece { cursor: pointer; padding: 10px; border-radius: 8px; transition: background 0.2s; border: 1px solid transparent; }
-    .promotion-piece:hover { background: rgba(255,255,255,0.08); border-color: var(--border-subtle); }
+    /* ─── Pawn Promotion Modal ─── */
+    .promotion-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.82); backdrop-filter:blur(12px);
+      z-index:2000; align-items:center; justify-content:center;
+    }
+    .promotion-modal.active { display:flex; animation:promoFadeIn 0.22s ease; }
+    @keyframes promoFadeIn { from{opacity:0;} to{opacity:1;} }
+    .promotion-content {
+      background:linear-gradient(160deg,#1e1e2c 0%,#18181f 100%);
+      border:1px solid rgba(212,168,67,0.22);
+      border-radius:20px; padding:28px 24px 22px;
+      text-align:center; max-width:480px; width:92%;
+      box-shadow:0 30px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(212,168,67,0.08);
+      animation:promoSlideUp 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes promoSlideUp { from{transform:translateY(24px) scale(0.95);opacity:0;} to{transform:translateY(0) scale(1);opacity:1;} }
+    .promotion-title {
+      font-family:var(--font-display); font-size:16px; font-weight:800;
+      color:var(--text-primary); letter-spacing:0.5px; margin-bottom:6px;
+    }
+    .promotion-subtitle {
+      font-size:11px; color:var(--text-muted); margin-bottom:20px;
+      letter-spacing:0.5px; text-transform:uppercase;
+    }
+    .promotion-options {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+      margin-bottom:16px;
+    }
+    .promotion-piece {
+      cursor:pointer; border-radius:14px;
+      border:2px solid rgba(255,255,255,0.07);
+      background:rgba(255,255,255,0.04);
+      padding:14px 8px 10px;
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+      position:relative; overflow:hidden;
+    }
+    .promotion-piece::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg,rgba(212,168,67,0.12),transparent);
+      opacity:0; transition:opacity 0.2s;
+    }
+    .promotion-piece:hover {
+      border-color:var(--gold);
+      background:rgba(212,168,67,0.08);
+      transform:translateY(-4px) scale(1.04);
+      box-shadow:0 10px 28px rgba(0,0,0,0.4),0 0 0 3px rgba(212,168,67,0.2);
+    }
+    .promotion-piece:hover::before { opacity:1; }
+    .promotion-piece:active { transform:translateY(-2px) scale(1.01); }
+    .promotion-piece img {
+      width:52px; height:52px; object-fit:contain;
+      filter:drop-shadow(0 3px 8px rgba(0,0,0,0.6));
+      transition:transform 0.2s;
+    }
+    .promotion-piece:hover img { transform:scale(1.1) translateY(-2px); }
+    .promotion-piece-name {
+      font-size:10px; font-weight:700; color:var(--text-secondary);
+      letter-spacing:0.8px; text-transform:uppercase;
+    }
+    .promotion-piece:hover .promotion-piece-name { color:var(--gold); }
+    .promotion-cancel {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:11px; color:var(--text-muted); cursor:pointer;
+      padding:6px 14px; border-radius:20px;
+      border:1px solid rgba(255,255,255,0.06);
+      background:rgba(255,255,255,0.03);
+      transition:all 0.2s; margin-top:2px;
+    }
+    .promotion-cancel:hover { color:var(--error); border-color:rgba(240,107,126,0.3); background:rgba(240,107,126,0.08); }
+    @media (max-width:440px) {
+      .promotion-options { gap:7px; }
+      .promotion-piece { padding:10px 4px 8px; border-radius:11px; }
+      .promotion-piece img { width:40px; height:40px; }
+      .promotion-content { padding:20px 14px 16px; }
+    }
     @media (max-width: 900px) {
       .game-layout { flex-direction: column; align-items: stretch; }
       .side-panel { width: 100%; max-width: 100%; }
       .board-section { width: 100%; display: flex; flex-direction: column; align-items: center; }
-      #board { width: min(500px, 100%) !important; }
+      /* ensure board section takes full content width minus any frame border */
+      #board-frame-outer { width: 100%; }
+      #board { width: 100% !important; }
     }
     @media (max-width: 480px) {
       .result-card { padding: 28px 20px; }
@@ -112,6 +200,486 @@
         .result-title { font-size: 20px; margin: 0; }
         .result-iq { width: 100%; margin-bottom: 10px; }
     }
+
+    /* ===== SETTINGS BUTTON ===== */
+    .btn-settings {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: rgba(212,168,67,0.07);
+      border: 1px solid rgba(212,168,67,0.18);
+      color: var(--text-muted);
+      font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.25s, background 0.25s, border-color 0.25s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+      position: relative; overflow: hidden;
+    }
+    .btn-settings::after {
+      content: ''; position: absolute; inset: 0; border-radius: 11px;
+      background: radial-gradient(circle at 50% 50%, rgba(212,168,67,0.3) 0%, transparent 70%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .btn-settings:hover { color: var(--gold); background: var(--gold-dim); border-color: rgba(212,168,67,0.4); transform: rotate(60deg); box-shadow: 0 0 16px rgba(212,168,67,0.2); }
+    .btn-settings:hover::after { opacity: 1; }
+    .btn-settings.active { color: var(--gold); background: rgba(212,168,67,0.15); border-color: rgba(212,168,67,0.5); transform: rotate(30deg); box-shadow: 0 0 20px rgba(212,168,67,0.25); }
+    .btn-settings .settings-pulse {
+      position: absolute; top: -3px; right: -3px; width: 9px; height: 9px;
+      background: var(--gold); border-radius: 50%; border: 2px solid var(--bg-primary);
+      animation: pulse-gold 2s infinite; display: none;
+    }
+    .btn-settings.has-custom .settings-pulse { display: block; }
+    @keyframes pulse-gold { 0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,0.6);} 50%{box-shadow:0 0 0 6px rgba(212,168,67,0);} }
+
+    /* ===== SETTINGS OVERLAY ===== */
+    #settings-overlay {
+      position: fixed; inset: 0; z-index: 1200;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(10px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.32s ease;
+    }
+    #settings-overlay.open { opacity: 1; pointer-events: all; }
+
+    /* ===== SETTINGS DRAWER ===== */
+    #settings-panel {
+      position: fixed; top: 0; right: -490px; bottom: 0;
+      width: 470px; max-width: 100vw;
+      background: linear-gradient(180deg, #1c1c26 0%, #18181f 100%);
+      border-left: 1px solid rgba(212,168,67,0.12);
+      box-shadow: -20px 0 70px rgba(0,0,0,0.7), -2px 0 0 rgba(212,168,67,0.06);
+      z-index: 1300;
+      display: flex; flex-direction: column;
+      transition: right 0.38s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #settings-panel.open { right: 0; }
+
+    /* ── Header ── */
+    .sp-header {
+      padding: 20px 22px 0;
+      border-bottom: 1px solid rgba(212,168,67,0.1);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(212,168,67,0.09) 0%, rgba(212,168,67,0.02) 50%, transparent 100%);
+      position: relative; overflow: hidden;
+    }
+    .sp-header::before {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,168,67,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .sp-header-top {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .sp-header-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 800;
+      color: var(--text-primary); display: flex; align-items: center; gap: 10px;
+    }
+    .sp-header-title .sp-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(212,168,67,0.3), rgba(212,168,67,0.1));
+      border: 1px solid rgba(212,168,67,0.35);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 15px;
+      box-shadow: 0 4px 12px rgba(212,168,67,0.15);
+    }
+    .sp-live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #3ecf6e; margin-left: 4px;
+      box-shadow: 0 0 6px rgba(62,207,110,0.6);
+      animation: blink-green 1.5s infinite;
+      display: inline-block;
+    }
+    @keyframes blink-green { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    .sp-close {
+      width: 34px; height: 34px; border-radius: 9px; border: none;
+      background: rgba(255,255,255,0.06); color: var(--text-muted);
+      font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .sp-close:hover { background: rgba(240,107,126,0.18); color: var(--error); transform: scale(1.1) rotate(90deg); }
+
+    /* ── Tabs ── */
+    .sp-tabs {
+      display: flex; gap: 1px;
+      background: rgba(0,0,0,0.25); border-radius: 10px 10px 0 0;
+      padding: 4px 4px 0; overflow-x: auto; scrollbar-width: none;
+    }
+    .sp-tabs::-webkit-scrollbar { display: none; }
+    .sp-tab {
+      flex: 1; min-width: 65px; padding: 8px 4px 10px;
+      border: none; background: transparent; color: var(--text-muted);
+      font-family: var(--font-body); font-size: 10.5px; font-weight: 600;
+      cursor: pointer; border-radius: 8px 8px 0 0;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 0.2s; letter-spacing: 0.3px; white-space: nowrap;
+      position: relative;
+    }
+    .sp-tab i { font-size: 13px; transition: transform 0.2s; }
+    .sp-tab:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+    .sp-tab:hover i { transform: scale(1.15); }
+    .sp-tab.active { color: var(--gold); background: rgba(212,168,67,0.06); }
+    .sp-tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 10%; right: 10%;
+      height: 2.5px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* ── Body ── */
+    .sp-body { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+    .sp-body::-webkit-scrollbar { width: 3px; }
+    .sp-body::-webkit-scrollbar-thumb { background: rgba(212,168,67,0.25); border-radius: 4px; }
+    .sp-tab-panel { display: none; flex-direction: column; gap: 20px; }
+    .sp-tab-panel.active { display: flex; animation: tabIn 0.22s ease; }
+    @keyframes tabIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .sp-section-label {
+      font-size: 9.5px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text-muted);
+      margin-bottom: 11px; display: flex; align-items: center; gap: 8px;
+    }
+    .sp-section-label i { color: var(--gold); font-size: 11px; }
+    .sp-section-label::after { content:''; flex:1; height:1px; background: linear-gradient(90deg, var(--border-subtle), transparent); }
+
+    /* ── Board Swatch Grid ── */
+    .sp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .sp-swatch {
+      border-radius: 11px; border: 2px solid transparent;
+      cursor: pointer; overflow: hidden; position: relative;
+      transition: transform 0.22s ease, border-color 0.22s, box-shadow 0.22s;
+      aspect-ratio: 1;
+    }
+    .sp-swatch:hover { transform: scale(1.08); border-color: rgba(212,168,67,0.6); }
+    .sp-swatch.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(212,168,67,0.3), 0 6px 20px rgba(0,0,0,0.5);
+    }
+    .sp-swatch .swatch-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 4px 4px; font-size: 9px; font-weight: 600;
+      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      color: #fff; text-align: center;
+    }
+    .sp-swatch.selected .swatch-label::before { content: '✓ '; color: var(--gold); }
+    .sp-swatch .swatch-check {
+      position: absolute; top: 4px; right: 4px; width: 16px; height: 16px;
+      background: var(--gold); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; color: #000; font-weight: 800;
+      opacity: 0; transform: scale(0); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sp-swatch.selected .swatch-check { opacity: 1; transform: scale(1); }
+
+    /* ── Piece Card Grid ── */
+    .sp-piece-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .sp-piece-card {
+      border-radius: 12px; border: 2px solid var(--border-subtle);
+      background: var(--bg-card); cursor: pointer; padding: 12px 6px 8px;
+      text-align: center; transition: all 0.22s ease; position: relative; overflow: hidden;
+    }
+    .sp-piece-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(212,168,67,0.1), transparent);
+      opacity: 0; transition: opacity 0.22s;
+    }
+    .sp-piece-card:hover { border-color: rgba(212,168,67,0.5); transform: translateY(-3px); background: var(--bg-card-hover); }
+    .sp-piece-card:hover::before { opacity: 1; }
+    .sp-piece-card.selected { border-color: var(--gold); background: rgba(212,168,67,0.07); box-shadow: 0 0 0 3px rgba(212,168,67,0.2); }
+    .sp-piece-card.selected::before { opacity: 1; }
+    .sp-piece-card img { width: 38px; height: 38px; object-fit: contain; margin-bottom: 6px; transition: transform 0.2s; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+    .sp-piece-card:hover img { transform: scale(1.15) translateY(-2px); }
+    .sp-piece-card .pc-name { font-size: 10px; font-weight: 600; color: var(--text-secondary); }
+    .sp-piece-card.selected .pc-name { color: var(--gold); }
+    .sp-piece-card .pc-check {
+      position: absolute; top: 5px; right: 5px; width: 16px; height: 16px;
+      background: var(--gold); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; color: #000; font-weight: 700;
+      opacity: 0; transform: scale(0); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sp-piece-card.selected .pc-check { opacity: 1; transform: scale(1); }
+
+    /* ── BG Grid ── */
+    .sp-bg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .sp-bg-card {
+      border-radius: 12px; border: 2px solid var(--border-subtle);
+      cursor: pointer; overflow: hidden; position: relative;
+      aspect-ratio: 16/9; transition: all 0.22s ease;
+    }
+    .sp-bg-card:hover { border-color: rgba(212,168,67,0.6); transform: scale(1.04); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .sp-bg-card.selected { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,168,67,0.3); }
+    .sp-bg-card .bg-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 7px 9px; font-size: 10.5px; font-weight: 600;
+      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: #fff;
+    }
+    .sp-bg-card.selected .bg-label::before { content:'✓ '; color: var(--gold); }
+
+    /* ── Border Style Grid ── */
+    .sp-border-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .sp-border-card {
+      border-radius: 11px; border: 2px solid var(--border-subtle);
+      background: var(--bg-card); cursor: pointer; padding: 14px 8px 10px;
+      text-align: center; transition: all 0.22s ease; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .sp-border-card:hover { border-color: rgba(212,168,67,0.5); transform: translateY(-2px); background: var(--bg-card-hover); }
+    .sp-border-card.selected { border-color: var(--gold); background: rgba(212,168,67,0.07); box-shadow: 0 0 0 3px rgba(212,168,67,0.2); }
+    .sp-border-card .bc-preview {
+      width: 48px; height: 48px; border-radius: 6px; overflow: hidden;
+      display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    }
+    .sp-border-card .bc-preview div { background: #b58863; }
+    .sp-border-card .bc-preview div:nth-child(odd) { background: #f0d9b5; }
+    .sp-border-card .bc-name { font-size: 10px; font-weight: 600; color: var(--text-secondary); }
+    .sp-border-card.selected .bc-name { color: var(--gold); }
+    .sp-border-card .bc-check {
+      position: absolute; top: 5px; right: 5px; width: 16px; height: 16px;
+      background: var(--gold); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; color: #000; font-weight: 700;
+      opacity: 0; transform: scale(0); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sp-border-card.selected .bc-check { opacity: 1; transform: scale(1); }
+
+    /* ── Toggle Row ── */
+    .sp-toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 13px; border-radius: 12px;
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      cursor: pointer; user-select: none;
+    }
+    .sp-toggle-row:hover { border-color: rgba(212,168,67,0.25); background: var(--bg-card-hover); transform: translateX(2px); }
+    .sp-toggle-left { display: flex; align-items: center; gap: 11px; }
+    .sp-toggle-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.18);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 13px; flex-shrink: 0;
+    }
+    .sp-toggle-text .sp-toggle-title { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+    .sp-toggle-text .sp-toggle-desc { font-size: 10.5px; color: var(--text-muted); margin-top: 1px; }
+
+    /* Custom toggle switch */
+    .sp-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .sp-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .sp-switch-track {
+      position: absolute; inset: 0; border-radius: 12px;
+      background: rgba(255,255,255,0.1); border: 1px solid var(--border-subtle);
+      transition: all 0.25s ease; cursor: pointer;
+    }
+    .sp-switch-track::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--text-muted); transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sp-switch input:checked + .sp-switch-track {
+      background: linear-gradient(135deg, rgba(212,168,67,0.4), rgba(212,168,67,0.22));
+      border-color: rgba(212,168,67,0.55);
+    }
+    .sp-switch input:checked + .sp-switch-track::after {
+      left: calc(100% - 19px); background: var(--gold);
+      box-shadow: 0 0 10px rgba(212,168,67,0.6);
+    }
+
+    /* ── Speed Slider ── */
+    .sp-slider-wrap { padding: 4px 0; }
+    .sp-slider-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+    input[type=range].sp-slider {
+      -webkit-appearance: none; width: 100%; height: 4px;
+      background: var(--border-subtle); border-radius: 4px; outline: none; cursor: pointer;
+    }
+    input[type=range].sp-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--gold); cursor: pointer; border: 3px solid #1c1c26;
+      box-shadow: 0 0 10px rgba(212,168,67,0.5); transition: box-shadow 0.2s, transform 0.2s;
+    }
+    input[type=range].sp-slider:hover::-webkit-slider-thumb { box-shadow: 0 0 18px rgba(212,168,67,0.7); transform: scale(1.1); }
+
+    /* ── Footer ── */
+    .sp-footer {
+      padding: 13px 18px; border-top: 1px solid rgba(212,168,67,0.1);
+      display: flex; gap: 10px; flex-shrink: 0; align-items: center;
+      background: linear-gradient(to top, rgba(10,10,14,0.6), transparent);
+    }
+    .sp-footer .btn { flex: 1; }
+    .sp-preview-badge {
+      display: flex; align-items: center; gap: 5px; font-size: 10.5px;
+      color: var(--gold); background: rgba(212,168,67,0.1);
+      border: 1px solid rgba(212,168,67,0.2); border-radius: 20px;
+      padding: 4px 10px; white-space: nowrap;
+    }
+    .sp-preview-badge i { font-size: 8px; animation: blink-green 1.5s infinite; }
+
+    /* Board bg wrapper — now just a pass-through; outer frame has the visuals */
+    #board-bg-wrapper {
+      width: 100%; overflow: hidden;
+      /* keep transition for smooth board redraws */
+      transition: none;
+    }
+    /* Remove old wrapper-based border rules — now handled by #board-frame-outer above */
+    #board-bg-wrapper.border-wood,
+    #board-bg-wrapper.border-metal,
+    #board-bg-wrapper.border-gold,
+    #board-bg-wrapper.border-neon,
+    #board-bg-wrapper.border-marble,
+    #board-bg-wrapper.border-none { border: none !important; box-shadow: none !important; }
+
+    /* ── Responsive ── */
+    @media (max-width: 540px) {
+      #settings-panel { width: 100vw; right: -100vw; }
+      .sp-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .sp-piece-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .sp-bg-grid { grid-template-columns: repeat(2, 1fr); }
+      .sp-border-grid { grid-template-columns: repeat(3, 1fr); }
+      .sp-tab { font-size: 9.5px; padding: 7px 3px 9px; min-width: 56px; }
+    }
+
+    /* ===== SETTINGS PANEL OVERLAY ===== */
+    #settings-overlay {
+      position: fixed; inset: 0; z-index: 1200;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #settings-overlay.open { opacity: 1; pointer-events: all; }
+
+    /* ===== SETTINGS DRAWER ===== */
+    #settings-panel {
+      position: fixed; top: 0; right: -480px; bottom: 0;
+      width: 460px; max-width: 100vw;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -16px 0 60px rgba(0,0,0,0.65);
+      z-index: 1300;
+      display: flex; flex-direction: column;
+      transition: right 0.36s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #settings-panel.open { right: 0; }
+
+    /* ── Header ── */
+    .sp-header {
+      padding: 20px 22px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+      background: linear-gradient(160deg, rgba(212,168,67,0.07) 0%, transparent 60%);
+    }
+    .sp-header-top {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .sp-header-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 800;
+      color: var(--text-primary); display: flex; align-items: center; gap: 10px;
+    }
+    .sp-header-title .sp-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(212,168,67,0.25), rgba(212,168,67,0.08));
+      border: 1px solid rgba(212,168,67,0.3);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 15px;
+    }
+    .sp-close {
+      width: 34px; height: 34px; border-radius: 9px; border: none;
+      background: rgba(255,255,255,0.06); color: var(--text-muted);
+      font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .sp-close:hover { background: rgba(240,107,126,0.18); color: var(--error); transform: scale(1.1); }
+
+    /* ── Tabs ── */
+    .sp-tabs {
+      display: flex; gap: 2px;
+      background: rgba(0,0,0,0.2); border-radius: 10px 10px 0 0;
+      padding: 4px 4px 0; overflow-x: auto; scrollbar-width: none;
+    }
+    .sp-tabs::-webkit-scrollbar { display: none; }
+    .sp-tab {
+      flex: 1; min-width: 70px; padding: 8px 6px 10px;
+      border: none; background: transparent; color: var(--text-muted);
+      font-family: var(--font-body); font-size: 11px; font-weight: 600;
+      cursor: pointer; border-radius: 8px 8px 0 0;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 0.2s; letter-spacing: 0.3px; white-space: nowrap;
+      position: relative;
+    }
+    .sp-tab i { font-size: 14px; }
+    .sp-tab:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+    .sp-tab.active { color: var(--gold); background: var(--bg-secondary); }
+    .sp-tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 15%; right: 15%;
+      height: 2px; background: var(--gold); border-radius: 2px 2px 0 0;
+    }
+
+    /* ── Body ── */
+    .sp-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 22px; scroll-behavior: smooth; }
+    .sp-body::-webkit-scrollbar { width: 4px; }
+    .sp-body::-webkit-scrollbar-thumb { background: rgba(212,168,67,0.2); border-radius: 4px; }
+    .sp-tab-panel { display: none; flex-direction: column; gap: 22px; }
+    .sp-tab-panel.active { display: flex; animation: tabIn 0.22s ease; }
+    @keyframes tabIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .sp-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text-muted);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .sp-section-label i { color: var(--gold); }
+    .sp-section-label::after { content:''; flex:1; height:1px; background: var(--border-subtle); }
+
+    /* ── Board Swatch Grid ── */
+    .sp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .sp-swatch {
+      border-radius: 12px; border: 2px solid transparent;
+      cursor: pointer; overflow: hidden; position: relative;
+      transition: transform 0.22s ease, border-color 0.22s, box-shadow 0.22s;
+      aspect-ratio: 1;
+    }
+    .sp-swatch:hover { transform: scale(1.07); border-color: rgba(212,168,67,0.55); }
+    .sp-swatch.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(212,168,67,0.25), 0 6px 20px rgba(0,0,0,0.45);
+    }
+    /* Board theme swatch – force inner 2×2 to use equal cells */
+    .sp-swatch > div { width:100%; height:100%; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+    .sp-swatch > div > div { min-height:0; }
+    .sp-swatch .swatch-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 5px 6px; font-size: 10px; font-weight: 600;
+      background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+      color: #fff; text-align: center;
+    }
+    .sp-swatch.selected .swatch-label::before { content: '✓ '; color: var(--gold); }
+
+    /* ── Piece Card Grid ── */
+    .sp-piece-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .sp-piece-card {
+      border-radius: 12px; border: 2px solid var(--border-subtle);
+      background: var(--bg-card); cursor: pointer; padding: 14px 8px 10px;
+      text-align: center; transition: all 0.22s ease; position: relative; overflow: hidden;
+    }
+    .sp-piece-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(212,168,67,0.08), transparent);
+      opacity: 0; transition: opacity 0.22s;
+    }
+    .sp-piece-card:hover { border-color: rgba(212,168,67,0.5); transform: translateY(-3px); background: var(--bg-card-hover); }
+    .sp-piece-card:hover::before { opacity: 1; }
+    .sp-piece-card.selected { border-color: var(--gold); background: rgba(212,168,67,0.06); box-shadow: 0 0 0 3px rgba(212,168,67,0.2); }
+    .sp-piece-card.selected::before { opacity: 1; }
+    .sp-piece-card img { width: 44px; height: 44px; object-fit: contain; margin-bottom: 8px; transition: transform 0.2s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+    .sp-piece-card:hover img { transform: scale(1.12); }
+    .sp-piece-card .pc-name { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    .sp-piece-card.selected .pc-name { color: var(--gold); }
+    .sp-piece-card .pc-check {
+      position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+      background: var(--gold); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: #000; font-weight: 700;
+      opacity: 0; transform: scale(0); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sp-piece-card.selected .pc-check { opacity: 1; transform: scale(1); }
+
   </style>
 </head>
 <body>
@@ -126,6 +694,10 @@
       <div class="topbar-right" style="gap:8px">
         <button id="btn-undo" class="btn btn-secondary btn-sm" style="display:none; padding: 6px 12px;" onclick="undoMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
         <button class="btn btn-danger btn-sm" style="padding: 6px 12px;" onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign</button>
+        <button class="btn-settings" id="btn-open-settings" title="Game Settings" onclick="openSettings()">
+          <i class="fa-solid fa-sliders"></i>
+          <span class="settings-pulse"></span>
+        </button>
       </div>
     </div>
     <div class="page-content">
@@ -149,7 +721,11 @@
           </div>
 
           <!-- Chess Board -->
-          <div id="board"></div>
+          <div id="board-frame-outer">
+            <div id="board-bg-wrapper">
+              <div id="board"></div>
+            </div>
+          </div>
 
           <div class="player-bar" id="my-bar" style="margin-top:16px">
             <div class="avatar-initial" id="my-avatar">P</div>
@@ -233,8 +809,10 @@
 <!-- PROMOTION MODAL -->
 <div id="promotion-modal" class="promotion-modal">
   <div class="promotion-content">
-    <div class="promotion-title">Select Promotion Piece</div>
+    <div class="promotion-title">&#9813; Pawn Promotion</div>
+    <div class="promotion-subtitle">Choose a piece to promote to</div>
     <div class="promotion-options" id="promotion-options"></div>
+    <button class="promotion-cancel" onclick="cancelPromotion()"><i class="fa-solid fa-xmark"></i> Cancel</button>
   </div>
 </div>
 
@@ -247,6 +825,199 @@
 </div>
 
 <div id="toast-container" class="toast-container"></div>
+
+<!-- SETTINGS OVERLAY -->
+<div id="settings-overlay" onclick="closeSettings()"></div>
+
+<!-- SETTINGS PANEL -->
+<div id="settings-panel">
+  <div class="sp-header">
+    <div class="sp-header-top">
+      <div class="sp-header-title">
+        <div class="sp-icon"><i class="fa-solid fa-sliders"></i></div>
+        Game Settings <span class="sp-live-dot"></span>
+      </div>
+      <button class="sp-close" onclick="closeSettings()" title="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sp-tabs" id="sp-tabs">
+      <button class="sp-tab active" data-tab="tab-board" onclick="switchSettingsTab('tab-board', this)">
+        <i class="fa-solid fa-chess-board"></i>Board
+      </button>
+      <button class="sp-tab" data-tab="tab-pieces" onclick="switchSettingsTab('tab-pieces', this)">
+        <i class="fa-solid fa-chess-knight"></i>Pieces
+      </button>
+      <button class="sp-tab" data-tab="tab-bg" onclick="switchSettingsTab('tab-bg', this)">
+        <i class="fa-solid fa-image"></i>BG
+      </button>
+      <button class="sp-tab" data-tab="tab-border" onclick="switchSettingsTab('tab-border', this)">
+        <i class="fa-solid fa-border-style"></i>Frame
+      </button>
+      <button class="sp-tab" data-tab="tab-options" onclick="switchSettingsTab('tab-options', this)">
+        <i class="fa-solid fa-toggle-on"></i>Options
+      </button>
+    </div>
+  </div>
+
+  <div class="sp-body" id="sp-body">
+
+    <!-- Tab: Board Themes -->
+    <div class="sp-tab-panel active" id="tab-board">
+      <div>
+        <div class="sp-section-label"><i class="fa-solid fa-chess-board"></i> Board Color Theme</div>
+        <div class="sp-grid" id="board-theme-grid"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Piece Themes -->
+    <div class="sp-tab-panel" id="tab-pieces">
+      <div>
+        <div class="sp-section-label"><i class="fa-solid fa-chess-knight"></i> Piece Style</div>
+        <div class="sp-piece-grid" id="piece-theme-grid"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Background -->
+    <div class="sp-tab-panel" id="tab-bg">
+      <div>
+        <div class="sp-section-label"><i class="fa-solid fa-image"></i> Board Area Background</div>
+        <div class="sp-bg-grid" id="bg-theme-grid"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Board Frame/Border -->
+    <div class="sp-tab-panel" id="tab-border">
+      <div>
+        <div class="sp-section-label"><i class="fa-solid fa-border-style"></i> Board Frame Style</div>
+        <div class="sp-border-grid" id="border-style-grid"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Options -->
+    <div class="sp-tab-panel" id="tab-options">
+      <div>
+        <div class="sp-section-label"><i class="fa-solid fa-sliders"></i> Gameplay Options</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+
+          <label class="sp-toggle-row" onclick="toggleOption('showLegalMoves')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-bullseye"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Legal Move Hints</div>
+                <div class="sp-toggle-desc">Show dots on possible squares</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-legal-moves" onchange="toggleOption('showLegalMoves')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+          <label class="sp-toggle-row" onclick="toggleOption('highlightMoves')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-highlighter"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Move Highlights</div>
+                <div class="sp-toggle-desc">Highlight last move squares</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-highlight-moves" onchange="toggleOption('highlightMoves')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+          <label class="sp-toggle-row" onclick="toggleOption('showCoords')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-border-all"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Board Coordinates</div>
+                <div class="sp-toggle-desc">Show rank &amp; file labels</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-coords" onchange="toggleOption('showCoords')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+          <label class="sp-toggle-row" onclick="toggleOption('animatePieces')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Piece Animations</div>
+                <div class="sp-toggle-desc">Smooth piece movement</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-animate" onchange="toggleOption('animatePieces')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+          <label class="sp-toggle-row" onclick="toggleOption('boardGlow')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-sparkles"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Board Glow Effect</div>
+                <div class="sp-toggle-desc">Subtle glow on board wrapper</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-glow" onchange="toggleOption('boardGlow')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+          <label class="sp-toggle-row" onclick="toggleOption('soundEnabled')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-volume-high"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Sound Effects</div>
+                <div class="sp-toggle-desc">Move & capture sounds</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-sound" onchange="toggleOption('soundEnabled')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+          <label class="sp-toggle-row" onclick="toggleOption('confettiOnWin')">
+            <div class="sp-toggle-left">
+              <div class="sp-toggle-icon"><i class="fa-solid fa-party-horn"></i></div>
+              <div class="sp-toggle-text">
+                <div class="sp-toggle-title">Win Celebration</div>
+                <div class="sp-toggle-desc">Confetti animation on victory</div>
+              </div>
+            </div>
+            <div class="sp-switch">
+              <input type="checkbox" id="opt-confetti" onchange="toggleOption('confettiOnWin')">
+              <div class="sp-switch-track"></div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <div>
+        <div class="sp-section-label"><i class="fa-solid fa-gauge-high"></i> Move Animation Speed</div>
+        <div class="sp-slider-wrap">
+          <div class="sp-slider-labels"><span>Instant</span><span>Slow</span></div>
+          <input type="range" class="sp-slider" id="opt-anim-speed" min="0" max="4" step="1"
+            value="2" oninput="onSpeedChange(this.value)">
+          <div style="text-align:center;margin-top:6px;font-size:12px;color:var(--gold);font-weight:600" id="speed-label">Normal</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sp-footer">
+    <button class="btn btn-secondary" onclick="resetSettings()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+    <div class="sp-preview-badge"><i class="fa-solid fa-circle-dot"></i> Live Preview</div>
+    <button class="btn btn-primary" onclick="applyAndClose()"><i class="fa-solid fa-check"></i> Apply</button>
+  </div>
+</div>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
@@ -382,7 +1153,7 @@ function removeHighlights() {
 function updateLastMoveHighlight(from, to) {
   $('#board .square-55d63').removeClass('highlight-last-move highlight-check');
   
-  if (settings.highlight_moves === false) return; // Respect setting
+  if (gSettings && gSettings.highlightMoves === false) return; // Respect setting
   
   // Highlight last move
   if (from && to) {
@@ -510,25 +1281,59 @@ async function saveBotMatch() {
 }
 
 let pendingMove = null;
+
+const PROMO_NAMES = { q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight' };
+
 function handlePromotion(source, target) {
   pendingMove = { from: source, to: target };
-  const modal = document.getElementById('promotion-modal');
+  const modal   = document.getElementById('promotion-modal');
   const options = document.getElementById('promotion-options');
   options.innerHTML = '';
-  
-  const color = chess.turn(); 
+
+  const color  = chess.turn(); // 'w' or 'b'
   const pieces = ['q', 'r', 'b', 'n'];
+
+  // Use active piece theme if available
+  const pt = (typeof PIECE_THEMES !== 'undefined' && gSettings)
+    ? PIECE_THEMES.find(t => t.id === gSettings.pieceTheme) || PIECE_THEMES[0]
+    : null;
 
   pieces.forEach(p => {
     const el = document.createElement('div');
     el.className = 'promotion-piece';
-    const pieceImg = `https://chessboardjs.com/img/chesspieces/wikipedia/${color}${p.toUpperCase()}.png`;
-    el.innerHTML = `<img src="${pieceImg}" width="45">`;
+
+    // Build image URL from active theme
+    let imgSrc;
+    if (pt) {
+      const pieceName = pt.wiki ? color + p.toUpperCase() : color + p;
+      imgSrc = pt.url + pieceName + '.png';
+    } else {
+      imgSrc = `https://chessboardjs.com/img/chesspieces/wikipedia/${color}${p.toUpperCase()}.png`;
+    }
+
+    el.innerHTML = `
+      <img src="${imgSrc}" alt="${PROMO_NAMES[p]}" onerror="this.src='https://chessboardjs.com/img/chesspieces/wikipedia/${color}${p.toUpperCase()}.png'">
+      <div class="promotion-piece-name">${PROMO_NAMES[p]}</div>
+    `;
     el.onclick = () => selectPromotion(p);
+    el.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') selectPromotion(p); });
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Promote to ${PROMO_NAMES[p]}`);
     options.appendChild(el);
   });
-  
+
   modal.classList.add('active');
+  // Focus the first option for keyboard accessibility
+  setTimeout(() => options.querySelector('.promotion-piece')?.focus(), 60);
+}
+
+function cancelPromotion() {
+  document.getElementById('promotion-modal').classList.remove('active');
+  if (pendingMove) {
+    board.position(chess.fen()); // snap piece back
+    pendingMove = null;
+  }
 }
 
 function selectPromotion(piece) {
@@ -561,7 +1366,7 @@ $(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
   if (piece && piece.color === myColorChar) {
     removeHighlights();
     selectedSquare = square;
-    if (settings.legal_moves !== false) {
+    if (gSettings ? gSettings.showLegalMoves !== false : true) {
         highlightSquare(square, 'selected');
         const moves = chess.moves({ square: square, verbose: true });
         moves.forEach(m => highlightSquare(m.to, 'move'));
@@ -705,7 +1510,7 @@ function onDragStart(source, piece) {
   if (chess.turn() !== myColorChar || piece.charAt(0) !== myColorChar) return false;
   removeHighlights();
   selectedSquare = source;
-  if (settings.legal_moves !== false) {
+  if (gSettings ? gSettings.showLegalMoves !== false : true) {
       highlightSquare(source, 'selected');
       const moves = chess.moves({ square: source, verbose: true });
       moves.forEach(m => highlightSquare(m.to, 'move'));
@@ -1222,6 +2027,386 @@ async function fetchMatchDetails() {
 }
 
 if (matchId && mode !== 'bot') fetchMatchDetails();
+
+// =====================================================
+// GAME SETTINGS SYSTEM
+// =====================================================
+
+const BOARD_THEMES = [
+  { id: 'classic',  name: 'Classic',   light: '#f0d9b5', dark: '#b58863' },
+  { id: 'ocean',    name: 'Ocean',     light: '#dee3e6', dark: '#8ca2ad' },
+  { id: 'midnight', name: 'Midnight',  light: '#4b7399', dark: '#1a3a5c' },
+  { id: 'forest',   name: 'Forest',    light: '#ffffdd', dark: '#86a666' },
+  { id: 'coral',    name: 'Coral',     light: '#f5dfd2', dark: '#c76b4e' },
+  { id: 'slate',    name: 'Slate',     light: '#cdd6e0', dark: '#4a6582' },
+  { id: 'violet',   name: 'Violet',    light: '#e5d9f2', dark: '#7c4f97' },
+  { id: 'gold',     name: 'Gold',      light: '#fdf3d5', dark: '#c9952c' },
+  { id: 'ice',      name: 'Ice',       light: '#e8f4f8', dark: '#5b9ab8' },
+  { id: 'cherry',   name: 'Cherry',    light: '#f9e4e8', dark: '#a83250' },
+  { id: 'walnut',   name: 'Walnut',    light: '#d4c09a', dark: '#6b4226' },
+  { id: 'neon',     name: 'Neon',      light: '#1a1a2e', dark: '#0d0d1a' },
+  { id: 'emerald',  name: 'Emerald',   light: '#c8e6c0', dark: '#2e7d32' },
+  { id: 'rose',     name: 'Rose',      light: '#fce4ec', dark: '#c2185b' },
+  { id: 'steel',    name: 'Steel',     light: '#eceff1', dark: '#546e7a' },
+  { id: 'amber',    name: 'Amber',     light: '#fff8e1', dark: '#f57c00' }
+];
+
+const PIECE_THEMES = [
+  { id: 'neo',       name: 'Neo',      url: 'https://www.chess.com/chess-themes/pieces/neo/150/',       wiki: false },
+  { id: 'wikipedia', name: 'Classic',  url: 'https://chessboardjs.com/img/chesspieces/wikipedia/',      wiki: true  },
+  { id: 'alpha',     name: 'Alpha',    url: 'https://www.chess.com/chess-themes/pieces/alpha/150/',     wiki: false },
+  { id: 'bases',     name: 'Bases',    url: 'https://www.chess.com/chess-themes/pieces/bases/150/',     wiki: false },
+  { id: 'blindfold', name: 'Blind',    url: 'https://www.chess.com/chess-themes/pieces/blindfold/150/',wiki: false },
+  { id: 'book',      name: 'Book',     url: 'https://www.chess.com/chess-themes/pieces/book/150/',      wiki: false },
+  { id: 'bubblegum', name: 'Bubble',   url: 'https://www.chess.com/chess-themes/pieces/bubblegum/150/',wiki: false },
+  { id: 'glass',     name: 'Glass',    url: 'https://www.chess.com/chess-themes/pieces/glass/150/',     wiki: false },
+  { id: 'gothic',    name: 'Gothic',   url: 'https://www.chess.com/chess-themes/pieces/gothic/150/',    wiki: false },
+  { id: 'icy_sea',   name: 'Icy',      url: 'https://www.chess.com/chess-themes/pieces/icy_sea/150/',   wiki: false },
+  { id: 'lolz',      name: 'Lolz',     url: 'https://www.chess.com/chess-themes/pieces/lolz/150/',      wiki: false },
+  { id: 'tigers',    name: 'Tigers',   url: 'https://www.chess.com/chess-themes/pieces/tigers/150/',    wiki: false }
+];
+
+const BG_TEMPLATES = [
+  { id: 'none',    name: 'None',       css: '',   shadow: '' },
+  { id: 'galaxy',  name: 'Galaxy',     css: 'linear-gradient(135deg,#0d0d2b 0%,#1a0a3a 40%,#0a1a3a 100%)',         shadow: '0 0 50px rgba(100,60,200,0.4)' },
+  { id: 'sunset',  name: 'Sunset',     css: 'linear-gradient(135deg,#1a0a00 0%,#3d1800 40%,#1a0a0a 100%)',         shadow: '0 0 45px rgba(220,80,30,0.35)' },
+  { id: 'forest',  name: 'Forest',     css: 'linear-gradient(135deg,#040d04 0%,#0a2010 50%,#041004 100%)',         shadow: '0 0 45px rgba(30,120,40,0.35)' },
+  { id: 'ocean',   name: 'Ocean',      css: 'linear-gradient(135deg,#020c1a 0%,#042040 50%,#020a14 100%)',         shadow: '0 0 45px rgba(20,80,160,0.35)' },
+  { id: 'rose',    name: 'Rose Gold',  css: 'linear-gradient(135deg,#1a0a0e 0%,#2a1018 50%,#180a0c 100%)',         shadow: '0 0 45px rgba(180,60,90,0.35)' },
+  { id: 'aurora',  name: 'Aurora',     css: 'linear-gradient(135deg,#030a10 0%,#0a1a2a 30%,#0d1a0a 70%,#0a0a1a 100%)', shadow: '0 0 55px rgba(40,180,120,0.3)' },
+  { id: 'lava',    name: 'Lava',       css: 'linear-gradient(135deg,#1a0500 0%,#2d0a00 50%,#1a0800 100%)',         shadow: '0 0 45px rgba(220,40,10,0.4)' },
+  { id: 'dusk',    name: 'Dusk',       css: 'linear-gradient(135deg,#0e0618 0%,#1a0a2e 40%,#0a0e1a 100%)',         shadow: '0 0 45px rgba(120,40,200,0.3)' },
+  { id: 'arctic',  name: 'Arctic',     css: 'linear-gradient(135deg,#0a1a24 0%,#0e2030 50%,#081418 100%)',         shadow: '0 0 45px rgba(100,180,220,0.3)' },
+  { id: 'amber',   name: 'Amber',      css: 'linear-gradient(135deg,#1a1000 0%,#2e1a00 50%,#1a0e00 100%)',         shadow: '0 0 45px rgba(220,140,20,0.35)' },
+  { id: 'matrix',  name: 'Matrix',     css: 'linear-gradient(135deg,#000a00 0%,#001500 50%,#000800 100%)',         shadow: '0 0 45px rgba(0,200,60,0.35)' }
+];
+
+const BOARD_BORDERS = [
+  { id: 'none',   name: 'None',   cls: 'border-none' },
+  { id: 'wood',   name: 'Wood',   cls: 'border-wood' },
+  { id: 'metal',  name: 'Metal',  cls: 'border-metal' },
+  { id: 'gold',   name: 'Gold',   cls: 'border-gold' },
+  { id: 'neon',   name: 'Neon',   cls: 'border-neon' },
+  { id: 'marble', name: 'Marble', cls: 'border-marble' }
+];
+
+const SPEED_LABELS = ['Instant', 'Fast', 'Normal', 'Slow', 'Very Slow'];
+const SPEED_VALUES = [0, 100, 200, 400, 700];
+
+let gSettings = JSON.parse(localStorage.getItem('px_game_settings') || '{}');
+if (!gSettings.boardTheme)        gSettings.boardTheme        = 'classic';
+if (!gSettings.pieceTheme)        gSettings.pieceTheme        = 'neo';
+if (!gSettings.bgTemplate)        gSettings.bgTemplate        = 'none';
+if (!gSettings.boardBorder)       gSettings.boardBorder       = 'none';
+if (gSettings.showLegalMoves  === undefined) gSettings.showLegalMoves  = true;
+if (gSettings.highlightMoves  === undefined) gSettings.highlightMoves  = true;
+if (gSettings.showCoords      === undefined) gSettings.showCoords      = false;
+if (gSettings.animatePieces   === undefined) gSettings.animatePieces   = true;
+if (gSettings.boardGlow       === undefined) gSettings.boardGlow       = false;
+if (gSettings.soundEnabled    === undefined) gSettings.soundEnabled    = true;
+if (gSettings.confettiOnWin   === undefined) gSettings.confettiOnWin   = true;
+if (gSettings.animSpeed       === undefined) gSettings.animSpeed       = 2;
+
+let pendingSettings = null;
+
+function saveGSettings() {
+  localStorage.setItem('px_game_settings', JSON.stringify(gSettings));
+}
+
+function openSettings() {
+  pendingSettings = { ...gSettings };
+  renderSettingsPanel(pendingSettings);
+  syncOptionToggles(pendingSettings);
+  document.getElementById('settings-overlay').classList.add('open');
+  document.getElementById('settings-panel').classList.add('open');
+  document.getElementById('btn-open-settings').classList.add('active');
+}
+
+function closeSettings() {
+  // Revert live preview if not applied
+  applyAllSettings();
+  document.getElementById('settings-overlay').classList.remove('open');
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('btn-open-settings').classList.remove('active');
+  pendingSettings = null;
+}
+
+function applyAndClose() {
+  if (pendingSettings) {
+    gSettings = { ...pendingSettings };
+    saveGSettings();
+    applyAllSettings();
+  }
+  document.getElementById('settings-overlay').classList.remove('open');
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('btn-open-settings').classList.remove('active');
+  pendingSettings = null;
+  updateSettingsBadge();
+  Toast.success('Settings applied!');
+}
+
+function resetSettings() {
+  pendingSettings = {
+    boardTheme: 'classic', pieceTheme: 'neo', bgTemplate: 'none', boardBorder: 'none',
+    showLegalMoves: true, highlightMoves: true, showCoords: false,
+    animatePieces: true, boardGlow: false, soundEnabled: true, confettiOnWin: true, animSpeed: 2
+  };
+  renderSettingsPanel(pendingSettings);
+  syncOptionToggles(pendingSettings);
+  applyLivePreview(pendingSettings);
+}
+
+function switchSettingsTab(tabId, btn) {
+  document.querySelectorAll('.sp-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sp-tab').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById(tabId);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function toggleOption(key) {
+  if (!pendingSettings) return;
+  pendingSettings[key] = !pendingSettings[key];
+  const map = { showLegalMoves:'opt-legal-moves', highlightMoves:'opt-highlight-moves', showCoords:'opt-coords', animatePieces:'opt-animate', boardGlow:'opt-glow', soundEnabled:'opt-sound', confettiOnWin:'opt-confetti' };
+  const el = document.getElementById(map[key]);
+  if (el) el.checked = pendingSettings[key];
+  if (key === 'highlightMoves') { if (!pendingSettings.highlightMoves) $('#board .square-55d63').removeClass('highlight-last-move'); else updateLastMoveHighlight(); }
+  if (key === 'showCoords') applyCoords(pendingSettings.showCoords);
+  if (key === 'boardGlow') applyBoardGlow(pendingSettings.boardGlow);
+}
+
+function onSpeedChange(val) {
+  if (!pendingSettings) return;
+  pendingSettings.animSpeed = parseInt(val);
+  const lbl = document.getElementById('speed-label');
+  if (lbl) lbl.textContent = SPEED_LABELS[val] || 'Normal';
+}
+
+function syncOptionToggles(s) {
+  const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+  setChk('opt-legal-moves', s.showLegalMoves);
+  setChk('opt-highlight-moves', s.highlightMoves);
+  setChk('opt-coords', s.showCoords);
+  setChk('opt-animate', s.animatePieces);
+  setChk('opt-glow', s.boardGlow);
+  setChk('opt-sound', s.soundEnabled);
+  setChk('opt-confetti', s.confettiOnWin);
+  const speedEl = document.getElementById('opt-anim-speed');
+  if (speedEl) speedEl.value = s.animSpeed ?? 2;
+  const lbl = document.getElementById('speed-label');
+  if (lbl) lbl.textContent = SPEED_LABELS[s.animSpeed ?? 2];
+}
+
+function updateSettingsBadge() {
+  const btn = document.getElementById('btn-open-settings');
+  if (!btn) return;
+  const isDefault = gSettings.boardTheme === 'classic' && gSettings.pieceTheme === 'neo'
+    && gSettings.bgTemplate === 'none' && gSettings.showLegalMoves !== false
+    && gSettings.highlightMoves !== false && !gSettings.boardGlow && gSettings.animSpeed === 2;
+  btn.classList.toggle('has-custom', !isDefault);
+}
+
+// Apply live preview (no save)
+function applyLivePreview(s) {
+  applyBoardTheme(s.boardTheme);
+  applyPieceTheme(s.pieceTheme);
+  applyBgTemplate(s.bgTemplate);
+  applyBoardBorder(s.boardBorder);
+  applyCoords(s.showCoords);
+  applyBoardGlow(s.boardGlow);
+}
+
+// Apply all saved settings
+function applyAllSettings() {
+  applyBoardTheme(gSettings.boardTheme);
+  applyPieceTheme(gSettings.pieceTheme);
+  applyBgTemplate(gSettings.bgTemplate);
+  applyBoardBorder(gSettings.boardBorder);
+  applyCoords(gSettings.showCoords);
+  applyBoardGlow(gSettings.boardGlow);
+}
+
+// --- Board Theme ---
+function applyBoardTheme(themeId) {
+  const t = BOARD_THEMES.find(x => x.id === themeId);
+  if (!t) return;
+  let style = document.getElementById('dyn-board-theme');
+  if (!style) { style = document.createElement('style'); style.id = 'dyn-board-theme'; document.head.appendChild(style); }
+  style.textContent = `
+    #board .white-1e1d7 { background-color: ${t.light} !important; }
+    #board .black-3c85d { background-color: ${t.dark} !important; }
+    #board .white-1e1d7.highlight-last-move { background-color: ${hexMix(t.light,'#e8c558',0.55)} !important; }
+    #board .black-3c85d.highlight-last-move { background-color: ${hexMix(t.dark,'#c8a820',0.55)} !important; }
+  `;
+}
+
+// --- Piece Theme ---
+function applyPieceTheme(themeId) {
+  const t = PIECE_THEMES.find(x => x.id === themeId);
+  if (!t || !board) return;
+  const ms = SPEED_VALUES[gSettings.animSpeed ?? 2];
+  const pieceThemeFn = (piece) => t.wiki ? t.url + piece + '.png' : t.url + piece.toLowerCase() + '.png';
+  board.destroy();
+  board = Chessboard('board', {
+    draggable: true,
+    moveSpeed: ms === 0 ? 'fast' : ms,
+    snapbackSpeed: Math.max(ms, 100),
+    snapSpeed: Math.max(ms * 0.5, 50),
+    position: chess.fen(), orientation: myColor,
+    pieceTheme: pieceThemeFn,
+    onDragStart, onDrop, onSnapEnd,
+    onMoveEnd: () => updateLastMoveHighlight()
+  });
+  setTimeout(() => updateLastMoveHighlight(), 300);
+}
+
+// --- BG Template ---
+function applyBgTemplate(bgId) {
+  const t = BG_TEMPLATES.find(x => x.id === bgId);
+  const outer = document.getElementById('board-frame-outer');
+  if (!outer || !t) return;
+  if (bgId === 'none') {
+    outer.style.background = '';
+    outer.style.padding    = '0';
+    outer.style.boxShadow  = '';
+  } else {
+    outer.style.background = t.css;
+    outer.style.padding    = '14px';  // padding on OUTER — board stays full-size inside
+    outer.style.boxShadow  = t.shadow || '';
+  }
+}
+
+// --- Coordinates ---
+function applyCoords(show) {
+  let style = document.getElementById('dyn-coords');
+  if (!style) { style = document.createElement('style'); style.id = 'dyn-coords'; document.head.appendChild(style); }
+  style.textContent = show
+    ? `#board .notation-322f9 { opacity: 1 !important; }`
+    : `#board .notation-322f9 { opacity: 0 !important; }`;
+}
+
+// --- Board Glow ---
+function applyBoardGlow(on) {
+  const outer = document.getElementById('board-frame-outer');
+  if (!outer) return;
+  // Apply glow via filter on the outer container
+  outer.style.filter = on ? 'drop-shadow(0 0 22px rgba(212,168,67,0.3))' : '';
+}
+
+
+// --- Hex color mix utility ---
+function hexMix(hex1, hex2, ratio) {
+  const p = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+  const [r1,g1,b1] = p(hex1); const [r2,g2,b2] = p(hex2);
+  const r = Math.round(r1*(1-ratio)+r2*ratio);
+  const g = Math.round(g1*(1-ratio)+g2*ratio);
+  const b = Math.round(b1*(1-ratio)+b2*ratio);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+// --- Render the panel UI ---
+function renderSettingsPanel(s) {
+  // Board themes
+  const btg = document.getElementById('board-theme-grid');
+  if (btg) btg.innerHTML = BOARD_THEMES.map(t => `
+    <div class="sp-swatch ${s.boardTheme===t.id?'selected':''}" id="bts-${t.id}"
+         onclick="selectBoardTheme('${t.id}')" title="${t.name}">
+      <div style="width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr">
+        <div style="background:${t.light}"></div><div style="background:${t.dark}"></div>
+        <div style="background:${t.dark}"></div><div style="background:${t.light}"></div>
+      </div>
+      <div class="swatch-label">${t.name}</div>
+    </div>`).join('');
+
+  // Piece themes
+  const ptg = document.getElementById('piece-theme-grid');
+  if (ptg) ptg.innerHTML = PIECE_THEMES.map(t => {
+    const imgSrc = t.wiki ? t.url + 'wK.png' : t.url + 'wk.png';
+    return `<div class="sp-piece-card ${s.pieceTheme===t.id?'selected':''}" id="pts-${t.id}" onclick="selectPieceTheme('${t.id}')">
+      <div class="pc-check">✓</div>
+      <img src="${imgSrc}" alt="${t.name}" onerror="this.style.display='none'">
+      <div class="pc-name">${t.name}</div>
+    </div>`;
+  }).join('');
+
+  // Background templates
+  const bgg = document.getElementById('bg-theme-grid');
+  if (bgg) bgg.innerHTML = BG_TEMPLATES.map(t => {
+    const preview = t.id === 'none'
+      ? `<div style="width:100%;height:100%;background:var(--bg-card);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;letter-spacing:1px">— None —</div>`
+      : `<div style="width:100%;height:100%;background:${t.css}"></div>`;
+    return `<div class="sp-bg-card ${s.bgTemplate===t.id?'selected':''}" id="bgs-${t.id}" onclick="selectBgTemplate('${t.id}')">
+      ${preview}
+      <div class="bg-label">${t.name}</div>
+    </div>`;
+  }).join('');
+
+  // Board border/frame styles
+  const bsg = document.getElementById('border-style-grid');
+  if (bsg) bsg.innerHTML = BOARD_BORDERS.map(t => {
+    const sel = s.boardBorder === t.id ? 'selected' : '';
+    const borderStyle = {
+      none:   'border:2px dashed rgba(255,255,255,0.12)',
+      wood:   'border:4px solid #8B5E3C',
+      metal:  'border:4px solid #7a8fa8',
+      gold:   'border:4px solid #d4a843; box-shadow:0 0 8px rgba(212,168,67,0.5)',
+      neon:   'border:3px solid #00f7ff; box-shadow:0 0 8px rgba(0,247,255,0.5)',
+      marble: 'border:4px solid #d4cfc9'
+    }[t.id] || '';
+    return `<div class="sp-border-card ${sel}" id="bds-${t.id}" onclick="selectBorderStyle('${t.id}')">
+      <div class="bc-check">✓</div>
+      <div class="bc-preview" style="${borderStyle}">
+        <div></div><div></div><div></div><div></div>
+      </div>
+      <div class="bc-name">${t.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectBoardTheme(id) {
+  if (!pendingSettings) return;
+  pendingSettings.boardTheme = id;
+  document.querySelectorAll('#board-theme-grid .sp-swatch').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('bts-' + id); if (el) el.classList.add('selected');
+  applyBoardTheme(id);
+}
+
+function selectPieceTheme(id) {
+  if (!pendingSettings) return;
+  pendingSettings.pieceTheme = id;
+  document.querySelectorAll('#piece-theme-grid .sp-piece-card').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('pts-' + id); if (el) el.classList.add('selected');
+  applyPieceTheme(id);
+}
+
+function selectBgTemplate(id) {
+  if (!pendingSettings) return;
+  pendingSettings.bgTemplate = id;
+  document.querySelectorAll('#bg-theme-grid .sp-bg-card').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('bgs-' + id); if (el) el.classList.add('selected');
+  applyBgTemplate(id);
+}
+
+function selectBorderStyle(id) {
+  if (!pendingSettings) return;
+  pendingSettings.boardBorder = id;
+  document.querySelectorAll('#border-style-grid .sp-border-card').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('bds-' + id); if (el) el.classList.add('selected');
+  applyBoardBorder(id);
+}
+
+// --- Board Border/Frame ---
+function applyBoardBorder(borderId) {
+  const outer = document.getElementById('board-frame-outer');
+  if (!outer) return;
+  const allCls = ['border-none','border-wood','border-metal','border-gold','border-neon','border-marble'];
+  allCls.forEach(c => outer.classList.remove(c));
+  const t = (typeof BOARD_BORDERS !== 'undefined') ? BOARD_BORDERS.find(x => x.id === borderId) : null;
+  if (t && t.cls) outer.classList.add(t.cls);
+}
+applyAllSettings();
+updateSettingsBadge();
+
 </script>
 </body>
 </html>

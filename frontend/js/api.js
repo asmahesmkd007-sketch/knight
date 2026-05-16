@@ -363,7 +363,8 @@ function showInstallPrompt() {
   modal.id = 'pwa-modal';
   modal.innerHTML = `
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(15px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;">
-      <div style="background:linear-gradient(145deg, #1e293b, #0f172a);border:2px solid #e8c547;border-radius:32px;padding:48px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,0.9);animation:pwa-pop 0.5s cubic-bezier(0.34,1.56,0.64,1);">
+      <div style="position:relative;background:linear-gradient(145deg, #1e293b, #0f172a);border:2px solid #e8c547;border-radius:32px;padding:48px 32px 40px;max-width:380px;width:100%;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,0.9);animation:pwa-pop 0.5s cubic-bezier(0.34,1.56,0.64,1);">
+        <button id="pwa-close" title="Close" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#94a3b8;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
         <div style="width:100px;height:100px;background:white;border-radius:28px;margin:0 auto 28px;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px rgba(232,197,71,0.5);">
           <img src="/assets/images/pwa-icon.png" style="width:100%;height:100%;border-radius:28px;object-fit:cover;">
         </div>
@@ -376,9 +377,14 @@ function showInstallPrompt() {
       @keyframes pwa-pop { from { opacity:0; transform:scale(0.8) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
       #pwa-install:hover { background: #f6e05e; transform: translateY(-2px); }
       #pwa-install:active { transform: scale(0.97); }
+      #pwa-close:hover { background: rgba(255,255,255,0.15); color: #e2e8f0; }
     </style>
   `;
   document.body.appendChild(modal);
+
+  document.getElementById('pwa-close').addEventListener('click', () => {
+    modal.remove();
+  });
 
   document.getElementById('pwa-install').addEventListener('click', async () => {
     const btn = document.getElementById('pwa-install');

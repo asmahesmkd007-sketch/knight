@@ -325,14 +325,33 @@
 
     /* Input with icon */
     .input-wrap {
-      position: relative; margin-bottom: 16px;
+      margin-bottom: 16px;
+    }
+    /* Inner shell: positions icons relative to the input only, not the label */
+    .input-shell {
+      position: relative;
+      display: flex;
+      align-items: center;
     }
     .input-wrap .input-icon {
-      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-      color: var(--text-muted); font-size: 14px; pointer-events: none;
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      pointer-events: none;
       transition: color 0.2s, transform 0.2s;
+      z-index: 1;
+      line-height: 1;
     }
     .input-wrap .input {
+      width: 100%;
       padding-left: 40px;
       background: var(--bg-tertiary);
       border: 1.5px solid var(--border-subtle);
@@ -344,8 +363,7 @@
       box-shadow: 0 0 0 3px rgba(232,197,71,0.12);
       transform: translateY(-1px);
     }
-    .input-wrap .input:focus ~ .input-icon,
-    .input-wrap:focus-within .input-icon {
+    .input-shell:focus-within .input-icon {
       color: var(--gold);
       transform: translateY(-50%) scale(1.1);
     }
@@ -368,16 +386,43 @@
       80%      { transform: translateX(3px); }
     }
     .input-wrap .input-eye {
-      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-      color: var(--text-muted); font-size: 14px; cursor: pointer;
-      transition: color 0.2s, transform 0.15s; background: none; border: none; padding: 4px;
-      border-radius: 4px;
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.15s;
+      background: none;
+      border: none;
+      padding: 0;
+      border-radius: 6px;
+      z-index: 1;
+      line-height: 1;
     }
     .input-wrap .input-eye:hover {
       color: var(--gold);
       transform: translateY(-50%) scale(1.15);
     }
-    .input-wrap .input.has-eye { padding-right: 40px; }
+    .input-wrap .input.has-eye { padding-right: 42px; }
+
+    /* Light theme icon visibility */
+    [data-theme="light"] .input-wrap .input-icon,
+    [data-theme="light"] .input-wrap .input-eye {
+      color: #72728a;
+    }
+    [data-theme="light"] .input-shell:focus-within .input-icon {
+      color: var(--gold);
+    }
+    [data-theme="light"] .input-wrap .input-eye:hover {
+      color: var(--gold);
+    }
 
     /* Password strength bar */
     .pwd-strength {
@@ -652,16 +697,20 @@
       <form class="auth-form active" id="login-form" onsubmit="doLogin(event)">
         <div class="input-wrap">
           <label class="input-lbl">Email Address</label>
-          <i class="fa-solid fa-envelope input-icon"></i>
-          <input type="email" id="l-email" class="input" placeholder="player@email.com" required autocomplete="email">
+          <div class="input-shell">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="l-email" class="input" placeholder="player@email.com" required autocomplete="email">
+          </div>
         </div>
         <div class="input-wrap">
           <label class="input-lbl">Password</label>
-          <i class="fa-solid fa-lock input-icon"></i>
-          <input type="password" id="l-pass" class="input has-eye" placeholder="Your password" required autocomplete="current-password">
-          <button type="button" class="input-eye" onclick="togglePwd('l-pass',this)" tabindex="-1">
-            <i class="fa-solid fa-eye"></i>
-          </button>
+          <div class="input-shell">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="l-pass" class="input has-eye" placeholder="Your password" required autocomplete="current-password">
+            <button type="button" class="input-eye" onclick="togglePwd('l-pass',this)" tabindex="-1">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
         <button type="submit" class="btn-auth" id="login-btn" onclick="addRipple(event,this)">
           <i class="fa-solid fa-chess-knight"></i> Sign In
@@ -674,28 +723,36 @@
         <div class="reg-grid">
           <div class="input-wrap" style="margin-bottom:0">
             <label class="input-lbl">Username</label>
-            <i class="fa-solid fa-at input-icon"></i>
-            <input type="text" id="r-user" class="input" placeholder="chess_king" required minlength="5"
-              oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9@_]/g, '')" autocomplete="username">
+            <div class="input-shell">
+              <i class="fa-solid fa-at input-icon"></i>
+              <input type="text" id="r-user" class="input" placeholder="chess_king" required minlength="5"
+                oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9@_]/g, '')" autocomplete="username">
+            </div>
           </div>
           <div class="input-wrap" style="margin-bottom:0">
             <label class="input-lbl">Full Name</label>
-            <i class="fa-solid fa-user input-icon"></i>
-            <input type="text" id="r-name" class="input" placeholder="Your Name" required autocomplete="name">
+            <div class="input-shell">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" id="r-name" class="input" placeholder="Your Name" required autocomplete="name">
+            </div>
           </div>
         </div>
         <div class="input-wrap" style="margin-top:16px">
           <label class="input-lbl">Email Address</label>
-          <i class="fa-solid fa-envelope input-icon"></i>
-          <input type="email" id="r-email" class="input" placeholder="player@email.com" required autocomplete="email">
+          <div class="input-shell">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="r-email" class="input" placeholder="player@email.com" required autocomplete="email">
+          </div>
         </div>
         <div class="input-wrap">
           <label class="input-lbl">Password <span style="color:var(--text-muted);font-size:10px;font-weight:400;text-transform:none;letter-spacing:0">(min 6 chars)</span></label>
-          <i class="fa-solid fa-lock input-icon"></i>
-          <input type="password" id="r-pass" class="input has-eye" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password" oninput="updatePwdStrength(this.value)">
-          <button type="button" class="input-eye" onclick="togglePwd('r-pass',this)" tabindex="-1">
-            <i class="fa-solid fa-eye"></i>
-          </button>
+          <div class="input-shell">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="r-pass" class="input has-eye" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password" oninput="updatePwdStrength(this.value)">
+            <button type="button" class="input-eye" onclick="togglePwd('r-pass',this)" tabindex="-1">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
           <div class="pwd-strength" id="pwd-strength" data-level="0">
             <div class="pwd-strength-seg"></div>
             <div class="pwd-strength-seg"></div>
@@ -705,8 +762,10 @@
         </div>
         <div class="input-wrap">
           <label class="input-lbl">Phone <span style="color:var(--text-muted);font-size:10px;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-          <i class="fa-solid fa-phone input-icon"></i>
-          <input type="tel" id="r-phone" class="input" placeholder="+91 9876543210" autocomplete="tel">
+          <div class="input-shell">
+            <i class="fa-solid fa-phone input-icon"></i>
+            <input type="tel" id="r-phone" class="input" placeholder="+91 9876543210" autocomplete="tel">
+          </div>
         </div>
         <button type="submit" class="btn-auth" id="register-btn" onclick="addRipple(event,this)">
           <i class="fa-solid fa-user-plus"></i> Create Account
