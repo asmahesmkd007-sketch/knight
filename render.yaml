@@ -6,6 +6,9 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://chessox-demo.onrender.com
   
   - type: web
     name: chessox-demo
