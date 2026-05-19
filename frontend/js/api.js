@@ -244,6 +244,7 @@ const RecordsAPI = {
   getReports     : ()              => api('/records/reports'),
   updateReportStatus: (id, status) => api(`/records/reports/${id}`, { method: 'PUT', body: { status } }),
   getFeedbacks   : ()              => api('/records/feedbacks'),
+  replenishTournaments: ()         => api('/records/tournaments/replenish', { method: 'POST' }),
 };
 
 // ─── FRIEND API ──────────────────────────────────────────

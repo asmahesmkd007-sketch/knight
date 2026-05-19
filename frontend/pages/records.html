@@ -201,6 +201,9 @@
               <button class="btn btn-primary" style="justify-content: flex-start" onclick="showPage('kyc', document.querySelector('[onclick*=kyc]'))"><i class="fa-solid fa-id-card"></i> Verify KYC Requests</button>
               <button class="btn btn-orange" style="justify-content: flex-start" onclick="showPage('withdrawals', document.querySelector('[onclick*=withdrawals]'))"><i class="fa-solid fa-money-bill-transfer"></i> Process Pending Payouts</button>
               <button class="btn btn-secondary" style="justify-content: flex-start" onclick="showPage('create-tournament', document.querySelector('[onclick*=create]'))"><i class="fa-solid fa-calendar-plus"></i> Host New Tournament</button>
+              <button class="btn" style="justify-content: flex-start; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--success);" onclick="triggerTournamentReplenish(this)">
+                <i class="fa-solid fa-arrows-spin"></i> Active Paid TR
+              </button>
             </div>
           </div>
           <div class="card">
@@ -800,6 +803,31 @@
     }
     function closeImageModal() { document.getElementById('image-modal').classList.remove('active'); }
     async function recordsLogout() { localStorage.clear(); window.location.href = '/pages/login.html'; }
+
+    async function triggerTournamentReplenish(btn) {
+      if (btn.disabled) return;
+      if (!confirm("Are you sure you want to force replenish all tournaments? This will process stuck recovery, clean up expired events, and create fresh upcoming free & paid tournaments.")) return;
+
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Activating...';
+
+      try {
+        const res = await RecordsAPI.replenishTournaments();
+        if (res && res.success) {
+          Toast.success("Tournaments Replenished Successfully!");
+          loadDashboard();
+        } else {
+          Toast.error(res?.message || "Failed to replenish tournaments.");
+        }
+      } catch (err) {
+        console.error('Replenish error:', err);
+        Toast.error("Failed to communicate with replenishment endpoint.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    }
 
     // Init
     document.getElementById("ct-start").value = new Date(Date.now() + 3600000).toISOString().slice(0, 16);

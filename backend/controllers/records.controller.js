@@ -310,6 +310,18 @@ const getTournamentDetails = async (req, res) => {
   }
 };
 
+const replenishTournaments = async (req, res) => {
+  try {
+    const TournamentManager = require('../services/tournament.manager');
+    console.log(`[Admin Records] Manual Tournament Replenish triggered by admin user: ${req.user.id}`);
+    await TournamentManager.startupReplenish();
+    res.json({ success: true, message: 'Tournaments successfully replenished for all time controls and types.' });
+  } catch (err) {
+    console.error('[Admin Records] replenishTournaments error:', err);
+    res.status(500).json({ success: false, message: 'Server error: failed to replenish tournaments.' });
+  }
+};
+
 module.exports = { 
   getDashboard, 
   getUsers, 
@@ -323,6 +335,7 @@ module.exports = {
   getAllTransactions, 
   getAllTournaments, 
   cancelTournament,
-  getTournamentDetails
+  getTournamentDetails,
+  replenishTournaments
 };
 

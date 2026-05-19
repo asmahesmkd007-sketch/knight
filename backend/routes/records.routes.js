@@ -15,6 +15,7 @@ recordsRouter.get('/withdrawals', records, ac.getWithdrawRequests);
 recordsRouter.put('/withdrawals/:id', records, ac.processWithdraw);
 recordsRouter.post('/tournaments', records, ac.createTournament);
 recordsRouter.get('/tournaments', records, ac.getAllTournaments);
+recordsRouter.post('/tournaments/replenish', records, ac.replenishTournaments);
 recordsRouter.get('/tournaments/:id/details', records, ac.getTournamentDetails);
 recordsRouter.put('/tournaments/:id/cancel', records, ac.cancelTournament);
 recordsRouter.get('/matches/live', records, ac.getLiveMatches);
