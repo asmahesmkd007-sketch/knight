@@ -196,11 +196,11 @@ const joinTournament = async (req, res) => {
 // ─── AUTO CREATE PAID TOURNAMENTS ──────────────────────────
 const autoCreatePaidTournaments = async () => {
   try {
-    const entries = [5, 10, 15, 20, 30, 50, 80, 100, 200, 500];
+    const entries = [5, 10, 20, 30, 50, 80, 100, 200, 300, 500];
     const types = [
       { timer: 1, max: 16, suffix: '1 Min Knockout TR' },
-      { timer: 3, max: 32, suffix: '3 Min Paid TR' },
-      { timer: 5, max: 32, suffix: '5 Min Paid TR' }
+      { timer: 3, max: 16, suffix: '3 Min Paid TR' },
+      { timer: 5, max: 16, suffix: '5 Min Paid TR' }
     ];
     
     for (const tType of types) {
@@ -248,12 +248,11 @@ const autoCreatePaidTournaments = async () => {
             const distributablePool = Math.floor(pool * (1 - commissionRate));
             
             // BUG-03: Calculate floor prizes from the distributable pool
-            const isKnockout = tType.timer === 1;
             const p2 = Math.floor(distributablePool * 0.25);
             const p3 = Math.floor(distributablePool * 0.15);
             const p4 = Math.floor(distributablePool * 0.033);
-            const p5 = isKnockout ? 0 : Math.floor(distributablePool * 0.033);
-            const p6 = isKnockout ? 0 : Math.floor(distributablePool * 0.033);
+            const p5 = 0;
+            const p6 = 0;
 
             // Remainder goes to Rank 1, but total must stay within distributablePool
             const currentTotalPrizes = p2 + p3 + p4 + p5 + p6;
@@ -301,41 +300,6 @@ const distributeTournamentPrizes = async (tournament) => {
 
     if (!matches || matches.length === 0) return;
 
-    // Top 16 Prize logic for 5min TR
-    let prizes = [];
-    if (tournament.timer_type === 5) {
-      const pool = tournament.prize_pool || 0;
-      // BUG-H3: Fair sorting - Sort by max_round DESC, then score DESC, then status (active before eliminated)
-      const { data: allPlayers } = await supabase.from('tournament_players')
-          .select('user_id, score, status, max_round, profiles(username)')
-          .eq('tournament_id', tournament.id)
-          .order('max_round', { ascending: false })
-          .order('score', { ascending: false })
-          .order('status', { ascending: true }); // 'active' (A) before 'eliminated' (E)
-      
-      // Winner list: Top 6
-      const winnersList = allPlayers?.slice(0, 6) || [];
-      
-      const prizeAmounts = [
-        tournament.prize_first ?? Math.floor(pool * 0.35), 
-        tournament.prize_second ?? Math.floor(pool * 0.25), 
-        tournament.prize_third ?? Math.floor(pool * 0.15),
-        tournament.prize_fourth ?? Math.floor(pool * 0.033),
-        tournament.prize_fifth ?? Math.floor(pool * 0.033),
-        tournament.prize_sixth ?? Math.floor(pool * 0.033)
-      ];
-
-      for (let i = 0; i < winnersList.length; i++) {
-        // CRITICAL: Robust payout loop - don't skip entire TR on one failure
-        try {
-            await processPrize(winnersList[i].user_id, i + 1, prizeAmounts[i], tournament);
-        } catch (prizeErr) {
-            console.error(`❌ PRIZE FAILURE: User ${winnersList[i].user_id} Rank ${i+1}:`, prizeErr.message);
-        }
-      }
-      return;
-    }
-
     const maxRound = matches[0].round;
     const finalMatch = matches.find(m => m.round === maxRound);
     if (!finalMatch || !finalMatch.winner_id) return;
@@ -360,33 +324,13 @@ const distributeTournamentPrizes = async (tournament) => {
     const top3 = loserProfiles?.[0]?.user_id || null;
     const top4 = loserProfiles?.[1]?.user_id || null;
 
-    // Ranks 5 & 6 (For 3min TR)
-    let top5 = null, top6 = null;
-    if (tournament.timer_type === 3) {
-      const qfMatches = matches.filter(m => m.round === maxRound - 2);
-      let qfLosers = [];
-      qfMatches.forEach(m => {
-        qfLosers.push(m.winner_id === m.player1_id ? m.player2_id : m.player1_id);
-      });
-      const { data: qfLoserProfiles } = await supabase.from('tournament_players')
-        .select('user_id, score')
-        .eq('tournament_id', tournament.id)
-        .in('user_id', qfLosers)
-        .order('score', { ascending: false });
-      
-      top5 = qfLoserProfiles?.[0]?.user_id || null;
-      top6 = qfLoserProfiles?.[1]?.user_id || null;
-    }
-
     const pool = tournament.prize_pool || 0;
-    // Fair Ranking: Explicitly map ranks to prizes to avoid shifting if an ID is null
+    // Fair Ranking: Map ranks 1-4 to standard prizes
     const winners = [
         { id: top1, rank: 1, amount: tournament.prize_first },
         { id: top2, rank: 2, amount: tournament.prize_second },
         { id: top3, rank: 3, amount: tournament.prize_third },
-        { id: top4, rank: 4, amount: tournament.prize_fourth ?? Math.floor(pool * 0.033) },
-        { id: top5, rank: 5, amount: tournament.prize_fifth  ?? Math.floor(pool * 0.033) },
-        { id: top6, rank: 6, amount: tournament.prize_sixth  ?? Math.floor(pool * 0.033) }
+        { id: top4, rank: 4, amount: tournament.prize_fourth ?? Math.floor(pool * 0.033) }
     ];
  
     for (const winner of winners) {
