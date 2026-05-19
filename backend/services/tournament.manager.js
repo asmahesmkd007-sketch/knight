@@ -773,7 +773,14 @@ class TournamentManager {
             console.error('Error in recoverStuckTournaments on startup:', e);
         }
 
-        const { autoCreatePaidTournaments, autoCreateFreeTournaments, updateTournamentStatuses } = require('../controllers/tournament.controller');
+        const { autoCreatePaidTournaments, autoCreateFreeTournaments, updateTournamentStatuses, backfillTournamentTrIds } = require('../controllers/tournament.controller');
+
+        // 1.5. Backfill any existing NULL tr_ids so they show up beautifully on the frontend
+        try {
+            await backfillTournamentTrIds();
+        } catch (e) {
+            console.error('Error backfilling tournament IDs on startup:', e);
+        }
 
         // 2. Immediately update existing tournament statuses (moves old upcoming free tournaments out of the way)
         try {

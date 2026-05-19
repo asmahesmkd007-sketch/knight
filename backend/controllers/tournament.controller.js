@@ -204,8 +204,26 @@ const autoCreatePaidTournaments = async () => {
     ];
     
     for (const tType of types) {
-        // BUG-12: Removed JS max-calculation for nextNum.
-        // tr_id is now handled exclusively by the database sequence/trigger.
+        // Query existing tr_ids for this timer type once to establish starting sequence index
+        const { data: list } = await supabase.from('tournaments')
+          .select('tr_id')
+          .eq('timer_type', tType.timer)
+          .not('tr_id', 'is', null);
+        
+        let maxNum = -1;
+        if (list && list.length > 0) {
+          for (const t of list) {
+            const parts = t.tr_id.split('-');
+            if (parts.length === 3) {
+              const num = parseInt(parts[2], 10);
+              if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+              }
+            }
+          }
+        }
+        
+        let nextIndex = maxNum + 1;
         
         for (const entry of entries) {
             console.log(`Checking ${tType.timer}min ${entry}c...`);
@@ -241,7 +259,11 @@ const autoCreatePaidTournaments = async () => {
             const currentTotalPrizes = p2 + p3 + p4 + p5 + p6;
             const p1 = Math.max(0, distributablePool - currentTotalPrizes); 
 
+            // Generate next sequential TR ID
+            const trIdStr = `TR-${tType.timer}-${String(nextIndex).padStart(2, '0')}`;
+
             const { error: insErr } = await supabase.from('tournaments').insert({
+              tr_id: trIdStr,
               name: `${entry} Coin - ${tType.suffix}`,
               type: 'paid',
               timer_type: tType.timer,
@@ -260,7 +282,8 @@ const autoCreatePaidTournaments = async () => {
 
             if (insErr) console.error('Failed to create tournament:', insErr);
             else {
-                console.log(`🏆 Created new ${entry} Coin - ${tType.suffix}`);
+                console.log(`🏆 Created new ${entry} Coin - ${tType.suffix} with ID ${trIdStr}`);
+                nextIndex++;
             }
         }
     }
@@ -437,7 +460,29 @@ const autoCreateFreeTournaments = async (customStartTime, customEndTime) => {
         
         if (existing && existing.length > 0) continue;
 
+        // Query max tr_id index for this timer type
+        const { data: list } = await supabase.from('tournaments')
+          .select('tr_id')
+          .eq('timer_type', t)
+          .not('tr_id', 'is', null);
+        
+        let maxNum = -1;
+        if (list && list.length > 0) {
+          for (const item of list) {
+            const parts = item.tr_id.split('-');
+            if (parts.length === 3) {
+              const num = parseInt(parts[2], 10);
+              if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+              }
+            }
+          }
+        }
+        
+        const trIdStr = `TR-${t}-${String(maxNum + 1).padStart(2, '0')}`;
+
         await supabase.from('tournaments').insert({
+          tr_id: trIdStr,
           name: `Free ${t}min Tournament`, 
           type: 'free', 
           format: 'standard', 
@@ -449,6 +494,56 @@ const autoCreateFreeTournaments = async (customStartTime, customEndTime) => {
         });
     }
   } catch (err) { console.error('Auto-create free error:', err); }
+};
+
+const backfillTournamentTrIds = async () => {
+  try {
+    console.log('🔄 Backfilling NULL tr_ids for existing tournaments...');
+    const timers = [1, 3, 5, 10];
+    for (const t of timers) {
+      // Fetch all tournaments for this timer type order by created_at ascending
+      const { data: tournaments, error } = await supabase.from('tournaments')
+        .select('id, tr_id')
+        .eq('timer_type', t)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error(`Error fetching tournaments for backfill timer ${t}:`, error);
+        continue;
+      }
+
+      if (!tournaments || tournaments.length === 0) continue;
+
+      let nextIndex = 0;
+      for (const tr of tournaments) {
+        if (!tr.tr_id) {
+          const trIdStr = `TR-${t}-${String(nextIndex).padStart(2, '0')}`;
+          const { error: updErr } = await supabase.from('tournaments')
+            .update({ tr_id: trIdStr })
+            .eq('id', tr.id);
+          
+          if (updErr) {
+            console.error(`Error updating backfill for tournament ${tr.id}:`, updErr);
+          } else {
+            console.log(`✅ Backfilled tournament ${tr.id} with ID ${trIdStr}`);
+          }
+          nextIndex++;
+        } else {
+          // If it already has a tr_id, parse its index to make sure our sequence remains continuous
+          const parts = tr.tr_id.split('-');
+          if (parts.length === 3) {
+            const num = parseInt(parts[2], 10);
+            if (!isNaN(num) && num >= nextIndex) {
+              nextIndex = num + 1;
+            }
+          }
+        }
+      }
+    }
+    console.log('✅ Backfill complete!');
+  } catch (err) {
+    console.error('backfillTournamentTrIds error:', err);
+  }
 };
 
 // ─── UPDATE FREE TOURNAMENT STATUSES ────────────────────────
@@ -524,5 +619,5 @@ const getLeaderboard = async (req, res) => {
 module.exports = { 
   getTournaments, getTournamentById, joinTournament, getLeaderboard, 
   autoCreateFreeTournaments, autoCreatePaidTournaments, updateTournamentStatuses, 
-  distributeTournamentPrizes 
+  distributeTournamentPrizes, backfillTournamentTrIds
 };
