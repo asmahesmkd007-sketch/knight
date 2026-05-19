@@ -98,22 +98,6 @@ const verifyDeposit = async (req, res) => {
   }
 };
 
-    if (rpcErr) throw rpcErr;
-    if (!result.success) return res.status(400).json({ success: false, message: result.message });
-
-    // 4. Emit real-time update
-    const io = req.app.get('io');
-    if (io) {
-      io.to(req.user.id).emit('wallet_update', { balance: result.new_balance, type: 'deposit' });
-    }
-
-    res.json({ success: true, message: 'Coins credited successfully!', balance: result.new_balance });
-  } catch (err) {
-    console.error('Verify deposit error:', err);
-    res.status(500).json({ success: false, message: 'Verification error.' });
-  }
-};
-
 const requestWithdraw = async (req, res) => {
   try {
     const { amount, upi_id } = req.body;
