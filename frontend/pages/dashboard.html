@@ -263,7 +263,14 @@
     @media (max-width: 640px) {
       .hero-card { padding: 20px; }
       .hero-card::before { display: none; }
+      #dash-rank-shield {
+        margin: 16px auto 0 !important;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
       .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .stat-tile { padding: 14px 12px; }
       .action-grid { grid-template-columns: 1fr 1fr; }
       .hero-name { font-size: 20px; }
       .tile-value { font-size: 22px; }
@@ -271,8 +278,7 @@
       .hero-actions { width: 100%; }
       .synced-email-pill { max-width: 200px; }
     }
-      @media (max-width: 400px) {
-      .stats-row { grid-template-columns: 1fr; }
+    @media (max-width: 400px) {
       .action-grid { grid-template-columns: 1fr 1fr; }
     }
 
