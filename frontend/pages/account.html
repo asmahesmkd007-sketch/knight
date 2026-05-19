@@ -1064,6 +1064,19 @@
     }
 
     async function saveProfile() {
+      let updatesCount = 0;
+      try {
+        const u = JSON.parse(localStorage.getItem('px_user'));
+        if (u && u.settings) {
+          updatesCount = u.settings.profile_updates_count || 0;
+        }
+      } catch (e) {}
+
+      if (updatesCount >= 2) {
+        const proceed = confirm("Your free profile updates are exhausted. Updating your profile now will cost 1 Coin. Do you want to proceed?");
+        if (!proceed) return;
+      }
+
       const btn = document.querySelector('#pane-profile .btn-action');
       const originalText = btn.innerHTML;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
