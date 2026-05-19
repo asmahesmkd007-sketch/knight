@@ -18,6 +18,10 @@ const createDepositOrder = async (req, res) => {
     if (!amount || amount < 10) return res.status(400).json({ success: false, message: 'Minimum deposit is ₹10.' });
     if (amount > 1000) return res.status(400).json({ success: false, message: 'Maximum deposit is ₹1000.' });
 
+    if (req.user.kyc_status !== 'verified') {
+        return res.status(403).json({ success: false, message: 'KYC verification required to deposit money.' });
+    }
+
     // 1. Create a pending transaction record
     const { data: txn, error: insErr } = await supabase.from('transactions').insert({
       user_id: req.user.id,
