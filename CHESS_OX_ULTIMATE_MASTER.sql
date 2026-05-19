@@ -779,4 +779,372 @@ BEGIN
     RETURN json_build_object('success', true);
 END; $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+
+-- ─── 11. MISSING TABLES FOR COMPATIBILITY ────────────────────
+
+-- [A] KYC Requests
+CREATE TABLE IF NOT EXISTS kyc_requests (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id         UUID UNIQUE NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  document_type   TEXT NOT NULL CHECK (document_type IN ('aadhaar', 'pan', 'passport')),
+  name            TEXT NOT NULL,
+  dob             TEXT NOT NULL,
+  status          TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  aadhaar_number  TEXT,
+  address_line1   TEXT,
+  address_line2   TEXT,
+  address_line3   TEXT,
+  pincode         TEXT,
+  front_image_url TEXT,
+  back_image_url  TEXT,
+  full_image_url  TEXT,
+  pan_number      TEXT,
+  pan_image_url   TEXT,
+  passport_number TEXT,
+  nationality     TEXT,
+  rejection_reason TEXT DEFAULT '',
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for kyc_requests
+ALTER TABLE kyc_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "kyc_requests_select" ON kyc_requests;
+CREATE POLICY "kyc_requests_select" ON kyc_requests FOR SELECT USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+DROP POLICY IF EXISTS "kyc_requests_insert" ON kyc_requests;
+CREATE POLICY "kyc_requests_insert" ON kyc_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "kyc_requests_update" ON kyc_requests;
+CREATE POLICY "kyc_requests_update" ON kyc_requests FOR UPDATE USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+
+-- [B] Clan Wars
+CREATE TABLE IF NOT EXISTS clan_wars (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  clan_a_id       UUID NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+  clan_b_id       UUID NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+  status          TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'completed')),
+  start_time      TIMESTAMPTZ NOT NULL,
+  end_time        TIMESTAMPTZ NOT NULL,
+  winner_clan_id  UUID REFERENCES clans(id) ON DELETE SET NULL,
+  score_a         INTEGER DEFAULT 0,
+  score_b         INTEGER DEFAULT 0,
+  lineup_a        UUID[] DEFAULT '{}'::UUID[],
+  lineup_b        UUID[] DEFAULT '{}'::UUID[],
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for clan_wars
+ALTER TABLE clan_wars ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "clan_wars_read" ON clan_wars;
+CREATE POLICY "clan_wars_read" ON clan_wars FOR SELECT USING (true);
+DROP POLICY IF EXISTS "clan_wars_write" ON clan_wars;
+CREATE POLICY "clan_wars_write" ON clan_wars FOR ALL USING (EXISTS (SELECT 1 FROM clan_members WHERE user_id = auth.uid() AND role IN ('leader', 'co_leader')));
+
+-- [C] Clan War Matches
+CREATE TABLE IF NOT EXISTS clan_war_matches (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  war_id          UUID NOT NULL REFERENCES clan_wars(id) ON DELETE CASCADE,
+  slot_index      INTEGER NOT NULL,
+  player1_id      UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  player2_id      UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  status          TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'finished')),
+  result          TEXT DEFAULT 'ongoing',
+  p1_points       INTEGER DEFAULT 0,
+  p2_points       INTEGER DEFAULT 0,
+  move_count      INTEGER DEFAULT 0,
+  match_id        UUID REFERENCES matches(id) ON DELETE SET NULL,
+  start_time      TIMESTAMPTZ,
+  end_time        TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for clan_war_matches
+ALTER TABLE clan_war_matches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "clan_war_matches_read" ON clan_war_matches;
+CREATE POLICY "clan_war_matches_read" ON clan_war_matches FOR SELECT USING (true);
+DROP POLICY IF EXISTS "clan_war_matches_write" ON clan_war_matches;
+CREATE POLICY "clan_war_matches_write" ON clan_war_matches FOR ALL USING (true);
+
+-- [D] Prize Failures (Audit Logs)
+CREATE TABLE IF NOT EXISTS prize_failures (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tournament_id   UUID REFERENCES tournaments(id) ON DELETE CASCADE,
+  user_id         UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  rank            INTEGER,
+  amount          NUMERIC,
+  error_message   TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE prize_failures ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "prize_failures_admin" ON prize_failures;
+CREATE POLICY "prize_failures_admin" ON prize_failures FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+
+
+-- ─── 12. MISSING VIEWS ────────────────────────────────────────
+
+-- [A] Leaderboard View (Aggregates tournament stats)
+CREATE OR REPLACE VIEW leaderboard AS 
+SELECT 
+    tp.id,
+    tp.tournament_id,
+    tp.user_id,
+    tp.score,
+    tp.wins,
+    tp.losses,
+    tp.draws,
+    tp.rank,
+    tp.max_round,
+    tp.matches_played,
+    tp.joined_at
+FROM tournament_players tp;
+
+
+-- ─── 13. MISSING ATOMIC FUNCTIONS ─────────────────────────────
+
+-- [A] Tournament: Join Free (Atomic)
+CREATE OR REPLACE FUNCTION join_free_tournament_atomic(
+    p_tournament_id UUID,
+    p_user_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_curr INTEGER;
+    v_max INTEGER;
+    v_status TEXT;
+BEGIN
+    SELECT status, current_players, max_players INTO v_status, v_curr, v_max 
+    FROM tournaments WHERE id = p_tournament_id FOR UPDATE;
+
+    IF v_status NOT IN ('upcoming', 'live') THEN
+        RETURN json_build_object('success', false, 'message', 'Tournament is closed.');
+    END IF;
+
+    IF v_curr >= v_max THEN
+        RETURN json_build_object('success', false, 'message', 'Tournament is full.');
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM tournament_players WHERE tournament_id = p_tournament_id AND user_id = p_user_id) THEN
+        RETURN json_build_object('success', false, 'message', 'Already joined.');
+    END IF;
+
+    INSERT INTO tournament_players (tournament_id, user_id) VALUES (p_tournament_id, p_user_id);
+    
+    UPDATE tournaments SET current_players = current_players + 1 WHERE id = p_tournament_id;
+
+    RETURN json_build_object('success', true, 'current_players', v_curr + 1);
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- [B] KYC: Review Application (Atomic)
+CREATE OR REPLACE FUNCTION review_kyc_atomic(
+    p_request_id UUID,
+    p_admin_id UUID,
+    p_action TEXT, -- 'approve' or 'reject'
+    p_rejection_reason TEXT DEFAULT ''
+)
+RETURNS JSON AS $$
+DECLARE
+    v_user_id UUID;
+    v_status TEXT;
+    v_document_type TEXT;
+    v_title TEXT;
+    v_message TEXT;
+BEGIN
+    SELECT user_id, status, document_type INTO v_user_id, v_status, v_document_type 
+    FROM kyc_requests WHERE id = p_request_id FOR UPDATE;
+
+    IF v_user_id IS NULL THEN
+        RETURN json_build_object('success', false, 'message', 'KYC Request not found.');
+    END IF;
+
+    IF v_status != 'pending' THEN
+        RETURN json_build_object('success', false, 'message', 'Request already processed.');
+    END IF;
+
+    IF p_action = 'approve' THEN
+        UPDATE kyc_requests 
+        SET status = 'approved', rejection_reason = '' 
+        WHERE id = p_request_id;
+
+        UPDATE profiles 
+        SET kyc_status = 'verified', kyc_verified = TRUE, kyc_rejection_reason = '' 
+        WHERE id = v_user_id;
+
+        v_title := 'KYC Verified ✅';
+        v_message := 'Congratulations! Your identity is verified. Wallet features are now unlocked.';
+    ELSE
+        UPDATE kyc_requests 
+        SET status = 'rejected', rejection_reason = p_rejection_reason 
+        WHERE id = p_request_id;
+
+        UPDATE profiles 
+        SET kyc_status = 'rejected', kyc_verified = FALSE, kyc_rejection_reason = p_rejection_reason 
+        WHERE id = v_user_id;
+
+        v_title := 'KYC Rejected ❌';
+        IF v_document_type = 'passport' THEN
+            v_message := 'Passport KYC Rejected – Retry';
+        ELSIF v_document_type = 'pan' THEN
+            v_message := 'Invalid PAN details';
+        ELSE
+            v_message := 'Reason: ' || COALESCE(NULLIF(p_rejection_reason, ''), 'Details mismatch. Please re-submit with correct information.');
+        END IF;
+    END IF;
+
+    -- Trigger notification
+    INSERT INTO notifications (user_id, type, title, message)
+    VALUES (v_user_id, 'kyc', v_title, v_message);
+
+    RETURN json_build_object('success', true, 'user_id', v_user_id);
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- [C] Tournament: Distribute Prize (Atomic)
+CREATE OR REPLACE FUNCTION distribute_prize_atomic(
+    p_tournament_id UUID,
+    p_user_id UUID,
+    p_rank INTEGER,
+    p_amount NUMERIC,
+    p_description TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+    v_new_balance NUMERIC;
+BEGIN
+    -- Update player rank in tournament_players
+    UPDATE tournament_players 
+    SET rank = p_rank 
+    WHERE tournament_id = p_tournament_id AND user_id = p_user_id;
+
+    -- Update wallet balance and total won
+    UPDATE wallets 
+    SET balance = balance + p_amount, total_won = total_won + p_amount, updated_at = NOW() 
+    WHERE user_id = p_user_id 
+    RETURNING balance INTO v_new_balance;
+
+    -- Insert prize transaction
+    INSERT INTO transactions (user_id, type, amount, status, description, reference_id) 
+    VALUES (p_user_id, 'tournament_prize', p_amount, 'success', p_description, p_tournament_id::TEXT);
+
+    -- Send winner notification
+    INSERT INTO notifications (user_id, type, title, message)
+    VALUES (p_user_id, 'prize', 'You won a prize! 🏆', p_description || '. Prize credited to your wallet.');
+
+    RETURN json_build_object('success', true, 'new_balance', v_new_balance);
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- [D] Tournament: Increment Score (Atomic)
+CREATE OR REPLACE FUNCTION increment_tournament_score(
+    p_tournament_id UUID,
+    p_user_id UUID,
+    p_score NUMERIC,
+    p_won INTEGER,
+    p_drew INTEGER,
+    p_round INTEGER
+)
+RETURNS void AS $$
+BEGIN
+    UPDATE tournament_players 
+    SET score = COALESCE(score, 0) + p_score,
+        wins = COALESCE(wins, 0) + p_won,
+        draws = COALESCE(draws, 0) + p_drew,
+        losses = COALESCE(losses, 0) + (CASE WHEN p_won = 0 AND p_drew = 0 THEN 1 ELSE 0 END),
+        max_round = GREATEST(COALESCE(max_round, 0), p_round),
+        matches_played = COALESCE(matches_played, 0) + 1
+    WHERE tournament_id = p_tournament_id AND user_id = p_user_id;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- [E] Clan: Update War Scores (Atomic)
+CREATE OR REPLACE FUNCTION update_clan_war_scores(
+    p_war_id UUID,
+    p_score_a_delta INTEGER,
+    p_score_b_delta INTEGER
+)
+RETURNS void AS $$
+BEGIN
+    UPDATE clan_wars 
+    SET score_a = COALESCE(score_a, 0) + p_score_a_delta,
+        score_b = COALESCE(score_b, 0) + p_score_b_delta
+    WHERE id = p_war_id;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- [F] Clan: Increment Total Wars & Wins
+CREATE OR REPLACE FUNCTION increment_clan_wars(
+    p_clan_id UUID,
+    p_won BOOLEAN
+)
+RETURNS void AS $$
+BEGIN
+    UPDATE clans 
+    SET total_wars = COALESCE(total_wars, 0) + 1,
+        war_wins = COALESCE(war_wins, 0) + (CASE WHEN p_won THEN 1 ELSE 0 END),
+        war_points = COALESCE(war_points, 0) + (CASE WHEN p_won THEN 3 ELSE 1 END)
+    WHERE id = p_clan_id;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ─── 14. CLAN WAR AUTOMATIC MATCHUPS TRIGGER ──────────────────
+
+-- Trigger function: Automatically generate matchup slots when Clan War starts
+CREATE OR REPLACE FUNCTION start_clan_war_matches() 
+RETURNS TRIGGER AS $$
+DECLARE
+    i INTEGER;
+    v_len_a INTEGER;
+    v_len_b INTEGER;
+    v_max_len INTEGER;
+    v_p1 UUID;
+    v_p2 UUID;
+BEGIN
+    IF NEW.status = 'active' AND OLD.status = 'pending' THEN
+        -- Get the lengths of the lineups
+        v_len_a := COALESCE(array_length(NEW.lineup_a, 1), 0);
+        v_len_b := COALESCE(array_length(NEW.lineup_b, 1), 0);
+        
+        -- The number of match slots is the maximum of the two lineup sizes (up to 16)
+        v_max_len := GREATEST(v_len_a, v_len_b);
+        IF v_max_len > 16 THEN
+            v_max_len := 16;
+        END IF;
+
+        -- Create match slots for each pair
+        FOR i IN 1..v_max_len LOOP
+            v_p1 := NULL;
+            v_p2 := NULL;
+            
+            IF i <= v_len_a THEN
+                v_p1 := NEW.lineup_a[i];
+            END IF;
+            
+            IF i <= v_len_b THEN
+                v_p2 := NEW.lineup_b[i];
+            END IF;
+
+            INSERT INTO clan_war_matches (
+                war_id,
+                slot_index,
+                player1_id,
+                player2_id,
+                status,
+                p1_points,
+                p2_points
+            ) VALUES (
+                NEW.id,
+                i,
+                v_p1,
+                v_p2,
+                'pending',
+                0,
+                0
+            );
+        END LOOP;
+    END IF;
+    RETURN NEW;
+END; $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS tr_start_clan_war_matches ON clan_wars;
+CREATE TRIGGER tr_start_clan_war_matches 
+AFTER UPDATE OF status ON clan_wars 
+FOR EACH ROW 
+EXECUTE FUNCTION start_clan_war_matches();
+
+
 SELECT 'CHESS OX ULTIMATE MASTER SCHEMA COMPILED! 🏁' AS status;
