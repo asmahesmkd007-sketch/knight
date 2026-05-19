@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "chess.js": "^1.4.0",
     "clsx": "latest",
     "framer-motion": "latest",
@@ -21,6 +22,7 @@
     "tailwind-merge": "latest"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
     "autoprefixer": "latest",
     "eslint": "latest",
     "eslint-config-next": "latest",

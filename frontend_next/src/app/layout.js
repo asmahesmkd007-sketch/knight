@@ -1,6 +1,7 @@
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
             </div>
           </main>
         </div>
+        <SpeedInsights />
       </body>
     </html>
   );
