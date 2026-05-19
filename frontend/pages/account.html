@@ -592,7 +592,7 @@
               <button class="tab-btn active" onclick="switchMainTab('profile', this)">
                 <i class="fa-solid fa-user-gear"></i> Profile
               </button>
-              <button class="tab-btn" onclick="switchMainTab('kyc', this)">
+              <button class="tab-btn" id="tab-btn-kyc" onclick="switchMainTab('kyc', this)">
                 <i class="fa-solid fa-id-card"></i> Verification
               </button>
               <button class="tab-btn" onclick="switchMainTab('security', this)">
@@ -897,29 +897,41 @@
         }
 
         const badge = document.getElementById('pb-kyc-badge');
+        const kycTabBtn = document.getElementById('tab-btn-kyc');
         if (u.kyc_status === 'verified') {
           badge.style.display = 'flex';
           document.getElementById('kyc-status-msg').innerHTML = '<i class="fa-solid fa-check-circle"></i> Your KYC is fully verified.';
           document.getElementById('btn-submit-aadhaar').style.display = 'none';
           document.getElementById('btn-submit-pan').style.display = 'none';
           document.getElementById('btn-submit-passport').style.display = 'none';
+          if (kycTabBtn) kycTabBtn.style.display = 'none';
+          
+          // Switch to Profile tab if active tab was KYC
+          const activeTabBtn = document.querySelector('.tab-bar .tab-btn.active');
+          if (activeTabBtn && activeTabBtn.id === 'tab-btn-kyc') {
+            const profileTabBtn = document.querySelector('.tab-bar .tab-btn');
+            if (profileTabBtn) switchMainTab('profile', profileTabBtn);
+          }
         } else if (u.kyc_status === 'pending') {
           document.getElementById('kyc-status-msg').innerHTML = '<i class="fa-solid fa-clock"></i> Your KYC is under review.';
           document.getElementById('btn-submit-aadhaar').style.display = 'none';
           document.getElementById('btn-submit-pan').style.display = 'none';
           document.getElementById('btn-submit-passport').style.display = 'none';
+          if (kycTabBtn) kycTabBtn.style.display = 'flex';
         } else if (u.kyc_status === 'rejected') {
           const reason = u.kyc_rejection_reason || 'Details not matching';
           document.getElementById('kyc-status-msg').innerHTML = `<i class="fa-solid fa-circle-xmark" style="color:#e74c3c"></i> KYC Rejected: ${reason}. Please re-submit correctly.`;
           document.getElementById('btn-submit-aadhaar').style.display = 'flex';
           document.getElementById('btn-submit-pan').style.display = 'flex';
           document.getElementById('btn-submit-passport').style.display = 'flex';
+          if (kycTabBtn) kycTabBtn.style.display = 'flex';
         } else {
           // not_verified
           document.getElementById('kyc-status-msg').textContent = '';
           document.getElementById('btn-submit-aadhaar').style.display = 'flex';
           document.getElementById('btn-submit-pan').style.display = 'flex';
           document.getElementById('btn-submit-passport').style.display = 'flex';
+          if (kycTabBtn) kycTabBtn.style.display = 'flex';
         }
 
         if (u.profile_image) {
@@ -1221,6 +1233,12 @@
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
       if (tab) {
+        if (tab === 'kyc') {
+          const kycTabBtn = document.getElementById('tab-btn-kyc');
+          if (kycTabBtn && kycTabBtn.style.display === 'none') {
+            return;
+          }
+        }
         const btn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
         if (btn) switchMainTab(tab, btn);
         if (tab === 'security' && params.get('action') === 'setPassword') {
