@@ -103,7 +103,7 @@ app.get('*', (req, res) => {
 // ─── START ───────────────────────────────────────────────
 const requiredEnv = [
   'SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 
-  'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET',
+  'PHONEPE_MERCHANT_ID', 'PHONEPE_SALT_KEY',
   'JWT_SECRET'
 ];
 
