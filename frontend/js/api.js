@@ -362,7 +362,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function showInstallPrompt(onCloseCallback) {
-  if (localStorage.getItem('pwa_installed')) {
+  if (localStorage.getItem('pwa_installed') || sessionStorage.getItem('pwa_dismissed')) {
     if (onCloseCallback) onCloseCallback();
     return;
   }
@@ -392,6 +392,7 @@ function showInstallPrompt(onCloseCallback) {
   document.body.appendChild(modal);
 
   const closeAndProceed = () => {
+    sessionStorage.setItem('pwa_dismissed', 'true');
     modal.remove();
     if (onCloseCallback) onCloseCallback();
   };
