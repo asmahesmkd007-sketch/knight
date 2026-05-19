@@ -9,6 +9,50 @@
     .leaderboard-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-subtle); }
     .leaderboard-row.me { background: rgba(232,197,71,0.06); border-radius: 8px; padding: 9px 8px; }
     .rank-num { font-family: var(--font-display); font-size: 15px; font-weight: 700; width: 28px; text-align: center; color: var(--text-muted); }
+    
+    /* Locked Screen CSS */
+    .locked-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 8, 16, 0.6);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      text-align: center;
+      padding: 40px 20px;
+      min-height: 480px;
+      border-radius: var(--radius);
+    }
+    .locked-icon-wrapper {
+      font-size: 80px;
+      color: var(--gold);
+      margin-bottom: 20px;
+      animation: lock-pulse 2s infinite alternate;
+    }
+    .locked-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .locked-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 440px;
+      line-height: 1.6;
+    }
+    @keyframes lock-pulse {
+      0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(232,197,71,0.2)); }
+      100% { transform: scale(1.08); filter: drop-shadow(0 0 25px rgba(232,197,71,0.6)); }
+    }
   </style>
 </head>
 <body>
@@ -25,7 +69,19 @@
         <div class="topbar-avatar" id="tb-avatar" role="button" tabindex="0" aria-label="Account Settings" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
       </div>
     </div>
-    <div class="page-content">
+    <div class="page-content" style="position: relative;">
+      <!-- Locked Screen Overlay -->
+      <div class="locked-overlay">
+        <div class="locked-icon-wrapper">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <div class="locked-title">Free Arena Locked</div>
+        <div class="locked-subtitle">Free tournaments are currently locked. Compete in our Paid Tournaments to win real coins and climb the ranks!</div>
+        <button class="btn btn-primary" onclick="window.location='/pages/paid-tournament.html'" style="margin-top: 24px; width: auto; padding: 12px 28px;">
+          <i class="fa-solid fa-trophy" style="margin-right: 8px;"></i> Go to Paid TR
+        </button>
+      </div>
+
       <!-- Info Banner -->
       <div class="card mb-20" style="border-color:rgba(232,197,71,0.2);display:flex;align-items:center;gap:14px;padding:14px 18px">
         <span style="font-size:22px;color:var(--gold)"><i class="fa-solid fa-gamepad"></i></span>
