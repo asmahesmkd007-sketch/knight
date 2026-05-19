@@ -954,6 +954,7 @@
           if (secCurrent) secCurrent.style.display = 'block';
         }
 
+        localStorage.setItem('px_user', JSON.stringify(u));
         if (typeof updateSidebarUI === 'function') updateSidebarUI(u);
       }
     }
@@ -1061,7 +1062,7 @@
         let avatarUrl = null;
         if (avatarFile) {
           const uploadRes = await UserAPI.uploadAvatar(avatarFile);
-          if (uploadRes.success) avatarUrl = uploadRes.avatarUrl;
+          if (uploadRes.success) avatarUrl = uploadRes.avatarUrl || uploadRes.url;
         }
 
         const res = await api('/user/profile', {
